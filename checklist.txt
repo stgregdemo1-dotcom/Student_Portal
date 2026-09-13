@@ -1,0 +1,69 @@
+System should include:
+1. admission
+        Accomplished:
+            sending details to database
+        Pending:
+            uploading of document
+            viewing of records by admin/registar
+            approving/rejection
+            email notification (notification)
+            update of status (when already enrolled)
+2. enrollment
+        Accomplished:
+
+        Pending:
+            sending of data to database
+            viewing of records by admin/registar
+            approving/rejection
+            email notification (notification)
+3. uploading of grades
+        Accomplished:
+
+        Pending:
+            teacher's login
+            student records
+            subject records
+            sending of data to database
+4. viewing of grades
+        Accomplished:
+            student login
+        Pending:
+            extraction of grades in database
+5. notification alert (sms or email) - integrated to other requirements
+6. error trapping - integrated to other requirements
+7. teachers dashboard
+        Accomplished:
+
+        Pending:
+            teacher login
+8. confirmation notification - what is this?
+9. Audit logs
+        Accomplished:
+            login action
+            create/update teacher
+        Pending: 
+            creation of table
+            student action
+            teacher action
+            admin action
+10. Account lockout
+        Accomplished:
+            student login
+        Pending
+            teacher login
+            login logic
+            admin dashboard
+11. backup and restore
+12. sorting and filtering
+13. achiving of class/subjects
+14. consistent labeling
+        Accomplished:
+
+        Pending:
+            overall 
+            
+Others:
+forgot-password logic
+
+added features
+add department management
