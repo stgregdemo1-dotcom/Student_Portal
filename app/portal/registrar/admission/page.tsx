@@ -27,6 +27,9 @@ export default function EnrollmentPage() {
   const [admissions, setAdmissions] = useState<AdmissionRequest[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  // Search state
+  const [searchTerm, setSearchTerm] = useState<string>("");
+
   // Status Filter state
   const [statusFilter, setStatusFilter] = useState<string>("All");
 
@@ -80,6 +83,12 @@ export default function EnrollmentPage() {
     fetchAdmissions();
   }, []);
 
+  // Handle search input change
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1); // Reset to first page when searching
+  };
+
   // Handle status filter change and reset to page 1
   const handleStatusFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setStatusFilter(e.target.value);
@@ -97,11 +106,23 @@ export default function EnrollmentPage() {
     setCurrentPage(1); // Reset to first page on sort
   };
 
-  // 1. Filter raw admissions by status
+  // 1. Filter raw admissions by status and search term (Student Name)
   const filteredAdmissions = admissions.filter((record) => {
-    if (statusFilter === "All") return true;
-    const currentStatus = (record.status || "Pending").toLowerCase();
-    return currentStatus === statusFilter.toLowerCase();
+    // Status Filter
+    if (statusFilter !== "All") {
+      const currentStatus = (record.status || "Pending").toLowerCase();
+      if (currentStatus !== statusFilter.toLowerCase()) return false;
+    }
+
+    // Student Name Search Filter
+    if (searchTerm.trim() !== "") {
+      const fullName = `${record.firstName || ""} ${record.lastName || ""}`.toLowerCase();
+      if (!fullName.includes(searchTerm.toLowerCase().trim())) {
+        return false;
+      }
+    }
+
+    return true;
   });
 
   // 2. Sort filtered admissions array
@@ -160,8 +181,38 @@ export default function EnrollmentPage() {
         <div>
           {/* Table Header Section */}
           <div className="p-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <h3 className="text-lg font-semibold text-gray-800">Admission Requests</h3>
             
+            {/* Title & Search Bar Beside It */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1">
+              <h3 className="text-lg font-semibold text-gray-800 whitespace-nowrap">
+                Admission Requests
+              </h3>
+              
+              <div className="relative w-full sm:w-64">
+                <input
+                  type="text"
+                  placeholder="Search student name..."
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                  className="w-full pl-9 pr-3 py-1.5 bg-gray-50 border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                />
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
+                  🔍
+                </span>
+                {searchTerm && (
+                  <button
+                    onClick={() => {
+                      setSearchTerm("");
+                      setCurrentPage(1);
+                    }}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs font-bold"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            </div>
+
             {/* Filter and Refresh Action Controls */}
             <div className="flex items-center gap-2">
               <select
@@ -344,7 +395,7 @@ export default function EnrollmentPage() {
 
             {loadingAttachment ? (
               <div className="py-8 text-center text-xs text-gray-400 animate-pulse font-medium">
-                🔄 Fetching secure document link...
+                Fetching secure document link...
               </div>
             ) : selectedAttachment ? (
               <div className="space-y-3">

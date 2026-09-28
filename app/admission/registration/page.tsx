@@ -14,6 +14,8 @@ interface SelectFieldProps {
   label: string;
   name: string;
   options: string[];
+  value?: string;
+  onChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void;
 }
 
 const InputField: React.FC<InputFieldProps> = ({
@@ -34,11 +36,13 @@ const InputField: React.FC<InputFieldProps> = ({
   </div>
 );
 
-const SelectField: React.FC<SelectFieldProps> = ({ label, name, options }) => (
+const SelectField: React.FC<SelectFieldProps> = ({ label, name, options, value, onChange }) => (
   <div className="flex flex-col gap-2">
     <label className="text-[10px] font-black uppercase text-slate-400 ml-1">{label}</label>
     <select 
       name={name}
+      value={value}
+      onChange={onChange}
       className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-yellow-400 text-sm"
     >
       {options.map((opt) => (
@@ -52,6 +56,23 @@ export default function AdmissionForm() {
   const [status, setStatus] = React.useState<{ type: "success" | "error" | ""; message: string }>({ type: "", message: "" });
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [selectedFileCount, setSelectedFileCount] = useState(0); // Track files visually
+
+  // 🚀 Track Enrollment Type & Dynamic Grade Level
+  const [enrollmentType, setEnrollmentType] = useState<string>("New Student");
+  const [gradeLevel, setGradeLevel] = useState<string>("Grade 11");
+
+  // Filter grade levels dynamically based on selected enrollment type
+  const gradeLevelOptions = enrollmentType === "New Student" ? ["Grade 11"] : ["Grade 11", "Grade 12"];
+
+  // Ensure selected grade level stays valid when enrollment type changes
+  const handleEnrollmentTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedType = e.target.value;
+    setEnrollmentType(selectedType);
+
+    if (selectedType === "New Student") {
+      setGradeLevel("Grade 11");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -74,6 +95,8 @@ export default function AdmissionForm() {
         setStatus({ type: "success", message: "Application submitted successfully!" });
         (e.target as HTMLFormElement).reset(); 
         setSelectedFileCount(0);
+        setEnrollmentType("New Student");
+        setGradeLevel("Grade 11");
       } else {
         setStatus({ type: "error", message: data.message || "Failed to submit application." });
       }
@@ -112,8 +135,20 @@ export default function AdmissionForm() {
           {/* Grid 2: Academic Profile */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <SelectField label="Desired Track/Strand *" name="track" options={["Information and Communication Technology", "Hotel and Restaurant Management"]} />
-            <SelectField label="Enrollment Type *" name="enrollmentType" options={["New Student", "Transferee"]} />
-            <SelectField label="Grade Level *" name="gradeLevel" options={["Grade 11", "Grade 12"]} />
+            <SelectField 
+              label="Enrollment Type *" 
+              name="enrollmentType" 
+              options={["New Student", "Transferee"]} 
+              value={enrollmentType}
+              onChange={handleEnrollmentTypeChange}
+            />
+            <SelectField 
+              label="Grade Level *" 
+              name="gradeLevel" 
+              options={gradeLevelOptions} 
+              value={gradeLevel}
+              onChange={(e) => setGradeLevel(e.target.value)}
+            />
             <InputField label="LRN" name="lrn" placeholder="12-digit LRN" />
             <InputField label="Last School Attended *" name="lastSchool" placeholder="School Name" />
           </div>
