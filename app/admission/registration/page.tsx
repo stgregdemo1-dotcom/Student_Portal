@@ -8,6 +8,9 @@ interface InputFieldProps {
   name: string;
   type?: string;
   placeholder?: string;
+  max?: string;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onInvalid?: (e: React.InvalidEvent<HTMLInputElement>) => void;
 }
 
 interface SelectFieldProps {
@@ -23,6 +26,9 @@ const InputField: React.FC<InputFieldProps> = ({
   name,
   type = "text",
   placeholder,
+  max,
+  onChange,
+  onInvalid,
 }) => (
   <div className="flex flex-col gap-2">
     <label className="text-[10px] font-black uppercase text-slate-400 ml-1">{label}</label>
@@ -30,6 +36,9 @@ const InputField: React.FC<InputFieldProps> = ({
       type={type}
       name={name}
       placeholder={placeholder}
+      max={max}
+      onChange={onChange}
+      onInvalid={onInvalid}
       className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-yellow-400 text-sm"
       required={label.includes("*")}
     />
@@ -61,6 +70,12 @@ export default function AdmissionForm() {
   const [enrollmentType, setEnrollmentType] = useState<string>("New Student");
   const [gradeLevel, setGradeLevel] = useState<string>("Grade 11");
 
+  // Calculate maximum allowed date of birth (at least 15 years old today)
+  const today = new Date();
+  const maxDobDate = new Date(today.getFullYear() - 15, today.getMonth(), today.getDate())
+    .toISOString()
+    .split("T")[0];
+
   // Filter grade levels dynamically based on selected enrollment type
   const gradeLevelOptions = enrollmentType === "New Student" ? ["Grade 11"] : ["Grade 11", "Grade 12"];
 
@@ -74,16 +89,43 @@ export default function AdmissionForm() {
     }
   };
 
+  const handleDobValidation = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target;
+    if (!input.value) {
+      input.setCustomValidity("");
+      return;
+    }
+
+    const dob = new Date(input.value);
+    const ageCutoff = new Date(today.getFullYear() - 15, today.getMonth(), today.getDate());
+
+    if (dob > ageCutoff) {
+      input.setCustomValidity("You must be at least 15 years old to apply.");
+    } else {
+      input.setCustomValidity("");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
     setStatus({ type: "", message: "" });
 
-    // 1. Instantly maps all name attributes, including the file inputs
     const formData = new FormData(e.currentTarget);
+    const dobValue = formData.get("dob") as string;
+
+    if (dobValue) {
+      const dob = new Date(dobValue);
+      const ageCutoff = new Date(today.getFullYear() - 15, today.getMonth(), today.getDate());
+      if (dob > ageCutoff) {
+        setStatus({ type: "error", message: "Applicants must be at least 15 years old." });
+        setIsSubmitting(false);
+        return;
+      }
+    }
 
     try {
-      // 2. UPDATED FETCH: Sending raw formData directly, omitting 'Content-Type' header
+      // Sending raw formData directly, omitting 'Content-Type' header
       const res = await fetch("/api/admission", {
         method: "POST",
         body: formData, 
@@ -127,7 +169,14 @@ export default function AdmissionForm() {
             <InputField label="Last Name *" name="lastName" placeholder="Dela Cruz" />
             <InputField label="Email Address *" name="email" type="email" placeholder="juan@example.com" />
             <InputField label="Phone Number *" name="phone" placeholder="+63 9xx xxx xxxx" />
-            <InputField label="Date of Birth *" name="dob" type="date" />
+            <InputField 
+              label="Date of Birth *" 
+              name="dob" 
+              type="date" 
+              max={maxDobDate}
+              onChange={handleDobValidation}
+              onInvalid={(e) => e.currentTarget.setCustomValidity("You must be at least 15 years old to apply.")}
+            />
             <SelectField label="Gender *" name="gender" options={["Male", "Female", "Other"]} />
             <InputField label="Nationality *" name="nationality" placeholder="Filipino" />
           </div>
@@ -183,7 +232,6 @@ export default function AdmissionForm() {
                 Report Card & Birth Certificate
               </p>
               
-              {/* UPDATED: Added name="files", multiple upload support, and a counter change log */}
               <input 
                 type="file" 
                 name="files"
