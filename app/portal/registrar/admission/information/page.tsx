@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-const enrollmentURL = "https://solid-umbrella-gxj599j9jpp3vx9-3000.app.github.dev/admission/enrollment";
+const enrollmentURL = "https://student-portal-q4hs.onrender.com/admission/enrollment";
 
 interface ApplicantData {
   _id: string; 
@@ -94,7 +94,7 @@ function ApplicantDetailsContent() {
               <p>We are pleased to inform you that your admission application for the <strong>${applicant.track}</strong> track has been <strong>Approved</strong>.</p>
               <p><strong>Admission Tracking ID:</strong> ${applicant.applicant_id}</p>
               <p>Please follow the link below to completed your enrollment process</p>
-              <p><a href="https://solid-umbrella-gxj599j9jpp3vx9-3000.app.github.dev/admission/verification">Enrollment link</a></p>
+              <p><a href="https://student-portal-q4hs.onrender.com/admission/verification">Enrollment link</a></p>
               <p>Our registrar office will reach out to you shortly regarding the next enrolment steps, document verification, and schedules.</p>
               <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
               <p style="font-size: 12px; color: #666;">Saint Gregory College of Science and Technology</p>

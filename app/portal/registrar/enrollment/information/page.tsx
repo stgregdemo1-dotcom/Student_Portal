@@ -80,7 +80,7 @@ function StudentDetailsContent() {
               <p>We are pleased to inform you that your enrollment request for the <strong>${student.track}</strong> track has been <strong>Approved</strong>.</p>
               <p><strong>Student Tracking ID:</strong> ${student.student_id}</p>
               <p>Please follow the link below to complete your verification setup:</p>
-              <p><a href="https://solid-umbrella-gxj599j9jpp3vx9-3000.app.github.dev/admission/verification">Enrollment Verification link</a></p>
+              <p><a href="https://student-portal-q4hs.onrender.com/admission/verification">Enrollment Verification link</a></p>
               <p>Our registrar office will reach out to you shortly regarding section schedules and orientation details.</p>
               <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
               <p style="font-size: 12px; color: #666;">Saint Gregory College of Science and Technology</p>
