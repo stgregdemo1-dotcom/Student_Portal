@@ -70,9 +70,9 @@ export default function AdmissionForm() {
   const [enrollmentType, setEnrollmentType] = useState<string>("New Student");
   const [gradeLevel, setGradeLevel] = useState<string>("Grade 11");
 
-  // Calculate maximum allowed date of birth (at least 15 years old today)
+  // Calculate maximum allowed date of birth (at least 13 years old today)
   const today = new Date();
-  const maxDobDate = new Date(today.getFullYear() - 15, today.getMonth(), today.getDate())
+  const maxDobDate = new Date(today.getFullYear() - 13, today.getMonth(), today.getDate())
     .toISOString()
     .split("T")[0];
 
