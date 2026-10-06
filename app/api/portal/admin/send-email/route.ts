@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 
 // Initialize Resend with your API key from environment variables
-//const resend = new Resend(process.env.RESEND_API_KEY);
+//const resend = new Resend(process.env.MAILGUN_API_KEY);
 
 export async function POST(request: NextRequest) {
   try {
     // 1. Guard check and delayed instantiation of Resend inside the handler
-    const apiKey = process.env.RESEND_API_KEY;
+    const apiKey = process.env.MAILGUN_API_KEY;
     if (!apiKey) {
-      console.error("Resend API key missing from process.env.RESEND_API_KEY");
+      console.error("Resend API key missing from process.env.MAILGUN_API_KEY");
       return NextResponse.json(
         { message: "Server configuration error: Missing Resend API key." },
         { status: 500 }
