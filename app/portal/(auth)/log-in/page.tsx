@@ -206,12 +206,7 @@ export default function Portal() {
           </button>
         </form>
 
-        <Link
-          href="/portal/forgot-password"
-          className="inline-block mt-6 text-[#2575fc] text-sm hover:underline"
-        >
-          Forgot Password?
-        </Link>
+        
       </div>
     </div>
   );

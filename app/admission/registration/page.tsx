@@ -64,22 +64,23 @@ const SelectField: React.FC<SelectFieldProps> = ({ label, name, options, value, 
 export default function AdmissionForm() {
   const [status, setStatus] = React.useState<{ type: "success" | "error" | ""; message: string }>({ type: "", message: "" });
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [selectedFileCount, setSelectedFileCount] = useState(0); // Track files visually
+  const [selectedFileCount, setSelectedFileCount] = useState(0);
 
-  // 🚀 Track Enrollment Type & Dynamic Grade Level
   const [enrollmentType, setEnrollmentType] = useState<string>("New Student");
   const [gradeLevel, setGradeLevel] = useState<string>("Grade 11");
 
-  // Calculate maximum allowed date of birth (at least 13 years old today)
-  const today = new Date();
-  const maxDobDate = new Date(today.getFullYear() - 13, today.getMonth(), today.getDate())
-    .toISOString()
-    .split("T")[0];
+  // 🚀 Hydration-safe state for max birth date limit
+  const [maxDobDate, setMaxDobDate] = useState<string | undefined>(undefined);
 
-  // Filter grade levels dynamically based on selected enrollment type
+  useEffect(() => {
+    // Calculated post-hydration on client side
+    const today = new Date();
+    const cutoffDate = new Date(today.getFullYear() - 13, today.getMonth(), today.getDate());
+    setMaxDobDate(cutoffDate.toISOString().split("T")[0]);
+  }, []);
+
   const gradeLevelOptions = enrollmentType === "New Student" ? ["Grade 11"] : ["Grade 11", "Grade 12"];
 
-  // Ensure selected grade level stays valid when enrollment type changes
   const handleEnrollmentTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedType = e.target.value;
     setEnrollmentType(selectedType);
@@ -96,6 +97,7 @@ export default function AdmissionForm() {
       return;
     }
 
+    const today = new Date();
     const dob = new Date(input.value);
     const ageCutoff = new Date(today.getFullYear() - 15, today.getMonth(), today.getDate());
 
@@ -115,6 +117,7 @@ export default function AdmissionForm() {
     const dobValue = formData.get("dob") as string;
 
     if (dobValue) {
+      const today = new Date();
       const dob = new Date(dobValue);
       const ageCutoff = new Date(today.getFullYear() - 15, today.getMonth(), today.getDate());
       if (dob > ageCutoff) {
@@ -125,7 +128,6 @@ export default function AdmissionForm() {
     }
 
     try {
-      // Sending raw formData directly, omitting 'Content-Type' header
       const res = await fetch("/api/admission", {
         method: "POST",
         body: formData, 
