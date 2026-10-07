@@ -1,59 +1,76 @@
-// components/DashboardPage.tsx
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 export default function DashboardPage() {
   const [studentCount, setStudentCount] = useState<number>(0);
   const [admissionCount, setAdmissionCount] = useState<number>(0);
   const [pendingStudentCount, setPendingStudentCount] = useState<number>(0);
+  const [recentAdmissionCount, setRecentAdmissionCount] = useState<number>(0);
+  const [recentEnrollmentCount, setRecentEnrollmentCount] = useState<number>(0);
 
-  useEffect(() => {
-    const fetchMetrics = async () => {
-      try {
-        // 🚀 UPDATED: Added '&status=Enrolled' onto the API route query string
-        const res = await fetch("/api/portal/registrar?table=students&count=true&status=Enrolled");
-        if (res.ok) {
-          const data = await res.json();
-          setStudentCount(data.count); 
-        }
-      } catch (err) {
-        console.error("Failed to load dashboard statistics:", err);
+  // Tracking refresh states
+  const [isFetching, setIsFetching] = useState<boolean>(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  const fetchMetrics = useCallback(async () => {
+    setIsFetching(true);
+    try {
+      const [
+        enrolledRes, 
+        pendingAdmRes, 
+        pendingStudRes, 
+        recentAdmRes, 
+        recentEnrollRes
+      ] = await Promise.all([
+        fetch("/api/portal/registrar?table=students&count=true&status=Enrolled"),
+        fetch("/api/portal/registrar?table=admissions_applications&count=true&status=Pending"),
+        fetch("/api/portal/registrar?table=students&count=true&status=Pending"),
+        // 🚀 Fetch admissions created within the last 24 hours
+        fetch("/api/portal/registrar?table=admissions_applications&count=true&last24hours=true"),
+        // 🚀 Fetch student enrollment requests created within the last 24 hours
+        fetch("/api/portal/registrar?table=students&count=true&last24hours=true"),
+      ]);
+
+      if (enrolledRes.ok) {
+        const data = await enrolledRes.json();
+        setStudentCount(data.count);
       }
-    };
-    fetchMetrics();
+      if (pendingAdmRes.ok) {
+        const data = await pendingAdmRes.json();
+        setAdmissionCount(data.count);
+      }
+      if (pendingStudRes.ok) {
+        const data = await pendingStudRes.json();
+        setPendingStudentCount(data.count);
+      }
+      if (recentAdmRes.ok) {
+        const data = await recentAdmRes.json();
+        setRecentAdmissionCount(data.count);
+      }
+      if (recentEnrollRes.ok) {
+        const data = await recentEnrollRes.json();
+        setRecentEnrollmentCount(data.count);
+      }
+
+      setLastUpdated(new Date());
+    } catch (err) {
+      console.error("Failed to load dashboard statistics:", err);
+    } finally {
+      setIsFetching(false);
+    }
   }, []);
 
   useEffect(() => {
-    const fetchMetrics = async () => {
-      try {
-        // 🚀 UPDATED: Added '&status=Pending' filter parameter onto the endpoint string
-        const res = await fetch("/api/portal/registrar?table=admissions_applications&count=true&status=Pending");
-        if (res.ok) {
-          const data = await res.json();
-          setAdmissionCount(data.count); 
-        }
-      } catch (err) {
-        console.error("Failed to load dashboard statistics:", err);
-      }
-    };
     fetchMetrics();
-  }, []);
 
-  useEffect(() => {
-    const fetchMetrics = async () => {
-      try {
-        const res = await fetch("/api/portal/registrar?table=students&count=true&status=Pending");
-        if (res.ok) {
-          const data = await res.json();
-          setPendingStudentCount(data.count); 
-        }
-      } catch (err) {
-        console.error("Failed to load dashboard statistics:", err);
-      }
-    };
-    fetchMetrics();
-  }, []);
+    const INTERVAL_MS = 30000;
+    const intervalId = setInterval(() => {
+      fetchMetrics();
+    }, INTERVAL_MS);
+
+    return () => clearInterval(intervalId);
+  }, [fetchMetrics]);
 
   const stats = [
     { 
@@ -96,6 +113,35 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      {/* Header bar showing sync status */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold text-slate-800">System Overview</h2>
+        <div className="flex items-center gap-3">
+          {lastUpdated && (
+            <span className="text-xs text-slate-400 font-medium">
+              Auto-updating (Last: {lastUpdated.toLocaleTimeString()})
+            </span>
+          )}
+          <button
+            onClick={() => fetchMetrics()}
+            disabled={isFetching}
+            className="p-2 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition disabled:opacity-50"
+            title="Refresh statistics now"
+          >
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              strokeWidth={1.5} 
+              stroke="currentColor" 
+              className={`size-4 ${isFetching ? "animate-spin text-blue-600" : ""}`}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
       {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
@@ -131,26 +177,19 @@ export default function DashboardPage() {
             svgPath={<path strokeLinecap="round" strokeLinejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" />}
             color="text-blue-600"
             bg="bg-blue-50"
-            title="New admission request"
-            desc="John Smith applied for Computer Science"
-            time="2 mins ago"
+            title="New admission requests"
+            desc={`${recentAdmissionCount} new admission application${recentAdmissionCount === 1 ? '' : 's'} submitted`}
+            time="Last 24 hours"
           />
           <ActivityItem 
             svgPath={<path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />}
             color="text-emerald-600"
             bg="bg-emerald-50"
-            title="Enrollment approved"
-            desc="Maria Garcia's enrollment was verified"
-            time="15 mins ago"
+            title="Enrollment requests"
+            desc={`${recentEnrollmentCount} new enrollment request${recentEnrollmentCount === 1 ? '' : 's'} created`}
+            time="Last 24 hours"
           />
-          <ActivityItem 
-            svgPath={<path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />}
-            color="text-amber-600"
-            bg="bg-amber-50"
-            title="Grade updated"
-            desc="Math 101 results modified for Robert Johnson"
-            time="1 hour ago"
-          />
+          
         </div>
       </div>
     </div>

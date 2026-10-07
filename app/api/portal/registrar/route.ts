@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server"; 
+import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import mongoose from "mongoose";
 import { Audit, Student, Admission, StudentSection, Subject } from "@/models/Schema";
@@ -328,7 +328,7 @@ export async function PUT(request: NextRequest) {
     const { model: TargetModel } = ALLOWED_TABLES[tableName];
     const body = await request.json();
 
-    // 1. Handle Admissions Applications (When approving/rejecting from page)
+    // 1. Handle Admissions Applications
     if (tableName === "admissions_applications") {
       const { applicant_id, status } = body;
 
@@ -382,6 +382,28 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ success: true, data: updatedDocument }, { status: 200 });
     }
 
+    // 3. Handle Students Table Updates (Fixes ?table=students calls)
+    if (tableName === "students") {
+      const { id, student_id, status } = body;
+
+      const query = id ? { _id: id } : { student_id };
+
+      const updatedDocument = await TargetModel.findOneAndUpdate(
+        query,
+        { $set: { status } },
+        { new: true, runValidators: true }
+      ).lean();
+
+      if (!updatedDocument) {
+        return NextResponse.json(
+          { message: `No student record found for query: ${JSON.stringify(query)}` },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json({ success: true, data: updatedDocument }, { status: 200 });
+    }
+    
     // Fallback if an unhandled allowed table is requested
     return NextResponse.json({ message: `No update logic defined for table: ${tableName}` }, { status: 400 });
 
