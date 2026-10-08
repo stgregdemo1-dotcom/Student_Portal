@@ -446,7 +446,7 @@ export default function ManageTeachers() {
       const method = isEditMode ? "PUT" : "POST";
 
       const payload = { ...savedTeacher };
-      if (!isEditMode) delete (payload as any).id;
+     // if (!isEditMode) delete (payload as any).id;
 
       try {
         const res = await fetch(url, {

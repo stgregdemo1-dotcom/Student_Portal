@@ -1,22 +1,28 @@
-import { NextRequest, NextResponse } from "next/server";
-import { Resend } from "resend";
-
-// Initialize Resend with your API key from environment variables
-//const resend = new Resend(process.env.MAILGUN_API_KEY);
+import { NextRequest, NextResponse } from "next/server"; 
+import FormData from "form-data";
+import Mailgun from "mailgun.js";
 
 export async function POST(request: NextRequest) {
   try {
-    // 1. Guard check and delayed instantiation of Resend inside the handler
+    // 1. Validate environment variables
     const apiKey = process.env.MAILGUN_API_KEY;
-    if (!apiKey) {
-      console.error("Resend API key missing from process.env.MAILGUN_API_KEY");
+    const domain = process.env.MAILGUN_DOMAIN;
+
+    if (!apiKey || !domain) {
+      console.error("Missing Mailgun configuration (MAILGUN_API_KEY or MAILGUN_DOMAIN)");
       return NextResponse.json(
-        { message: "Server configuration error: Missing Resend API key." },
+        { message: "Server configuration error: Missing Mailgun credentials." },
         { status: 500 }
       );
     }
 
-    const resend = new Resend(apiKey);
+    // 2. Initialize Mailgun client
+    const mailgun = new Mailgun(FormData);
+    const mg = mailgun.client({
+      username: "api",
+      key: apiKey,
+      // url: "https://api.eu.mailgun.net" // Uncomment this line if your Mailgun domain is hosted in Europe (EU region)
+    });
 
     const { teacher_id, email_address, faculty_name, id } = await request.json();
 
@@ -28,9 +34,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Determine the host origin dynamically (works on localhost or production)
+    // Determine the host origin dynamically
     const origin = request.nextUrl.origin;
-    const passwordSetupUrl = `${origin}/portal/setup-password?id=${teacher_id}`;
+    const passwordSetupUrl = `${origin}/set-password/verify`;
 
     // Clean, minimalist HTML email layout matching Tailwind designs
     const emailHtml = `
@@ -52,29 +58,24 @@ export async function POST(request: NextRequest) {
       </div>
     `;
 
-    // Send the email using Resend
-    const { data, error } = await resend.emails.send({
-      from: process.env.EMAIL_FROM_ADDRESS || "Portal Admin <onboarding@resend.dev>",
+    // 3. Dispatch email via Mailgun API
+    const response = await mg.messages.create(domain, {
+      from: process.env.EMAIL_FROM_ADDRESS || `Portal Admin <postmaster@${domain}>`,
       to: [email_address],
       subject: "Action Required: Set Your Portal Password",
       text: `Hello ${faculty_name}, please use the following link to configure your portal account password: ${passwordSetupUrl}`,
       html: emailHtml,
     });
 
-    if (error) {
-      console.error("Resend delivery error:", error);
-      return NextResponse.json({ message: error.message }, { status: 400 });
-    }
-
     return NextResponse.json(
-      { message: "The password creation pipeline completed successfully." },
+      { message: "The password creation pipeline completed successfully.", id: response.id },
       { status: 200 }
     );
   } catch (error: any) {
-    console.error("Mail dispatch exception routing error:", error);
+    console.error("Mailgun delivery error:", error);
     return NextResponse.json(
       { message: error.message || "Failed to route system outbound mail." },
-      { status: 500 }
+      { status: error.status || 500 }
     );
   }
 }

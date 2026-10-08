@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";  
+import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
 import { cookies } from "next/headers";
 import mongoose from "mongoose";
 import { Audit }        from "@/models/Schema";
@@ -194,9 +195,31 @@ export async function POST(request: NextRequest) {
       const idPrefix = `TCH-${currentYear}-`;
       const structuralId = await generateSequentialId(TargetModel, "teacher_id", idPrefix);
 
+      // 🚀 Auto-generate a unique 'id' string (security code) that does not exist in the database
+      let securityCode = "";
+      let isUnique = false;
+      let attempts = 0;
+
+      while (!isUnique && attempts < 10) {
+        attempts++;
+        const candidateCode = crypto.randomBytes(12).toString("hex");
+        
+        // Check if candidateCode already exists in 'id' field
+        const existingDoc = await TargetModel.findOne({ id: candidateCode }).lean();
+        if (!existingDoc) {
+          securityCode = candidateCode;
+          isUnique = true;
+        }
+      }
+
+      if (!isUnique) {
+        throw new Error("Failed to generate a unique teacher security ID. Please try again.");
+      }
+
       bodyData = {
         ...bodyData,
-        teacher_id: structuralId
+        teacher_id: structuralId,
+        id: securityCode, // Attach unique security code to 'id'
       };
     }
 

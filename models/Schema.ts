@@ -14,7 +14,7 @@ export const Audit = mongoose.models.Audit || mongoose.model("Audit", AuditSchem
 
 const TeacherSchema = new mongoose.Schema(
   {
-    id:             { type: Number },
+    id:             { type: String },
     teacher_id:     { type: String },
     prefix:         { type: String },
     first_name:     { type: String },
