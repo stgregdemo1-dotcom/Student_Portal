@@ -1,43 +1,42 @@
 "use client"; 
-import { useState, useEffect } from 'react';
-import { Bar } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-} from 'chart.js';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+import { useState, useEffect } from 'react';
+
+// Helper function to get a cookie value by name
+function getCookie(name: string): string | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+  return match ? decodeURIComponent(match[2]) : null;
+}
 
 export default function Dashboard() {
-  const [activeStudents, setActiveStudents] = useState<number>(0);
+  const [enrolledStudents, setEnrolledStudents] = useState<number>(0);
+  const [classCount, setClassCount] = useState<number>(0);
+  const [upcomingEvents, setUpcomingEvents] = useState<number>(0);
+
   useEffect(() => {
     const getAnalytics = async () => {
       try {
-        const res = await fetch("/api/teachers");
+        const loggedInTeacherId = getCookie("username");
+
+        const res = await fetch(
+          loggedInTeacherId 
+            ? `/api/teachers?teacher_id=${loggedInTeacherId}`
+            : `/api/teachers`
+        );
+
         if (res.ok) {
           const data = await res.json();
-          setActiveStudents(data.totalActiveStudents);
+          setEnrolledStudents(data.totalEnrolledStudents || 0);
+          setClassCount(data.totalClasses || 0);
+          setUpcomingEvents(data.upcomingEvents || 0);
         }
       } catch (err) {
-        console.error("Could not fetch active student metrics:", err);
+        console.error("Could not fetch dashboard metrics:", err);
       }
     };
     getAnalytics();
   }, []);
-
-  const gradeData = {
-    labels: ['A', 'B', 'C', 'D', 'F'],
-    datasets: [{
-      label: 'Students',
-      data: [35, 42, 28, 12, 5],
-      backgroundColor: ['#4ade80', '#86efac', '#fde047', '#fdba74', '#fca5a5'],
-    }]
-  };
 
   return (
     <>
@@ -48,27 +47,9 @@ export default function Dashboard() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <StatCard title="Total Students" value={activeStudents} icon="fa-users" color="blue" />
-        <StatCard title="Classes" value="4" icon="fa-chalkboard-teacher" color="green" />
-        <StatCard title="Pending Grades" value="12" icon="fa-clipboard-list" color="yellow" />
-        <StatCard title="Upcoming Events" value="2" icon="fa-calendar-check" color="purple" />
-      </div>
-
-      {/* Charts Section - Now constrained to a smaller width */}
-      <div className="max-w-2xl mb-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm">
-          <h3 className="font-bold text-lg mb-4">Grade Distribution</h3>
-          <div className="h-[250px]"> {/* Fixed height container */}
-            <Bar 
-              data={gradeData} 
-              options={{ 
-                responsive: true, 
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } } 
-              }} 
-            />
-          </div>
-        </div>
+        <StatCard title="Enrolled Students" value={enrolledStudents} icon="fa-users" color="blue" />
+        <StatCard title="Classes" value={classCount} icon="fa-chalkboard-teacher" color="green" />
+        <StatCard title="Upcoming Events" value={upcomingEvents} icon="fa-calendar-check" color="purple" />
       </div>
     </>
   );

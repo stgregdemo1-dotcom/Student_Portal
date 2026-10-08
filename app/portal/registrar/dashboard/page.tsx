@@ -100,15 +100,7 @@ export default function DashboardPage() {
       up: false,
       svg: <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.656-5.64 9.094 9.094 0 00-3.741.479m1.112 5.64M12 12a5 5 0 100-10 5 5 0 000 10zm0 0c-2.67 0-5 1.33-6.16 3.35A4.922 4.922 0 0012 21a4.922 4.922 0 006.16-5.65C17 13.33 14.67 12 12 12z" />
     },
-    { 
-      label: 'Class Sections', 
-      value: '32', 
-      color: 'text-purple-600', 
-      bg: 'bg-purple-100', 
-      trend: 'Updated', 
-      up: true,
-      svg: <path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75Z" />
-    },
+    
   ];
 
   return (
