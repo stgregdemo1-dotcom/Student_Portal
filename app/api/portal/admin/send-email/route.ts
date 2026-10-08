@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
 
     // Determine the host origin dynamically
     const origin = request.nextUrl.origin;
-    const passwordSetupUrl = `${origin}/set-password/verify`;
+    const passwordSetupUrl = `https://student-portal-q4hs.onrender.com/set-password/verify`;
 
     // Clean, minimalist HTML email layout matching Tailwind designs
     const emailHtml = `
