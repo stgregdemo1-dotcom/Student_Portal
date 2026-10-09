@@ -48,7 +48,7 @@ export default function Home() {
         className="h-[70vh] flex items-center justify-center text-white text-center bg-cover bg-center"
         style={{
           backgroundImage:
-            "linear-gradient(rgba(0,0,0,0.514), rgba(0,0,0,0.5)), url('https://placehold.co/1200x600')",
+            "linear-gradient(rgba(0,0,0,0.514), rgba(0,0,0,0.5)), url('https://scontent.fcrk3-3.fna.fbcdn.net/v/t1.15752-9/829406177_1938597277545802_2860480563625807303_n.jpg?_nc_cat=106&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=9f807c&_nc_ohc=nSa7oE_9IIkQ7kNvwEVNOeY&_nc_oc=AdplMu7yOzav7X0zsp3EcgIUHtBTSFiztGiHsRVqlBdjR2eaLTBBbK2q6dLGBjnIzME&_nc_zt=23&_nc_ht=scontent.fcrk3-3.fna&_nc_ss=7b2a8&oh=03_Q7cD6gH6HKuXVJE-NFdnmn-uN2wEaTrcaxkrc5ZFFqyABvawtg&oe=6AE87494')",
         }}
       >
         <div className="max-w-[700px] mx-auto px-5">
@@ -88,11 +88,15 @@ export default function Home() {
           {[
             {
               title: "Mission",
-              desc: "Starting on June 23, 2026, The Admission is officially open.",
+              desc: [
+              "SAINT GREGORY COLLEGE OF SCIENCE AND TECHNOLOGY - CAVITE ACADEME ENVISIONS ITSELF AS THE CENTER OF ACADEMIC EXCELLENCE IN HOSPITALITY & TOURISM MANAGEMENT WHICH IS ESTABLISHED TO THE PURPOSE OF MOLDING THE MIND OF THE FILIPINO YOUTH DEDICATED TO THE SERVICE OF COUNTRY, HUMANITY AND GOD. ",
+              "AN ACADEME COMMITTED TO GIVE HIGH QUALITY STANDARD OF HRM/TOURISM/ICT EDUCATION WITH HIGHLY COMPETITIVE SKILLS AND KNOWLEDGE WITH THIS COMMITMENT. SAINT GREGORY COLLEGE OF SCIENCE AND TECHNOLOGY - CAVITE AIMS TO DEVELOP AND PRODUCE GRADUATES WITH TIMELY AND BEST TEACHING METHODS THAT ANSWER THE NEEDS OF OUR MODERN LEARNERS.",
+              "IN ACCORDANCE WITH THIS MISSION, SGCST-CAVITE BINDS ITSELF TO THE HIGHEST STANDARD OF DEDICATION, INTEGRITY AND COMPETENCY."
+              ]
             },
             {
               title: "Vision",
-              desc: "Explore the wonders of life through hands-on laboratory experiences.",
+              desc: "IN SOLIDARITY WITH OUR PEOPLE SAINT GREGORY COLLEGE OF SCIENCE AND TECHNOLOGY-CAVITE SCATTO THE CONSTITUTIONAL MANDATE OF EDUCATING THE YOUTH BY PROVIDING KNOWLEDGE ABOUT COMPETITIVE SKILLS AND MODERN TECHNOLOGY THAT MAY EFFECT PERSONAL AND SOCIAL CHANGES AND WILL ACHIEVE SUCCESS FOR THE FUTURE.",
             },
           ].map((item, index) => (
             <div
