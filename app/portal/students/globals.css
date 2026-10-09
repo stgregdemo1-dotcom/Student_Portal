@@ -1,58 +1,134 @@
 @import "tailwindcss";
+
+:root {
+  --font-sans: Arial, sans-serif;
+}
+
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
-  background: #f5f7fb;
+  font-family: var(--font-sans);
+  background-color: #f5f7fb;
+  color: #0f172a;
+  /* Prevent horizontal scrollbars from off-canvas drawers */
+  overflow-x: hidden;
+  min-height: 100vh;
+  /* Better mobile touch tap highlights */
+  -webkit-tap-highlight-color: transparent;
 }
 
+/* Base Layout Container */
 .dashboardPage {
   display: flex;
-  height: 100vh;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100%;
 }
 
+@media (min-width: 768px) {
+  .dashboardPage {
+    flex-direction: row;
+  }
+}
+
+/* Sidebar Styles & Off-Canvas Mobile Drawer */
 .sidebar {
-  width: 240px;
-  background: #1e40af;
-  color: white;
-  padding: 20px;
+  width: 100%;
+  max-width: 260px;
+  background-color: #1e40af;
+  color: #ffffff;
+  padding: 1.25rem;
   display: flex;
   flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 50;
+  transition: transform 0.3s ease-in-out;
+}
+
+/* Hide mobile sidebar by default if toggled via css class */
+.sidebar.collapsed {
+  transform: translateX(-100%);
+}
+
+@media (min-width: 768px) {
+  .sidebar {
+    position: fixed;
+    transform: none !important;
+  }
 }
 
 .sidebar button {
-  margin: 6px 0;
-  padding: 10px;
+  margin: 0.25rem 0;
+  padding: 0.75rem 1rem;
   border: none;
   background: transparent;
-  color: white;
+  color: #ffffff;
   cursor: pointer;
   text-align: left;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  transition: background-color 0.2s ease;
+}
+
+.sidebar button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .logout {
   margin-top: auto;
-  background: red;
+  background-color: #ef4444 !important;
+  color: #ffffff !important;
 }
 
+.logout:hover {
+  background-color: #dc2626 !important;
+}
+
+/* Content Area Spacing */
 .mainContent {
   flex: 1;
-  padding: 30px;
+  padding: 1rem;
+  width: 100%;
 }
 
+@media (min-width: 768px) {
+  .mainContent {
+    padding: 1.75rem;
+    margin-left: 260px; /* Aligns with desktop sidebar width */
+  }
+}
+
+/* Responsive Topbar */
 .topbar {
   display: flex;
+  flex-direction: row;
+  align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
 }
 
+/* Responsive Grid System: 1 column on mobile, 2 columns on tablet/desktop */
 .grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
+  grid-template-columns: 1fr;
+  gap: 1rem;
 }
 
+@media (min-width: 640px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+  }
+}
+
+/* Standardized Responsive Cards */
 .card {
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
+  background-color: #ffffff;
+  padding: 1.25rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
 }

@@ -1,46 +1,41 @@
 "use client";
 
 import { useState } from "react";
-import Sidebar from "../../-components/Sidebar";
-import Header from "../../-components/sheader";
+import Header from "../../-components/aheader";
+import Footer from "../../-components/afooter";
+import Sidebar from "../../-components/Sidebar"; // or asidebar depending on portal
 
 export default function ClientLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
-    <html lang="en">
-      <body className="flex h-screen overflow-hidden bg-gray-50">
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="fixed top-4 left-4 z-50 w-10 h-10 bg-gray-800 text-white rounded-md flex items-center justify-center hover:bg-gray-700"
-        >
-          {sidebarOpen ? "✕" : "☰"}
-        </button>
-
-        <aside
-          className={`fixed top-0 left-0 h-full w-64 z-40 bg-white border-r transition-transform duration-300 ${
-            sidebarOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
-        >
-          <Sidebar />
-        </aside>
-
+    <div className="flex min-h-screen relative overflow-x-hidden">
+      {/* Dark Mobile Backdrop Overlay */}
+      {isSidebarOpen && (
         <div
-          className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${
-            sidebarOpen ? "ml-64" : "ml-0"
-          }`}
-        >
-          <Header />
+          className="fixed inset-0 bg-slate-900/50 z-40 md:hidden transition-opacity"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
 
-          <main className="flex-1 overflow-y-auto p-6">
-            {children}
-          </main>
-        </div>
-      </body>
-    </html>
+      {/* Slide-out Mobile / Fixed Desktop Sidebar */}
+      <Sidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
+
+      {/* Main Content Body */}
+      <div className="flex-1 ml-0 md:ml-64 flex flex-col min-h-screen w-full max-w-full">
+        <Header onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
+
+        <main className="flex-1 p-4 md:p-6">{children}</main>
+
+        <Footer />
+      </div>
+    </div>
   );
 }

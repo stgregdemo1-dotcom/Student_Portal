@@ -3,8 +3,12 @@
 import React from 'react';
 import Link from 'next/link';
 
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
   const navItems = [
     { name: 'Dashboard', href: '/portal/admin/dashboard', icon: <path d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /> },
     { name: 'Manage Teachers', href: '/portal/admin/manage-teachers', icon: <path d="M4.26 10.174L10.74 12c.38.1.74-.14.74-.53V3.84c0-.38-.34-.65-.7-.57L4.3 4.44a.6.6 0 00-.46.58v4.57c0 .28.2.53.42.58zM19.74 10.174L13.26 12c-.38.1-.74-.14-.74-.53V3.84c0-.38.34-.65.7-.57l6.44 1.17c.28.05.46.3.46.58v4.57c0 .28-.2.53-.42.58z" /> },
@@ -21,9 +25,29 @@ const Sidebar = () => {
   };
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-yellow-400 text-yellow-950 flex flex-col z-50 shadow-lg">
-      <div className="p-6 border-b border-yellow-500/30">
+    <aside 
+      className={`
+        fixed left-0 top-0 h-screen w-64 bg-yellow-400 text-yellow-950 flex flex-col z-50 shadow-lg
+        transition-transform duration-300 ease-in-out
+        ${isOpen ? 'translate-x-0' : '-translate-x-full'} 
+        md:translate-x-0
+      `}
+    >
+      <div className="p-6 border-b border-yellow-500/30 flex items-center justify-between">
         <h2 className="text-xl font-black tracking-tighter uppercase">Admin Portal</h2>
+        
+        {/* Mobile Close Button */}
+        {onClose && (
+          <button 
+            onClick={onClose}
+            className="p-1 rounded-lg hover:bg-yellow-500/40 text-yellow-950 md:hidden transition-colors"
+            aria-label="Close sidebar"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        )}
       </div>
 
       <nav className="flex-1 overflow-y-auto p-4">
@@ -32,6 +56,7 @@ const Sidebar = () => {
             <li key={item.name}>
               <Link 
                 href={item.href}
+                onClick={() => onClose && onClose()}
                 className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-yellow-500/40 transition-all group"
               >
                 <svg 
