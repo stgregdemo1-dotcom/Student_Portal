@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Header from "../../-components/aheader";
+import Header from "../../-components/sheader";
 import Footer from "../../-components/afooter";
 import Sidebar from "../../-components/Sidebar"; // or asidebar depending on portal
 
