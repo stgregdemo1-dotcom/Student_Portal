@@ -164,6 +164,7 @@ export default function AdmissionForm() {
             </div>
           )}
 
+          <div className="mb-10 flex justify-between items-end">
           <div>
             <h1 className="text-4xl font-black text-[#451a03]">
               SGCST Admission
