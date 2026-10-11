@@ -164,6 +164,31 @@ export default function AdmissionForm() {
             </div>
           )}
 
+          <div>
+            <h1 className="text-4xl font-black text-[#451a03]">
+              SGCST Admission
+            </h1>
+
+            <p className="text-slate-500 font-medium italic">
+              Saint Gregory College of Science and Technology
+            </p>
+
+            <a
+              href="/admission/verification"
+              className="text-slate-400 font-medium italic hover:text-slate-800 transition-colors"
+            >
+              already submitted an application?
+            </a>
+          </div>
+
+          <a
+            href="/Home"
+            className="text-sm font-bold text-slate-400 hover:text-red-600 transition-colors"
+          >
+            Back
+          </a>
+        </div>
+
           {/* Grid 1: Personal Data */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <InputField label="First Name *" name="firstName" placeholder="Juan" />
