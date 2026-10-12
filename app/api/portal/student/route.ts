@@ -23,6 +23,23 @@ export async function GET(request: NextRequest) {
     const { searchParams } = request.nextUrl;
 
     // ==========================================================
+    // STUDENT NAME LOOKUP (For Header Welcome Banner)
+    // ==========================================================
+    if (searchParams.get("getStudentName") === "true") {
+      const studentProfile = await Student.findOne({ student_id: studentId }).lean();
+
+      if (!studentProfile) {
+        return NextResponse.json({ success: false, message: "Student profile not found." }, { status: 404 });
+      }
+
+      return NextResponse.json({
+        success: true,
+        firstName: (studentProfile as any).firstName || (studentProfile as any).first_name || "",
+        lastName: (studentProfile as any).lastName || (studentProfile as any).last_name || "",
+      }, { status: 200 });
+    }
+
+    // ==========================================================
     // CALENDAR EVENTS LOOKUP
     // ==========================================================
     if (searchParams.get("getCalendarEvents") === "true") {
@@ -160,7 +177,7 @@ export async function GET(request: NextRequest) {
     }
 
     // ==========================================================
-    // ACADEMIC / GRADES LOOKUP (UPDATED & MATCHED FOR EMBEDDED ARRAY)
+    // ACADEMIC / GRADES LOOKUP
     // ==========================================================
     if (searchParams.get("getYearsOnly") === "true") {
       const studentRecord = await StudentSection.findOne({ student_id: studentId }).lean();
@@ -187,10 +204,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: true, data: { subjects: [], average: "—" } }, { status: 200 });
     }
 
-    // Helper to normalize semester strings for comparison ("1", "1st", "1st Semester" -> "1")
     const normalizeSem = (sem: string) => String(sem || "").trim().charAt(0);
 
-    // Find the matching class entry by year and normalized semester
     const targetClass = studentRecord.class.find((cls: any) => {
       const sameYear = String(cls.year).trim() === String(yearFilter).trim();
       const sameSem = normalizeSem(cls.semester) === normalizeSem(semesterFilter);
@@ -201,7 +216,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: true, data: { subjects: [], average: "—" } }, { status: 200 });
     }
 
-    // Map through master subjects for subject name lookup if available
     const subjectIds = targetClass.subjects.map((s: any) => s.subject_id).filter(Boolean);
     const masterSubjects = await Subject.find({ subject_id: { $in: subjectIds } }).lean();
     const masterSubjectMap = new Map();

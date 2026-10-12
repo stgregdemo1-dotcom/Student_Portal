@@ -1,10 +1,59 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 interface HeaderProps {
   onToggleSidebar?: () => void;
 }
 
 export default function Header({ onToggleSidebar }: HeaderProps) {
+  const [welcomeText, setWelcomeText] = useState<string>("Welcome, Guest");
+  const [userInitial, setUserInitial] = useState<string>("U");
+
+  useEffect(() => {
+    // Helper function to get cookie value by name
+    const getCookie = (name: string) => {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop()?.split(";").shift();
+    };
+
+    const username = getCookie("username");
+
+    if (username) {
+      const upperUsername = username.toUpperCase();
+      setUserInitial(username.charAt(0).toUpperCase());
+
+      if (upperUsername.startsWith("ST")) {
+        // Fetch the student's first and last name from your API route
+        fetch("/api/portal/student?getStudentName=true") // Update path if your route is nested differently (e.g., /api/student)
+          .then((res) => res.json())
+          .then((data) => {
+            if (data && data.success && data.firstName && data.lastName) {
+              setWelcomeText(`Welcome, ${data.firstName} ${data.lastName}`);
+            } else {
+              setWelcomeText("Welcome, Student");
+            }
+          })
+          .catch(() => {
+            setWelcomeText("Welcome, Student");
+          });
+      } else {
+        let role = "User";
+
+        if (upperUsername.startsWith("ADM")) {
+          role = "Admin";
+        } else if (upperUsername.startsWith("REG")) {
+          role = "Registrar";
+        } else if (upperUsername.startsWith("TCH")) {
+          role = "Teacher";
+        }
+
+        setWelcomeText(`Welcome, ${role}`);
+      }
+    }
+  }, []);
+
   return (
     <header className="h-16 bg-white border-b flex items-center justify-between px-4 md:px-6 sticky top-0 z-30">
       <div className="flex items-center gap-3">
@@ -37,10 +86,10 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
 
       <div className="flex items-center gap-3 md:gap-4">
         <span className="text-xs md:text-sm text-gray-600 font-medium">
-          Welcome, Admin!
+          {welcomeText}
         </span>
         <div className="w-8 h-8 bg-amber-500 text-yellow-950 font-bold rounded-full flex items-center justify-center text-xs shadow-sm">
-          A
+          {userInitial}
         </div>
       </div>
     </header>
