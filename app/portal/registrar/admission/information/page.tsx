@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-const enrollmentURL = "https://student-portal-q4hs.onrender.com/admission/enrollment";
+const enrollmentURL = "https://stgregory-college.online/admission/enrollment";
 
 interface ApplicantData {
   _id: string; 
