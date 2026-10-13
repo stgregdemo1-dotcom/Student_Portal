@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 
-// Keep this main list interface light and free of heavy attachment properties
 interface AdmissionRequest {
   _id: string;
   applicant_id?: string; 
@@ -11,14 +10,6 @@ interface AdmissionRequest {
   track?: string;
   enrollmentType?: string;
   status?: string;
-}
-
-// Lazy-load interface when the registrar clicks "View"
-interface AttachmentDetails {
-  applicant_id: string;
-  attachmentName?: string;
-  attachmentUrl?: string; // S3 link, cloud bucket, or base64 string
-  uploadedAt?: string;
 }
 
 type SortableKeys = "applicant_id" | "studentName" | "track" | "status";
@@ -37,14 +28,9 @@ export default function EnrollmentPage() {
   const [sortKey, setSortKey] = useState<SortableKeys>("applicant_id");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
-  // 🚀 PAGINATION STATES
+  // PAGINATION STATES
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage] = useState<number>(20);
-
-  // Lazy attachment states
-  const [activeApplicantId, setActiveApplicantId] = useState<string | null>(null);
-  const [selectedAttachment, setSelectedAttachment] = useState<AttachmentDetails | null>(null);
-  const [loadingAttachment, setLoadingAttachment] = useState<boolean>(false);
 
   const fetchAdmissions = async () => {
     setIsLoading(true);
@@ -59,23 +45,6 @@ export default function EnrollmentPage() {
       console.error("Error loading admission requests:", err);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleLoadAttachment = async (applicantId: string) => {
-    setActiveApplicantId(applicantId);
-    setLoadingAttachment(true);
-    setSelectedAttachment(null);
-    try {
-      const res = await fetch(`/api/admission?getAttachment=true&applicant_id=${applicantId}`);
-      if (res.ok) {
-        const jsonResponse = await res.json();
-        setSelectedAttachment(jsonResponse.attachmentData || null);
-      }
-    } catch (err) {
-      console.error("Error fetching attachment on demand:", err);
-    } finally {
-      setLoadingAttachment(false);
     }
   };
 
@@ -143,7 +112,7 @@ export default function EnrollmentPage() {
     return 0;
   });
 
-  // 🚀 PAGINATION LOGIC: Slice sorted array into active page segments
+  // PAGINATION LOGIC: Slice sorted array into active page segments
   const totalItems = sortedAdmissions.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   
@@ -174,9 +143,8 @@ export default function EnrollmentPage() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto flex flex-col lg:flex-row gap-6">
-      {/* Left Column: Main Table */}
-      <div className="flex-1 bg-white rounded-xl shadow overflow-hidden border border-gray-100 flex flex-col justify-between">
+    <div className="p-6 max-w-7xl mx-auto">
+      <div className="bg-white rounded-xl shadow overflow-hidden border border-gray-100 flex flex-col justify-between">
         
         <div>
           {/* Table Header Section */}
@@ -308,13 +276,6 @@ export default function EnrollmentPage() {
                         >
                           View Profile
                         </a>
-                        <span className="text-gray-300">|</span>
-                        <button 
-                          onClick={() => handleLoadAttachment(record.applicant_id || "")}
-                          className="text-indigo-600 hover:text-indigo-800 hover:underline font-medium text-sm"
-                        >
-                          Check File
-                        </button>
                       </td>
                     </tr>
                   ))
@@ -324,7 +285,7 @@ export default function EnrollmentPage() {
           </div>
         </div>
 
-        {/* 🚀 PAGINATION CONTAINER FOOTER */}
+        {/* PAGINATION CONTAINER FOOTER */}
         {!isLoading && totalItems > 0 && (
           <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
             <span className="text-xs text-gray-500">
@@ -376,51 +337,6 @@ export default function EnrollmentPage() {
         )}
 
       </div>
-
-      {/* Right Column: Lazy Attachment Side Panel */}
-      {activeApplicantId && (
-        <div className="w-full lg:w-80 bg-white rounded-xl shadow p-5 border border-gray-100 flex flex-col justify-between self-start h-auto">
-          <div>
-            <div className="flex justify-between items-center border-b pb-3 mb-4">
-              <h4 className="font-bold text-gray-800 text-sm">Attachment Panel</h4>
-              <button 
-                onClick={() => setActiveApplicantId(null)} 
-                className="text-gray-400 hover:text-gray-600 text-sm font-bold"
-              >
-                ✕
-              </button>
-            </div>
-
-            <p className="text-xs text-gray-500 mb-2">Applicant ID: <span className="font-mono text-gray-800 font-bold">{activeApplicantId}</span></p>
-
-            {loadingAttachment ? (
-              <div className="py-8 text-center text-xs text-gray-400 animate-pulse font-medium">
-                Fetching secure document link...
-              </div>
-            ) : selectedAttachment ? (
-              <div className="space-y-3">
-                <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
-                  <p className="text-xs font-semibold text-gray-700 truncate">{selectedAttachment.attachmentName || "Attached_Document.pdf"}</p>
-                  <p className="text-[10px] text-gray-400 mt-1">Uploaded: {selectedAttachment.uploadedAt || "N/A"}</p>
-                </div>
-                
-                <a 
-                  href={selectedAttachment.attachmentUrl} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="w-full block text-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-xs font-semibold shadow-sm"
-                >
-                  Download / Open Attachment
-                </a>
-              </div>
-            ) : (
-              <div className="py-8 text-center text-xs text-gray-400 italic">
-                No attachments on file for this application.
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
