@@ -1,27 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
-import { Admission } from "@/models/Schema";
+import { Admission, Audit } from "@/models/Schema"; // 🚀 Added Audit import
 
 const connectDB = async () => {
   if (mongoose.connection.readyState >= 1) return;
   await mongoose.connect(process.env.MONGODB_URI!);
 };
 
-// 🚀 UPDATED: Handles both fetching all records AND fetching a single applicant by applicant_id
+function getAuditUser(request: NextRequest): string {
+  const auditUserCookie = request.cookies.get("audit_user");
+  return auditUserCookie ? decodeURIComponent(auditUserCookie.value) : "SYSTEM";
+}
+
 export async function GET(request: NextRequest) {
   try {
     await connectDB();
     const { searchParams } = request.nextUrl;
     
-    // Accept BOTH standard casings to ensure the frontend never drops parameters
     const applicantId = searchParams.get("applicantId") || searchParams.get("id");
     const fileId = searchParams.get("fileId");
     const tableName = searchParams.get("table");
 
-    // ---------------------------------------------------------
-    // 🚀 SCENARIO 1: File Download Pipeline
-    // Triggered when BOTH an applicant context AND a specific fileId are passed
-    // ---------------------------------------------------------
     if (applicantId && fileId) {
       const applicant = await Admission.findOne(
         { applicant_id: applicantId, "attachments._id": fileId },
@@ -34,7 +33,6 @@ export async function GET(request: NextRequest) {
 
       const file = applicant.attachments[0];
       
-      // 🚨 CRITICAL FIX: Explicitly convert MongoDB BSON Binary back to a raw Node Buffer
       let rawBuffer: Buffer;
       if (file.data && file.data.buffer) {
         rawBuffer = Buffer.from(file.data.buffer);
@@ -44,16 +42,9 @@ export async function GET(request: NextRequest) {
         rawBuffer = Buffer.from(file.data as any);
       }
 
-      // Safe fallback filename mapping
-      const safeFilename = file.filename || "downloaded-file";
-
-       
+      const safeFilename = file.filename || "downloaded-file";      
      }
 
-    // ---------------------------------------------------------
-    // 🚀 SCENARIO 2: Single Applicant Info Lookup
-    // Triggered when viewing the details of one student (?id=ID-2026-XXXXX)
-    // ---------------------------------------------------------
     if (applicantId && !fileId && !tableName) {
       const record = await Admission.findOne({ applicant_id: applicantId });
       if (!record) {
@@ -62,9 +53,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: true, data: record }, { status: 200 });
     }
 
-    // ---------------------------------------------------------
-    // 🚀 SCENARIO 3: Summary Table View (List All)
-    // ---------------------------------------------------------
     if (tableName === "admissions_applications" || tableName === "admissions") {
       const records = await Admission.find({}).sort({ submittedAt: -1 });
       return NextResponse.json({ success: true, data: records }, { status: 200 });
@@ -130,33 +118,40 @@ export async function POST(request: NextRequest) {
     }
 
     const applicationData = {
-      applicant_id:      fields.applicant_id,
-      status:            fields.status || "Pending",
-      firstName:         fields.firstName,
-      middleName:        fields.middleName,
-      lastName:          fields.lastName,
-      email:             fields.email,
-      phone:             fields.phone,
-      dob:               fields.dob,
-      gender:            fields.gender,
-      nationality:       fields.nationality,
-      track:             fields.track,
-      enrollmentType:    fields.enrollmentType,
-      gradeLevel:        fields.gradeLevel,
-      lrn:               fields.lrn,
-      lastSchool:        fields.lastSchool,
-      street:            fields.street,
-      city:              fields.city,
-      province:          fields.province,
-      zip:               fields.zip,
-      country:           fields.country,
-      personalStatement: fields.personalStatement,
-      attachments:       processedAttachments,
-      submittedAt:       new Date()
+      applicant_id:       fields.applicant_id,
+      status:             fields.status || "Pending",
+      firstName:          fields.firstName,
+      middleName:         fields.middleName,
+      lastName:           fields.lastName,
+      email:              fields.email,
+      phone:              fields.phone,
+      dob:                fields.dob,
+      gender:             fields.gender,
+      nationality:        fields.nationality,
+      track:              fields.track,
+      enrollmentType:     fields.enrollmentType,
+      gradeLevel:         fields.gradeLevel,
+      lrn:                fields.lrn,
+      lastSchool:         fields.lastSchool,
+      street:             fields.street,
+      city:               fields.city,
+      province:           fields.province,
+      zip:                fields.zip,
+      country:            fields.country,
+      personalStatement:  fields.personalStatement,
+      attachments:        processedAttachments,
+      submittedAt:        new Date()
     };
 
     const application = new Admission(applicationData);
     await application.save();
+
+    // 🚀 Audit logging for new admission submission
+    const currentOperator = getAuditUser(request);
+    const applicantFullName = `${fields.firstName || ""} ${fields.lastName || ""}`.trim();
+    const activityDescription = `Submitted new admission application for applicant: (${applicantFullName} - ID: ${fields.applicant_id})`;
+    
+    await createAuditLog(currentOperator, activityDescription);
 
     return NextResponse.json(
       { message: "Application archived successfully.", data: application }, 
@@ -172,7 +167,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// 🚀 ADDED: Handles updating the review status (Approved / Rejected) via applicant_id
 export async function PUT(request: NextRequest) {
   try {
     await connectDB();
@@ -186,16 +180,45 @@ export async function PUT(request: NextRequest) {
     const updatedApplication = await Admission.findOneAndUpdate(
       { applicant_id: applicant_id },
       { status: status },
-      { new: true } // Returns the modified document instead of the original
+      { new: true } 
     );
 
     if (!updatedApplication) {
       return NextResponse.json({ message: "Applicant records not found matching that ID." }, { status: 404 });
     }
 
+    // 🚀 Audit logging for status updates (e.g. Approved / Rejected)
+    const currentOperator = getAuditUser(request);
+    const activityDescription = `Updated admission application status for ID ${applicant_id} to '${status}'`;
+    
+    await createAuditLog(currentOperator, activityDescription);
+
     return NextResponse.json({ success: true, data: updatedApplication }, { status: 200 });
   } catch (error: any) {
     console.error("Admission endpoint status update error:", error);
     return NextResponse.json({ message: error.message || "Internal server error." }, { status: 500 });
   }
+}
+
+async function createAuditLog(username: string, activityDescription: string) {
+  let detectedUserType = "SYSTEM";
+  const upperUsername = username.toUpperCase();
+
+  if (upperUsername.startsWith("ADM")) {
+    detectedUserType = "admin";
+  } else if (upperUsername.startsWith("TCH")) {
+    detectedUserType = "teacher";
+  } else if (upperUsername.startsWith("REG")) {
+    detectedUserType = "registrar";
+  } else if (upperUsername.startsWith("ST")) {
+    detectedUserType = "student";
+  }
+
+  const logEntry = new Audit({
+    username: username,
+    user_type: detectedUserType,
+    activity: activityDescription,
+  });
+
+  await logEntry.save();
 }

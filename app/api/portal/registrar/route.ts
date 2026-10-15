@@ -414,7 +414,7 @@ export async function PUT(request: NextRequest) {
 }
 
 async function createAuditLog(username: string, activityDescription: string) {
-  let detectedUserType = "student";
+  let detectedUserType = "SYSTEM";
   const upperUsername = username.toUpperCase();
 
   if (upperUsername.startsWith("ADM")) {
@@ -423,6 +423,8 @@ async function createAuditLog(username: string, activityDescription: string) {
     detectedUserType = "teacher";
   } else if (upperUsername.startsWith("REG")) {
     detectedUserType = "registrar";
+  } else if (upperUsername.startsWith("ST")) {
+    detectedUserType = "student";
   }
 
   const logEntry = new Audit({

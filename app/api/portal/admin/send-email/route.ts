@@ -1,10 +1,24 @@
 import { NextRequest, NextResponse } from "next/server"; 
 import FormData from "form-data";
 import Mailgun from "mailgun.js";
+import mongoose from "mongoose";
+import { Audit } from "@/models/Schema";
+
+const connectDB = async () => {
+  if (mongoose.connection.readyState >= 1) return;
+  await mongoose.connect(process.env.MONGODB_URI!);
+};
+
+function getAuditUser(request: NextRequest): string {
+  const auditUserCookie = request.cookies.get("audit_user");
+  return auditUserCookie ? decodeURIComponent(auditUserCookie.value) : "SYSTEM";
+}
 
 export async function POST(request: NextRequest) {
   try {
-    // 1. Validate environment variables
+    // 1. Connect to Database and Validate environment variables
+    await connectDB();
+
     const apiKey = process.env.MAILGUN_API_KEY;
     const domain = process.env.MAILGUN_DOMAIN;
 
@@ -21,7 +35,7 @@ export async function POST(request: NextRequest) {
     const mg = mailgun.client({
       username: "api",
       key: apiKey,
-      // url: "https://api.eu.mailgun.net" // Uncomment this line if your Mailgun domain is hosted in Europe (EU region)
+      // url: "https://api.eu.mailgun.net" // Uncomment if your Mailgun domain is hosted in Europe (EU region)
     });
 
     const { teacher_id, email_address, faculty_name, id } = await request.json();
@@ -35,7 +49,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Determine the host origin dynamically
-    const origin = request.nextUrl.origin;
     const passwordSetupUrl = `https://stgregory-college.online/set-password/verify`;
 
     // Clean, minimalist HTML email layout matching Tailwind designs
@@ -67,6 +80,11 @@ export async function POST(request: NextRequest) {
       html: emailHtml,
     });
 
+    // 🚀 4. Audit Logging for Email Dispatch
+    const currentOperator = getAuditUser(request);
+    const activityDescription = `Dispatched account setup email to faculty member: (${faculty_name || "Unknown"} - ID: ${teacher_id})`;
+    await createAuditLog(currentOperator, activityDescription);
+
     return NextResponse.json(
       { message: "The password creation pipeline completed successfully.", id: response.id },
       { status: 200 }
@@ -78,4 +96,27 @@ export async function POST(request: NextRequest) {
       { status: error.status || 500 }
     );
   }
+}
+
+async function createAuditLog(username: string, activityDescription: string) {
+  let detectedUserType = "SYSTEM";
+  const upperUsername = username.toUpperCase();
+
+  if (upperUsername.startsWith("ADM")) {
+    detectedUserType = "admin";
+  } else if (upperUsername.startsWith("TCH")) {
+    detectedUserType = "teacher";
+  } else if (upperUsername.startsWith("REG")) {
+    detectedUserType = "registrar";
+  } else if (upperUsername.startsWith("ST")) {
+    detectedUserType = "student";
+  }
+
+  const logEntry = new Audit({
+    username: username,
+    user_type: detectedUserType,
+    activity: activityDescription,
+  });
+
+  await logEntry.save();
 }

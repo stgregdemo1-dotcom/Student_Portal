@@ -1,11 +1,42 @@
 import { NextRequest, NextResponse } from "next/server"; 
 import mongoose from "mongoose";
-import { Teacher, Subject, StudentSection, Config } from "@/models/Schema";
+import { Teacher, Subject, StudentSection, Config, Audit } from "@/models/Schema";
 
 const connectDB = async () => {
   if (mongoose.connection.readyState >= 1) return;
   await mongoose.connect(process.env.MONGODB_URI!);
 };
+
+function getAuditUser(request: NextRequest): string {
+  const auditUserCookie = request.cookies.get("audit_user");
+  if (auditUserCookie?.value) return decodeURIComponent(auditUserCookie.value);
+
+  const usernameCookie = request.cookies.get("username");
+  return usernameCookie?.value ? decodeURIComponent(usernameCookie.value) : "SYSTEM";
+}
+
+async function createAuditLog(username: string, activityDescription: string) {
+  let detectedUserType = "SYSTEM";
+  const upperUsername = username.toUpperCase();
+
+  if (upperUsername.startsWith("ADM")) {
+    detectedUserType = "admin";
+  } else if (upperUsername.startsWith("TCH")) {
+    detectedUserType = "teacher";
+  } else if (upperUsername.startsWith("REG")) {
+    detectedUserType = "registrar";
+  } else if (upperUsername.startsWith("ST")) {
+    detectedUserType = "student";
+  }
+
+  const logEntry = new Audit({
+    username: username,
+    user_type: detectedUserType,
+    activity: activityDescription,
+  });
+
+  await logEntry.save();
+}
 
 const calculateEvaluationStatus = (gradeArray: any[]): string => {
   const [prelim, midterm, preFinal, final, remarks] = gradeArray;
@@ -121,12 +152,29 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// POST: Add new records if needed (if your application triggers POST here)
+export async function POST(request: NextRequest) {
+  try {
+    await connectDB();
+    const body = await request.json();
+
+    const currentOperator = getAuditUser(request);
+    await createAuditLog(currentOperator, `Created record entry inside teacher portal routing tier.`);
+
+    return NextResponse.json({ success: true, message: "Record created successfully." }, { status: 201 });
+  } catch (err: any) {
+    console.error("POST Handler Error:", err);
+    return NextResponse.json({ message: err.message || "Internal server error" }, { status: 500 });
+  }
+}
+
 // PUT: Add or Update Student Grades & Evaluation
 export async function PUT(request: NextRequest) {
   try {
     await connectDB();
     const body = await request.json();
     const { action } = body;
+    const currentOperator = getAuditUser(request);
 
     if (action === "updateProfile") {
       const { teacherId, name, email } = body;
@@ -143,6 +191,10 @@ export async function PUT(request: NextRequest) {
           } 
         }
       );
+
+      // 🚀 Audit Log for Teacher Profile Update
+      await createAuditLog(currentOperator, `Updated profile details for teacher ID: ${teacherId}`);
+
       return NextResponse.json({ success: true, message: "Profile saved successfully!" }, { status: 200 });
     }
 
@@ -193,6 +245,10 @@ export async function PUT(request: NextRequest) {
     });
 
     await Promise.all(updatePromises);
+
+    // 🚀 Audit Log for Grades & Evaluation Updates
+    const actionLabel = isDraft ? "saved grade draft" : "submitted final grades";
+    await createAuditLog(currentOperator, `Teacher successfully ${actionLabel} for schedule code: ${scheduleCode}`);
 
     return NextResponse.json(
       { 

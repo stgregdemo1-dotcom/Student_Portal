@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
-import { Student, Credentials } from "@/models/Schema";
+import { Student, Credentials, Audit } from "@/models/Schema"; // 🚀 Ensure Audit is imported here
 
 const connectDB = async () => {
   if (mongoose.connection.readyState >= 1) return;
@@ -14,6 +14,11 @@ const REQUIRED_PROFILE_FIELDS = [
   "email_address",
 ] as const;
 
+function getAuditUser(request: NextRequest): string {
+  const auditUserCookie = request.cookies.get("audit_user");
+  return auditUserCookie ? decodeURIComponent(auditUserCookie.value) : "SYSTEM";
+}
+
 export async function POST(request: NextRequest) {
   try {
     await connectDB();
@@ -25,7 +30,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: "Missing required fields." }, { status: 400 });
     }
 
-    // Validate mandatory profile fields explicitly rather than trusting the client payload
+    // Validate mandatory profile fields explicitly
     const missingField = REQUIRED_PROFILE_FIELDS.find((field) => !studentProfile[field]);
     if (missingField) {
       return NextResponse.json(
@@ -41,7 +46,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Reject duplicates up front (cheap check before opening a transaction)
+    // Reject duplicates up front
     const [existingStudent, existingCredential] = await Promise.all([
       Student.findOne({ student_id: studentProfile.student_id }).select("_id").lean(),
       Credentials.findOne({ username: accountSetup.username }).select("_id").lean(),
@@ -85,12 +90,10 @@ export async function POST(request: NextRequest) {
 
     const credentialRecordPayload = {
       username: accountSetup.username,
-      password: accountSetup.password, // ⚠️ plain text for now — hash this before going to production
+      password: accountSetup.password, 
       user_type: accountSetup.user_type || "student",
     };
 
-    // Write both records atomically: if either insert fails, both roll back.
-    // Requires MongoDB running as a replica set / Atlas (transactions aren't supported on standalone instances).
     const session = await mongoose.startSession();
     try {
       session.startTransaction();
@@ -99,6 +102,13 @@ export async function POST(request: NextRequest) {
       await Credentials.create([credentialRecordPayload], { session });
 
       await session.commitTransaction();
+
+      // 🚀 PUT AUDIT LOGIC HERE (After transaction is safely committed)
+      const currentOperator = getAuditUser(request);
+      const studentFullName = `${studentProfile.first_name} ${studentProfile.last_name}`.trim();
+      const activityDescription = `Enrolled new student: (${studentFullName} - ID: ${studentProfile.student_id})`;
+      
+      await createAuditLog(currentOperator, activityDescription);
 
       return NextResponse.json(
         {
@@ -118,7 +128,6 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error("Database Save Error:", error);
 
-    // Surface duplicate-key races (in case two requests slip past the pre-check simultaneously)
     if (error.code === 11000) {
       return NextResponse.json(
         { success: false, message: "Duplicate student ID or username." },
@@ -131,4 +140,27 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+async function createAuditLog(username: string, activityDescription: string) {
+  let detectedUserType = "SYSTEM";
+  const upperUsername = username.toUpperCase();
+
+  if (upperUsername.startsWith("ADM")) {
+    detectedUserType = "admin";
+  } else if (upperUsername.startsWith("TCH")) {
+    detectedUserType = "teacher";
+  } else if (upperUsername.startsWith("REG")) {
+    detectedUserType = "registrar";
+  } else if (upperUsername.startsWith("ST")) {
+    detectedUserType = "student";
+  }
+
+  const logEntry = new Audit({
+    username: username,
+    user_type: detectedUserType,
+    activity: activityDescription,
+  });
+
+  await logEntry.save();
 }
