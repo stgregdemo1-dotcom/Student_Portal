@@ -42,8 +42,8 @@ export default function EnrollmentPage() {
       const data = await response.json();
       const records = Array.isArray(data) ? data : data.data || [];
       
-      // Sort records by student_id in ascending order
-      const sortedRecords = records.sort((a, b) => 
+      // 🚀 Explicitly typed parameters 'a' and 'b' to resolve the implicit any type error
+      const sortedRecords = records.sort((a: StudentSectionRecord, b: StudentSectionRecord) => 
         (a.student_id || "").localeCompare(b.student_id || "")
       );
 
