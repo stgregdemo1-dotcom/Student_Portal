@@ -197,7 +197,7 @@ function AdminStudentDetailsContent() {
                       </tr>
                     ) : (
                       currentClass.subjects.map((sub, idx) => (
-                        <tr key={sub._id || idx} className="hover:bg-gray-50/40">
+                        <tr key={sub.subject_id || idx} className="hover:bg-gray-50/40">
                           <td className="px-6 py-3 font-semibold text-indigo-600">{sub.sched_code || "N/A"}</td>
                           <td className="px-6 py-3 font-medium text-gray-900">{sub.subject_id}</td>
                           <td className="px-6 py-3 text-center text-gray-600">{sub.grade_1 || "—"}</td>
