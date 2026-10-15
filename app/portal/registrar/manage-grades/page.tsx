@@ -92,7 +92,6 @@ export default function GradesManagementPage() {
     setSelectedRecord({ ...selectedRecord, subjects: updatedSubjects });
   };
 
-  // 🚀 NEW: Dedicated method to manage changes to the drop-down remarks separately
   const handleRemarksInputChange = (value: string) => {
     if (!selectedRecord) return;
 
@@ -137,12 +136,15 @@ export default function GradesManagementPage() {
     setExpandedStudents((prev) => ({ ...prev, [uniqueKey]: !prev[uniqueKey] }));
   };
 
-  const filteredRecords = records.filter((row) => {
-    const matchesSearch = row.student_id.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesSemester = row.semester === activeSemester;
-    const matchesSection = activeSectionFilter === "All Sections" || row.section === activeSectionFilter;
-    return matchesSearch && matchesSemester && matchesSection;
-  });
+  // Filter records and sort them by student_id ascending
+  const filteredRecords = records
+    .filter((row) => {
+      const matchesSearch = row.student_id.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSemester = row.semester === activeSemester;
+      const matchesSection = activeSectionFilter === "All Sections" || row.section === activeSectionFilter;
+      return matchesSearch && matchesSemester && matchesSection;
+    })
+    .sort((a, b) => a.student_id.localeCompare(b.student_id));
 
   const uniqueSections = Array.from(new Set(records.map((r) => r.section))).filter(Boolean);
   const getEditingSubject = () => {
@@ -159,7 +161,7 @@ export default function GradesManagementPage() {
         
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Grades Management Module</h1>
+            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Grades Management</h1>
             <p className="text-xs text-gray-500">Cross-referencing schedule codes seamlessly via system database joins.</p>
           </div>
         </div>
@@ -277,7 +279,6 @@ export default function GradesManagementPage() {
                           <td className="p-4 text-center font-black text-indigo-700 bg-indigo-50/20">
                             {calculations.finalAvg}
                           </td>
-                          {/* Main Row Display for Remarks */}
                           <td className="p-4 text-center">
                             <span className={`text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-md ${
                               subject.remarks === "Passed" ? "bg-green-100 text-green-700" :
@@ -376,7 +377,6 @@ export default function GradesManagementPage() {
                       <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Computed Gen Average</p>
                       <p className="text-lg font-black text-indigo-700">{calc.finalAvg}</p>
                     </div>
-                    {/* 🚀 MODIFIED: The Evaluation field is now an interactive input drop-down selector */}
                     <div className="flex flex-col text-left">
                       <label className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Evaluation Result</label>
                       <select

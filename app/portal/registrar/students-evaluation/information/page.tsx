@@ -15,11 +15,7 @@ interface SubjectRecord {
   sched_code?: string;
 }
 
-interface StudentSectionData {
-  _id: string;
-  student_id: string;
-  first_name: string;
-  last_name: string;
+interface ClassRecord {
   year: string;
   semester: string;
   section: string;
@@ -27,12 +23,21 @@ interface StudentSectionData {
   subjects: SubjectRecord[];
 }
 
+interface StudentSectionRawData {
+  _id: string;
+  student_id: string;
+  first_name?: string;
+  last_name?: string;
+  class: ClassRecord[];
+}
+
 function AdminStudentDetailsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const studentId = searchParams.get("id");
 
-  const [record, setRecord] = useState<StudentSectionData | null>(null);
+  const [record, setRecord] = useState<StudentSectionRawData | null>(null);
+  const [activeClassIndex, setActiveClassIndex] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -42,15 +47,9 @@ function AdminStudentDetailsContent() {
     try {
       const res = await fetch(`/api/portal/registrar?table=student_section&id=${studentId}`);
       if (res.ok) {
-        const data = await res.json();
-        
-        if (Array.isArray(data)) {
-          setRecord(data[0] || null);
-        } else if (data.success && Array.isArray(data.data)) {
-          setRecord(data.data[0] || null);
-        } else {
-          setRecord(data.data || data || null);
-        }
+        const json = await res.json();
+        const rawData = json.data || json;
+        setRecord(rawData);
       } else {
         console.error("Failed to load section document map.");
       }
@@ -65,21 +64,33 @@ function AdminStudentDetailsContent() {
     fetchSectionDetails();
   }, [studentId]);
 
+  const currentClass = record?.class?.[activeClassIndex];
+
   const updateEvaluationStatus = async (newStatus: "Approved" | "Rejected") => {
-    if (!record) return;
+    if (!record || !currentClass) return;
     setActionLoading(true);
 
     try {
-      // Send student_id in the API query string.
-      // The backend will catch this, match student_id + evaluation: "Pending", and update it.
       const res = await fetch(`/api/portal/registrar?table=student_section&id=${record.student_id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ evaluation: newStatus }),
+        body: JSON.stringify({ 
+          evaluation: newStatus,
+          year: currentClass.year,
+          semester: currentClass.semester 
+        }),
       });
 
       if (res.ok) {
-        setRecord((prev) => (prev ? { ...prev, evaluation: newStatus } : null));
+        setRecord((prev) => {
+          if (!prev) return null;
+          const updatedClasses = [...prev.class];
+          updatedClasses[activeClassIndex] = {
+            ...updatedClasses[activeClassIndex],
+            evaluation: newStatus,
+          };
+          return { ...prev, class: updatedClasses };
+        });
         alert(`Evaluation registry marked successfully as ${newStatus}.`);
       } else {
         alert("Failed to update execution context changes inside student_section data array.");
@@ -108,7 +119,7 @@ function AdminStudentDetailsContent() {
     );
   }
 
-  if (!record) {
+  if (!record || !currentClass) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-500 italic">
         Academic track assessment record could not be found for Student ID: {studentId}.
@@ -117,7 +128,7 @@ function AdminStudentDetailsContent() {
   }
 
   const fullName = record.first_name || record.last_name 
-    ? `${record.first_name} ${record.last_name}` 
+    ? `${record.first_name || ""} ${record.last_name || ""}`.trim() 
     : "Student Details";
 
   return (
@@ -132,11 +143,11 @@ function AdminStudentDetailsContent() {
 
           <div className="flex gap-3">
             <span className={`px-3 py-1 rounded-full text-sm font-semibold flex items-center ${
-              record.evaluation === "Approved" ? "bg-green-100 text-green-800" :
-              record.evaluation === "Rejected" ? "bg-red-100 text-red-800" :
+              currentClass.evaluation === "Approved" ? "bg-green-100 text-green-800" :
+              currentClass.evaluation === "Rejected" ? "bg-red-100 text-red-800" :
               "bg-yellow-100 text-yellow-800"
             }`}>
-              {record.evaluation || "Pending"}
+              {currentClass.evaluation || "Pending"}
             </span>
           </div>
         </div>
@@ -155,14 +166,14 @@ function AdminStudentDetailsContent() {
           <div className="lg:col-span-2 space-y-6">
             <Card title="Current Enrollment">
               <Grid>
-                <Field label="Academic Year" value={record.year} />
-                <Field label="Active Semester" value={`${record.semester}${record.semester === "1" ? "st" : "nd"} Semester`} />
-                <Field label="Assigned Section" value={record.section} />
-                <Field label="Evaluation Status" value={record.evaluation || "Pending"} />
+                <Field label="Academic Year" value={currentClass.year} />
+                <Field label="Active Semester" value={`${currentClass.semester}${currentClass.semester === "1" ? "st" : "nd"} Semester`} />
+                <Field label="Assigned Section" value={currentClass.section} />
+                <Field label="Evaluation Status" value={currentClass.evaluation || "Pending"} />
               </Grid>
             </Card>
 
-            {/* Live Subjects Grid with Sched Codes from joined DB collection */}
+            {/* Live Subjects Grid */}
             <Card title="Student Subject Grades">
               <div className="overflow-x-auto -mx-6">
                 <table className="min-w-full divide-y divide-gray-100 text-sm">
@@ -178,15 +189,15 @@ function AdminStudentDetailsContent() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 text-gray-700 bg-white">
-                    {!record.subjects || record.subjects.length === 0 || (record.subjects.length === 1 && !record.subjects[0].subject_id) ? (
+                    {!currentClass.subjects || currentClass.subjects.length === 0 ? (
                       <tr>
                         <td colSpan={7} className="px-6 py-4 text-center text-gray-400 italic">
                           No subjects assigned within this dynamic structural section document framework.
                         </td>
                       </tr>
                     ) : (
-                      record.subjects.map((sub, idx) => (
-                        <tr key={sub.subject_id || idx} className="hover:bg-gray-50/40">
+                      currentClass.subjects.map((sub, idx) => (
+                        <tr key={sub._id || idx} className="hover:bg-gray-50/40">
                           <td className="px-6 py-3 font-semibold text-indigo-600">{sub.sched_code || "N/A"}</td>
                           <td className="px-6 py-3 font-medium text-gray-900">{sub.subject_id}</td>
                           <td className="px-6 py-3 text-center text-gray-600">{sub.grade_1 || "—"}</td>
@@ -215,14 +226,14 @@ function AdminStudentDetailsContent() {
             <Card title="Action">
               <div className="space-y-3">
                 <button 
-                  disabled={actionLoading || record.evaluation === "Approved" || record.evaluation === "Rejected"}
+                  disabled={actionLoading || currentClass.evaluation === "Approved" || currentClass.evaluation === "Rejected"}
                   onClick={() => updateEvaluationStatus("Approved")}
                   className="w-full bg-green-600 hover:bg-green-700 text-white py-2.5 px-4 rounded-lg text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
                 >
                   Approve Evaluation Request
                 </button>
                 <button 
-                  disabled={actionLoading || record.evaluation === "Approved" || record.evaluation === "Rejected"}
+                  disabled={actionLoading || currentClass.evaluation === "Approved" || currentClass.evaluation === "Rejected"}
                   onClick={() => updateEvaluationStatus("Rejected")}
                   className="w-full bg-red-100 hover:bg-red-200 text-red-700 py-2.5 px-4 rounded-lg text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
@@ -238,7 +249,6 @@ function AdminStudentDetailsContent() {
   );
 }
 
-// Export default component wrapped inside Suspense
 export default function AdminStudentDetailsPage() {
   return (
     <Suspense
@@ -253,7 +263,6 @@ export default function AdminStudentDetailsPage() {
   );
 }
 
-// Atomic helper design subcomponents
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">

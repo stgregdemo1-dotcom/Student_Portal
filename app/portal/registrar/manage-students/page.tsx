@@ -22,68 +22,68 @@ export default function ManageStudents() {
 
   const currentYear = new Date().getFullYear().toString();
 
-  useEffect(() => {
-    const fetchEnrolledStudents = async () => {
-      try {
-        setLoading(true);
+  const fetchEnrolledStudents = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-        const [studentsRes, sectionsRes] = await Promise.all([
-          fetch("/api/portal/registrar?table=students&status=Enrolled"),
-          fetch(`/api/portal/registrar?table=student_section&year=${currentYear}`),
-        ]);
+      const [studentsRes, sectionsRes] = await Promise.all([
+        fetch("/api/portal/registrar?table=students&status=Enrolled"),
+        fetch(`/api/portal/registrar?table=student_section&year=${currentYear}`),
+      ]);
 
-        const studentsJson = await studentsRes.json();
+      const studentsJson = await studentsRes.json();
 
-        if (!studentsRes.ok || !studentsJson.success) {
-          setError(studentsJson.message || "Failed to parse dynamic collection profile arrays.");
-          return;
-        }
-
-        let studentSectionMap = new Map<string, { section: string; semester: string }>();
-        if (sectionsRes.ok) {
-          const sectionsJson = await sectionsRes.json();
-          if (sectionsJson.success && Array.isArray(sectionsJson.data)) {
-            // Check if backend returned aggregated flattened records or raw array
-            sectionsJson.data.forEach((rec: any) => {
-              if (rec.section && rec.semester) {
-                studentSectionMap.set(rec.student_id, {
-                  section: rec.section,
-                  semester: rec.semester
-                });
-              } else if (rec.class && Array.isArray(rec.class)) {
-                const activeClass = rec.class.find((c: any) => c.year === currentYear) || rec.class[0];
-                if (activeClass) {
-                  studentSectionMap.set(rec.student_id, {
-                    section: activeClass.section,
-                    semester: activeClass.semester
-                  });
-                }
-              }
-            });
-          }
-        } else {
-          console.error("Failed to load current-year section assignments.");
-        }
-
-        const merged = studentsJson.data.map((student: any) => {
-          const assignment = studentSectionMap.get(student.student_id);
-          return {
-            ...student,
-            section: assignment ? assignment.section : null,
-            semester: assignment ? assignment.semester : null,
-          };
-        });
-
-        setStudents(merged);
-        setCurrentPage(1); 
-      } catch (err) {
-        console.error("Database connecting query error:", err);
-        setError("Network error connecting to student collections pipeline.");
-      } finally {
-        setLoading(false);
+      if (!studentsRes.ok || !studentsJson.success) {
+        setError(studentsJson.message || "Failed to parse dynamic collection profile arrays.");
+        return;
       }
-    };
 
+      let studentSectionMap = new Map<string, { section: string; semester: string }>();
+      if (sectionsRes.ok) {
+        const sectionsJson = await sectionsRes.json();
+        if (sectionsJson.success && Array.isArray(sectionsJson.data)) {
+          sectionsJson.data.forEach((rec: any) => {
+            if (rec.section && rec.semester) {
+              studentSectionMap.set(rec.student_id, {
+                section: rec.section,
+                semester: rec.semester
+              });
+            } else if (rec.class && Array.isArray(rec.class)) {
+              const activeClass = rec.class.find((c: any) => c.year === currentYear) || rec.class[0];
+              if (activeClass) {
+                studentSectionMap.set(rec.student_id, {
+                  section: activeClass.section,
+                  semester: activeClass.semester
+                });
+              }
+            }
+          });
+        }
+      } else {
+        console.error("Failed to load current-year section assignments.");
+      }
+
+      const merged = studentsJson.data.map((student: any) => {
+        const assignment = studentSectionMap.get(student.student_id);
+        return {
+          ...student,
+          section: assignment ? assignment.section : null,
+          semester: assignment ? assignment.semester : null,
+        };
+      });
+
+      setStudents(merged);
+      setCurrentPage(1); 
+    } catch (err) {
+      console.error("Database connecting query error:", err);
+      setError("Network error connecting to student collections pipeline.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchEnrolledStudents();
   }, [currentYear]);
 
@@ -158,7 +158,7 @@ export default function ManageStudents() {
     }
   };
 
-  if (loading) {
+  if (loading && students.length === 0) {
     return (
       <div className="p-12 text-center text-sm font-medium text-gray-400 animate-pulse">
         Retrieving active registry accounts from database...
@@ -194,7 +194,7 @@ export default function ManageStudents() {
         </div>
 
         {/* ACTION CONTAINER */}
-        <div className="flex items-center gap-3 w-full md:w-auto">
+        <div className="flex items-center gap-3 w-full md:w-auto justify-end">
           <select
             id="semester-filter-dropdown"
             value={selectedSemesterFilter}
@@ -206,7 +206,14 @@ export default function ManageStudents() {
             <option value="2">2nd Semester</option>
           </select>
 
-          
+          {/* Refresh Button */}
+          <button
+            onClick={fetchEnrolledStudents}
+            disabled={loading}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm disabled:opacity-50"
+          >
+            {loading ? "Refreshing..." : "Refresh"}
+          </button>
         </div>
       </div>
 
@@ -257,7 +264,7 @@ export default function ManageStudents() {
                   </span>
                 </td>
                 <td className="py-4 text-sm font-semibold text-gray-800">
-                  {student.section ? `${currentYear} - ${student.section}` : "Unassigned"}
+                  {student.section ? `${currentYear} ${student.section}` : "Unassigned"}
                 </td>
                 <td className="py-4 text-sm text-gray-600">
                   {student.semester ? `Semester ${student.semester}` : "—"}

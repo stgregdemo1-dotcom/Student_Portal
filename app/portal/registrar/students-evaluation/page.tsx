@@ -25,7 +25,7 @@ export default function EnrollmentPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 🚀 PAGINATION STATES
+  // PAGINATION STATES
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 20; // Display exactly 20 records per page
 
@@ -42,8 +42,13 @@ export default function EnrollmentPage() {
       const data = await response.json();
       const records = Array.isArray(data) ? data : data.data || [];
       
-      setRequests(records);
-      setCurrentPage(1); // 🚀 Always reset back to page 1 on fresh load/refresh
+      // Sort records by student_id in ascending order
+      const sortedRecords = records.sort((a, b) => 
+        (a.student_id || "").localeCompare(b.student_id || "")
+      );
+
+      setRequests(sortedRecords);
+      setCurrentPage(1); // Always reset back to page 1 on fresh load/refresh
     } catch (err: any) {
       setError(err.message || "Something went wrong.");
     } finally {
@@ -55,7 +60,7 @@ export default function EnrollmentPage() {
     fetchEvaluationRequests();
   }, [fetchEvaluationRequests]);
 
-  // 🚀 PAGINATION MATHEMATICS
+  // PAGINATION MATHEMATICS
   const totalItems = requests.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
@@ -115,7 +120,7 @@ export default function EnrollmentPage() {
                   </td>
                 </tr>
               ) : (
-                /* 🚀 Map over the paginated subset */
+                /* Map over the paginated subset */
                 paginatedRequests.map((record) => {
                   const hasFullName = record.first_name || record.last_name;
                   const fullName = hasFullName 
@@ -145,7 +150,7 @@ export default function EnrollmentPage() {
           </table>
         </div>
 
-        {/* 🚀 PAGINATION CONTROLLER FOOTER */}
+        {/* PAGINATION CONTROLLER FOOTER */}
         {!loading && totalItems > 0 && (
           <div className="p-4 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
             <span className="text-xs text-gray-500">

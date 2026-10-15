@@ -96,10 +96,15 @@ const GradingSheet = () => {
         const response = await fetch(`/api/portal/teacher?table=student_section&id=${activeClass.subject_id}&action=students`);
         const data = await response.json();
         if (data && data.students) {
-          setRosterList(data.students);
+          // Sort the students by student_id in ascending order
+          const sortedStudents = [...data.students].sort((a, b) => 
+            (a.student_id || "").localeCompare(b.student_id || "")
+          );
+
+          setRosterList(sortedStudents);
 
           const initialGradesMap: { [key: string]: (number | string)[] } = {};
-          data.students.forEach((std: any) => {
+          sortedStudents.forEach((std: any) => {
             initialGradesMap[std.student_id] = [
               std.grades[0] || 0,
               std.grades[1] || 0,
@@ -203,7 +208,10 @@ const GradingSheet = () => {
           const refreshResponse = await fetch(`/api/portal/teacher?table=student_section&id=${activeClass.subject_id}&action=students`);
           const refreshData = await refreshResponse.json();
           if (refreshData && refreshData.students) {
-            setRosterList(refreshData.students);
+            const sortedRefreshed = [...refreshData.students].sort((a, b) => 
+              (a.student_id || "").localeCompare(b.student_id || "")
+            );
+            setRosterList(sortedRefreshed);
           }
         }
       }
