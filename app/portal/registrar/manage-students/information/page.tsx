@@ -62,18 +62,13 @@ function AdminStudentDetailsContent() {
   const [studentSectionDoc, setStudentSectionDoc] = useState<StudentSectionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
-
   const [sectionsList, setSectionsList] = useState<string[]>([]);
   const [selectedSection, setSelectedSection] = useState<string>("");
   const [selectedSemester, setSelectedSemester] = useState<string>("1");
   const currentYear = new Date().getFullYear().toString();
-
   const [subjectsList, setSubjectsList] = useState<SubjectData[]>([]);
   const [subjectsLoading, setSubjectsLoading] = useState<boolean>(false);
 
-  // -------------------------------------------------------------
-  // LOGIC 2: Find the latest class record based on Year and Semester
-  // -------------------------------------------------------------
   const latestClass = useMemo<ClassEntry | null>(() => {
     if (!studentSectionDoc || !studentSectionDoc.class || studentSectionDoc.class.length === 0) {
       return null;
@@ -86,9 +81,6 @@ function AdminStudentDetailsContent() {
     return sorted[0];
   }, [studentSectionDoc]);
 
-  // -------------------------------------------------------------
-  // Determine Button Text & Action Behavior
-  // -------------------------------------------------------------
   const { buttonLabel, isButtonDisabled, actionType } = useMemo(() => {
     if (!studentSectionDoc || !latestClass) {
       return { buttonLabel: "Assign Section", isButtonDisabled: false, actionType: "CREATE" };
@@ -96,26 +88,21 @@ function AdminStudentDetailsContent() {
 
     const evalStatus = latestClass.evaluation ? latestClass.evaluation.trim() : "";
 
-    // Logic 3: evaluation = "" -> Display "Update Section"
     if (evalStatus === "") {
       return { buttonLabel: "Update Section", isButtonDisabled: false, actionType: "UPDATE" };
     }
 
-    // Logic 5: evaluation = "Approved" -> Display "Assign Section" enabled
     if (evalStatus === "Approved") {
       return { buttonLabel: "Assign Section", isButtonDisabled: false, actionType: "PUSH_NEW" };
     }
 
-    // Logic 4: evaluation is not empty and NOT "Approved" -> Disabled
     return { buttonLabel: "Assign Section", isButtonDisabled: true, actionType: "DISABLED" };
   }, [studentSectionDoc, latestClass]);
 
-  // 1. Fetch Student Details and Student Section Collection Record
   const fetchStudentDetails = async () => {
     if (!studentId) return;
     setLoading(true);
     try {
-      // Fetch core student record
       const studentRes = await fetch(`/api/portal/registrar?table=students&id=${studentId}`);
       if (studentRes.ok) {
         const jsonResponse = await studentRes.json();
@@ -123,7 +110,6 @@ function AdminStudentDetailsContent() {
         setStudent(data);
       }
 
-      // Fetch student_section document
       const sectionRes = await fetch(`/api/portal/registrar?table=student_section&id=${studentId}`);
       if (sectionRes.ok) {
         const sectionJson = await sectionRes.json();
@@ -148,7 +134,6 @@ function AdminStudentDetailsContent() {
     }
   };
 
-  // 2. Fetch dropdown section entries
   const fetchSectionsDropdown = async () => {
     try {
       const res = await fetch("/api/portal/admin?table=configuration");
@@ -163,7 +148,6 @@ function AdminStudentDetailsContent() {
     }
   };
 
-  // 3. Pull server-filtered subjects
   const fetchFilteredSubjects = async () => {
     if (!selectedSection || selectedSection === "") {
       setSubjectsList([]);
@@ -196,9 +180,6 @@ function AdminStudentDetailsContent() {
     fetchFilteredSubjects();
   }, [selectedSection, selectedSemester, currentYear]);
 
-  // -------------------------------------------------------------
-  // Handles Assigning / Updating Section
-  // -------------------------------------------------------------
   const handleAssignOrUpdateSection = async () => {
     if (!student || !selectedSection || selectedSection === "" || !selectedSemester || isButtonDisabled) return;
     setActionLoading(true);
@@ -286,11 +267,10 @@ function AdminStudentDetailsContent() {
           </button>
 
           <div className="flex gap-3">
-            <span className={`px-3 py-1 rounded-full text-sm font-semibold flex items-center ${
-              student.status === "Approved" || student.status === "Enrolled" ? "bg-green-100 text-green-800" :
-              student.status === "Rejected" ? "bg-red-100 text-red-800" :
-              "bg-yellow-100 text-yellow-800"
-            }`}>
+            <span className={`px-3 py-1 rounded-full text-sm font-semibold flex items-center ${student.status === "Approved" || student.status === "Enrolled" ? "bg-green-100 text-green-800" :
+                student.status === "Rejected" ? "bg-red-100 text-red-800" :
+                  "bg-yellow-100 text-yellow-800"
+              }`}>
               {student.status || "Pending"}
             </span>
           </div>
@@ -405,11 +385,10 @@ function AdminStudentDetailsContent() {
                 <button
                   disabled={actionLoading || isButtonDisabled || !selectedSection || selectedSection === ""}
                   onClick={handleAssignOrUpdateSection}
-                  className={`w-full py-2.5 px-4 rounded-lg text-sm font-semibold transition-colors shadow-sm mt-2 ${
-                    isButtonDisabled
+                  className={`w-full py-2.5 px-4 rounded-lg text-sm font-semibold transition-colors shadow-sm mt-2 ${isButtonDisabled
                       ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                       : "bg-indigo-600 hover:bg-indigo-700 text-white"
-                  }`}
+                    }`}
                 >
                   {actionLoading ? "Processing..." : buttonLabel}
                 </button>
@@ -487,13 +466,12 @@ function AdminStudentDetailsContent() {
                           {latestClass.section || "—"}
                         </td>
                         <td className="px-3 py-2.5">
-                          <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold border ${
-                            latestClass.evaluation === "Approved"
+                          <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold border ${latestClass.evaluation === "Approved"
                               ? "bg-green-50 text-green-700 border-green-200"
                               : latestClass.evaluation === ""
-                              ? "bg-gray-100 text-gray-600 border-gray-200"
-                              : "bg-amber-50 text-amber-700 border-amber-200"
-                          }`}>
+                                ? "bg-gray-100 text-gray-600 border-gray-200"
+                                : "bg-amber-50 text-amber-700 border-amber-200"
+                            }`}>
                             {latestClass.evaluation === "" ? "Unassigned" : latestClass.evaluation}
                           </span>
                         </td>

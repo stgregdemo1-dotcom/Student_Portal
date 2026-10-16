@@ -9,7 +9,7 @@ interface InputFieldProps {
   placeholder?: string;
   readOnly?: boolean;
   value?: string;
-  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void; 
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   disabled?: boolean;
 }
 
@@ -29,26 +29,24 @@ const InputField: React.FC<InputFieldProps> = ({
       type={type}
       placeholder={placeholder}
       readOnly={readOnly}
-      value={value || ""} 
+      value={value || ""}
       onChange={onChange}
-      className={`w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm ${
-        readOnly ? "bg-slate-100 cursor-not-allowed text-slate-500 font-bold" : ""
-      }`}
+      className={`w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm ${readOnly ? "bg-slate-100 cursor-not-allowed text-slate-500 font-bold" : ""
+        }`}
     />
   </div>
 );
 
 export default function EnrollmentForm() {
   const router = useRouter();
-  
+
   const [controlNumber, setControlNumber] = useState<string | null>(null);
-  const [studentData, setStudentData] = useState<any>(null); // This stores all data from admission_application
+  const [studentData, setStudentData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [agree, setAgree] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // New Mutable Form States
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [contactPerson, setContactPerson] = useState("");
@@ -56,47 +54,45 @@ export default function EnrollmentForm() {
   const [contactNumber, setContactNumber] = useState("");
 
   useEffect(() => {
-  const cachedNumber = localStorage.getItem("enrollment_control_number");
-  if (!cachedNumber) {
-    setLoading(false);
-    return;
-  }
-  setControlNumber(cachedNumber);
-
-  const fetchStudentProfile = async () => {
-    try {
-      const res = await fetch(`/api/portal/registrar?table=admissions_applications&id=${cachedNumber}`);
-      if (res.ok) {
-        const jsonResponse = await res.json();
-        
-        // 🚀 Extract and save the raw admission details object directly
-        const applicationDetails = jsonResponse.data; 
-        setStudentData(applicationDetails);
-
-        // Optional: If you want to log or work with all entries as an array of key-value pairs:
-        const detailsArray = Object.entries(applicationDetails);
-        console.log("Application Data Array Structure:", detailsArray);
-      }
-    } catch (err) {
-      console.error("Failed to recover enrollment session:", err);
-    } finally {
+    const cachedNumber = localStorage.getItem("enrollment_control_number");
+    if (!cachedNumber) {
       setLoading(false);
+      return;
     }
-  };
+    setControlNumber(cachedNumber);
 
-  fetchStudentProfile();
-}, []);
+    const fetchStudentProfile = async () => {
+      try {
+        const res = await fetch(`/api/portal/registrar?table=admissions_applications&id=${cachedNumber}`);
+        if (res.ok) {
+          const jsonResponse = await res.json();
+
+          const applicationDetails = jsonResponse.data;
+          setStudentData(applicationDetails);
+
+          const detailsArray = Object.entries(applicationDetails);
+          console.log("Application Data Array Structure:", detailsArray);
+        }
+      } catch (err) {
+        console.error("Failed to recover enrollment session:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStudentProfile();
+  }, []);
 
   const handleEnrollmentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const formattedStudentId = studentData.applicant_id && typeof studentData.applicant_id === "string"
-    ? studentData.applicant_id.replace(/^ID-/, "ST-")
-    : "ST-XXXX-XXXXX";
+      ? studentData.applicant_id.replace(/^ID-/, "ST-")
+      : "ST-XXXX-XXXXX";
 
     const completeAddress = `${studentData.street || ""}, ${studentData.city || ""}, ${studentData.province || ""}, ${studentData.zip || ""}`
-          .replace(/^,\s*/, "") 
-          .replace(/,\s*$/, "");
+      .replace(/^,\s*/, "")
+      .replace(/,\s*$/, "");
 
     const payloadDetails = {
       status: "Pending",
@@ -136,9 +132,8 @@ export default function EnrollmentForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          // 🚀 UPDATE THIS: Send your payloadDetails and your accountSetup properties together
-          studentProfile: payloadDetails, 
-          accountSetup: { 
+          studentProfile: payloadDetails,
+          accountSetup: {
             username: formattedStudentId,
             password: password,
             user_type: "student"
@@ -149,7 +144,7 @@ export default function EnrollmentForm() {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        localStorage.removeItem("enrollment_control_number"); // Clear cache session upon success
+        localStorage.removeItem("enrollment_control_number");
         router.push("/portal/log-in");
       } else {
         setErrorMsg(result.message || "Enrollment processing failed.");
@@ -189,7 +184,7 @@ export default function EnrollmentForm() {
           </button>
         </div>
       </div>
-    );     
+    );
   }
 
   const studentFullName = `${studentData.firstName} ${studentData.middleName ? `${studentData.middleName} ` : ""}${studentData.lastName}`;
@@ -228,19 +223,19 @@ export default function EnrollmentForm() {
             <h3 className="text-2xl font-black text-[#166534]">Account Setup</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
               <InputField label="Student ID" value={formattedStudentId} readOnly />
-              <br/>
-              <InputField 
-                label="Password *" 
-                type="password" 
-                value={password} 
-                onChange={(e) => setPassword(e.target.value)} 
+              <br />
+              <InputField
+                label="Password *"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 disabled={submitting}
               />
-              <InputField 
-                label="Confirm Password *" 
-                type="password" 
-                value={confirmPassword} 
-                onChange={(e) => setConfirmPassword(e.target.value)} 
+              <InputField
+                label="Confirm Password *"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 disabled={submitting}
               />
             </div>
@@ -249,25 +244,25 @@ export default function EnrollmentForm() {
           <div>
             <h4 className="text-sm font-black text-amber-600 uppercase tracking-widest mb-6">Emergency Contact</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <InputField 
-                label="Contact Person *" 
-                placeholder="Full Name" 
-                value={contactPerson} 
-                onChange={(e) => setContactPerson(e.target.value)} 
+              <InputField
+                label="Contact Person *"
+                placeholder="Full Name"
+                value={contactPerson}
+                onChange={(e) => setContactPerson(e.target.value)}
                 disabled={submitting}
               />
-              <InputField 
-                label="Relationship *" 
-                placeholder="Guardian" 
-                value={relationship} 
-                onChange={(e) => setRelationship(e.target.value)} 
+              <InputField
+                label="Relationship *"
+                placeholder="Guardian"
+                value={relationship}
+                onChange={(e) => setRelationship(e.target.value)}
                 disabled={submitting}
               />
-              <InputField 
-                label="Contact Number *" 
-                placeholder="+63 9xx xxx xxxx" 
-                value={contactNumber} 
-                onChange={(e) => setContactNumber(e.target.value)} 
+              <InputField
+                label="Contact Number *"
+                placeholder="+63 9xx xxx xxxx"
+                value={contactNumber}
+                onChange={(e) => setContactNumber(e.target.value)}
                 disabled={submitting}
               />
             </div>
@@ -296,9 +291,8 @@ export default function EnrollmentForm() {
           <button
             type="submit"
             disabled={!agree || submitting}
-            className={`w-full py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl transition-all ${
-              agree && !submitting ? "bg-[#166534] hover:bg-[#14532d] text-white" : "bg-slate-300 text-slate-500 cursor-not-allowed"
-            }`}
+            className={`w-full py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl transition-all ${agree && !submitting ? "bg-[#166534] hover:bg-[#14532d] text-white" : "bg-slate-300 text-slate-500 cursor-not-allowed"
+              }`}
           >
             {submitting ? "Processing Enrollment..." : "Confirm Enrollment"}
           </button>

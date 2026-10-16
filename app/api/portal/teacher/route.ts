@@ -52,7 +52,6 @@ const calculateEvaluationStatus = (gradeArray: any[]): string => {
   return hasFailedGrade ? "Failed" : "Pending"; 
 };
 
-// GET: Retrieve Profile, Subjects, or Student Rosters
 export async function GET(request: NextRequest) { 
   try {
     await connectDB();
@@ -88,7 +87,6 @@ export async function GET(request: NextRequest) {
       case "students": {
         const subjectId = teacherId; 
 
-        // Query students where any class item contains the target subject_id
         const enrolledStudents = await StudentSection.find({
           "class.subjects.subject_id": subjectId
         }).lean();
@@ -97,7 +95,6 @@ export async function GET(request: NextRequest) {
           let foundSubject: any = null;
           let currentEvaluation = "";
 
-          // Navigate nested structure: student -> class[] -> subjects[]
           if (Array.isArray(doc.class)) {
             for (const cls of doc.class) {
               if (Array.isArray(cls.subjects)) {
@@ -128,7 +125,6 @@ export async function GET(request: NextRequest) {
       }
 
       case "config": {
-        // Fetches the active system configuration settings
         const config = await Config.findOne({}).lean();
         return NextResponse.json({
           success: true,
@@ -152,7 +148,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST: Add new records if needed (if your application triggers POST here)
 export async function POST(request: NextRequest) {
   try {
     await connectDB();
@@ -168,7 +163,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT: Add or Update Student Grades & Evaluation
 export async function PUT(request: NextRequest) {
   try {
     await connectDB();
@@ -192,7 +186,6 @@ export async function PUT(request: NextRequest) {
         }
       );
 
-      // 🚀 Audit Log for Teacher Profile Update
       await createAuditLog(currentOperator, `Updated profile details for teacher ID: ${teacherId}`);
 
       return NextResponse.json({ success: true, message: "Profile saved successfully!" }, { status: 200 });
@@ -204,7 +197,6 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ message: "Missing payload data parameters." }, { status: 400 });
     }
 
-    // Process grade updates for each student
     const updatePromises = Object.entries(grades).map(async ([studentId, gradeArray]) => {
       if (!Array.isArray(gradeArray) || gradeArray.length < 5) {
         throw new Error(`Invalid grade structure for student ${studentId}`);
@@ -212,7 +204,6 @@ export async function PUT(request: NextRequest) {
 
       const [prelim, midterm, preFinal, final, remarks] = gradeArray;
 
-      // Base fields to set (grades & remarks)
       const updateFields: Record<string, any> = {
         "class.$[cElem].subjects.$[sElem].grade_1": prelim != null ? String(prelim) : "",
         "class.$[cElem].subjects.$[sElem].grade_2": midterm != null ? String(midterm) : "",
@@ -221,7 +212,6 @@ export async function PUT(request: NextRequest) {
         "class.$[cElem].subjects.$[sElem].remarks": remarks != null ? String(remarks) : "",
       };
 
-      // Only evaluate status if it's NOT a draft submission
       if (!isDraft) {
         const computedEvaluation = calculateEvaluationStatus(gradeArray);
         updateFields["class.$[cElem].evaluation"] = computedEvaluation;
@@ -246,7 +236,6 @@ export async function PUT(request: NextRequest) {
 
     await Promise.all(updatePromises);
 
-    // 🚀 Audit Log for Grades & Evaluation Updates
     const actionLabel = isDraft ? "saved grade draft" : "submitted final grades";
     await createAuditLog(currentOperator, `Teacher successfully ${actionLabel} for schedule code: ${scheduleCode}`);
 

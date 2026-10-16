@@ -7,14 +7,14 @@ export default function SettingsPage() {
   return (
     <div className="bg-white rounded-xl shadow-sm p-6 max-w-2xl">
       <h3 className="text-xl font-bold mb-6">Account Settings</h3>
-      
+
       <div className="space-y-6">
         <div className="flex items-center justify-between py-3 border-b">
           <div>
             <p className="font-medium">Email Notifications</p>
             <p className="text-sm text-gray-500">Receive weekly academic summaries</p>
           </div>
-          <button 
+          <button
             onClick={() => setNotifications(!notifications)}
             className={`w-12 h-6 rounded-full transition-colors ${notifications ? 'bg-blue-600' : 'bg-gray-300'}`}
           >

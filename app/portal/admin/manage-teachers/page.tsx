@@ -290,7 +290,6 @@ export default function ManageTeachers() {
   const [sortField, setSortField] = useState<keyof Teacher | "faculty_name">("teacher_id");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
-  // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 15;
 
@@ -313,7 +312,6 @@ export default function ManageTeachers() {
     fetchTeachers();
   }, [fetchTeachers]);
 
-  // Extract unique departments dynamically from teachers list
   const departmentOptions = useMemo(() => {
     const deps = teachers
       .map((t) => t.department_id)
@@ -321,7 +319,6 @@ export default function ManageTeachers() {
     return Array.from(new Set(deps)).sort();
   }, [teachers]);
 
-  // Reset to page 1 whenever searching or filtering
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
     setCurrentPage(1);
@@ -365,7 +362,7 @@ export default function ManageTeachers() {
   }, []);
 
   const handleSort = useCallback((field: keyof Teacher | "faculty_name") => {
-    setCurrentPage(1); // Reset page on sort
+    setCurrentPage(1); 
     setSortField((prevField) => {
       if (prevField === field) {
         setSortDirection((prevDir) => (prevDir === "asc" ? "desc" : "asc"));
@@ -417,7 +414,6 @@ export default function ManageTeachers() {
     });
   }, [teachers, searchQuery, departmentFilter, sortField, sortDirection]);
 
-  // Pagination math calculations
   const totalPages = Math.ceil(sortedTeachers.length / ITEMS_PER_PAGE) || 1;
   const paginatedTeachers = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -446,7 +442,6 @@ export default function ManageTeachers() {
       const method = isEditMode ? "PUT" : "POST";
 
       const payload = { ...savedTeacher };
-     // if (!isEditMode) delete (payload as any).id;
 
       try {
         const res = await fetch(url, {

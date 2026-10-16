@@ -7,43 +7,40 @@ import { useRouter } from "next/navigation";
 export default function Portal() {
   const [showPassword, setShowPassword] = useState(false);
   const [isStaff, setIsStaff] = useState(false);
-  const [errorMessage, setErrorMessage] = useState(""); 
+  const [errorMessage, setErrorMessage] = useState("");
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
-    // Clear any leftover audit cookies immediately when landing on the login screen
     document.cookie = "audit_user=; path=/; max-age=0; SameSite=Strict";
 
     if (formRef.current) {
       (formRef.current.elements.namedItem("username") as HTMLInputElement).value = "";
       (formRef.current.elements.namedItem("password") as HTMLInputElement).value = "";
     }
-    setErrorMessage(""); 
+    setErrorMessage("");
   }, [isStaff]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage(""); 
-    
+    setErrorMessage("");
+
     const form = e.target as HTMLFormElement;
     const username = (form.elements.namedItem("username") as HTMLInputElement).value.trim();
     const password = (form.elements.namedItem("password") as HTMLInputElement).value.trim();
 
     if (!username || !password) return;
 
-    // Determine target user type string based on the active tab layout selection
     const expectedUserType = isStaff ? "staff" : "student";
 
     try {
-      // UPDATED: Sending expectedUserType to the backend server route handler
       const response = await fetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          username, 
-          password, 
-          user_type: expectedUserType 
+        body: JSON.stringify({
+          username,
+          password,
+          user_type: expectedUserType
         }),
       });
 
@@ -54,7 +51,6 @@ export default function Portal() {
         return;
       }
 
-      // Save the validated username inside a secure cookie for auditing
       document.cookie = `audit_user=${encodeURIComponent(username)}; path=/; max-age=28800; SameSite=Strict`;
       document.cookie = `username=${encodeURIComponent(username)}; path=/; max-age=28800; SameSite=Strict`;
       if (isStaff) {
@@ -78,11 +74,10 @@ export default function Portal() {
 
   return (
     <div
-      className={`min-h-screen w-full flex justify-center items-center p-5 transition-all duration-500 ${
-        isStaff
+      className={`min-h-screen w-full flex justify-center items-center p-5 transition-all duration-500 ${isStaff
           ? "bg-[linear-gradient(135deg,#182848_0%,#4b6cb7_100%)]"
           : "bg-[linear-gradient(135deg,#f80c0c_0%,#b9da02_100%)]"
-      }`}
+        }`}
     >
       <div className="relative w-full max-w-[450px] bg-white/95 backdrop-blur-[10px] rounded-[30px] shadow-[0_15px_35px_rgba(0,0,0,0.2)] p-10 text-center">
 
@@ -112,18 +107,16 @@ export default function Portal() {
           <button
             type="button"
             onClick={() => setIsStaff(false)}
-            className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${
-              !isStaff ? "bg-white text-[#6a11cb] shadow-sm" : "text-gray-500"
-            }`}
+            className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${!isStaff ? "bg-white text-[#6a11cb] shadow-sm" : "text-gray-500"
+              }`}
           >
             Student
           </button>
           <button
             type="button"
             onClick={() => setIsStaff(true)}
-            className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${
-              isStaff ? "bg-white text-[#2575fc] shadow-sm" : "text-gray-500"
-            }`}
+            className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${isStaff ? "bg-white text-[#2575fc] shadow-sm" : "text-gray-500"
+              }`}
           >
             Faculty
           </button>
@@ -196,11 +189,10 @@ export default function Portal() {
 
           <button
             type="submit"
-            className={`w-full p-4 text-white font-bold text-lg rounded-xl shadow-lg transition-all hover:-translate-y-0.5 active:translate-y-0 ${
-              isStaff
+            className={`w-full p-4 text-white font-bold text-lg rounded-xl shadow-lg transition-all hover:-translate-y-0.5 active:translate-y-0 ${isStaff
                 ? "bg-[linear-gradient(to_right,#182848,#4b6cb7)] shadow-blue-900/20"
                 : "bg-[linear-gradient(to_right,#6a11cb,#2575fc)] shadow-blue-500/30"
-            }`}
+              }`}
           >
             {isStaff ? "Staff Login" : "Student Login"}
           </button>
@@ -211,7 +203,7 @@ export default function Portal() {
         >
           Forgot Password?
         </Link>
-        
+
       </div>
     </div>
   );

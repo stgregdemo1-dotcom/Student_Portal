@@ -8,17 +8,16 @@ interface SubjectSchedule {
   subject_name: string;
   room: string;
   semester: string;
-  "subject-day": string; 
+  "subject-day": string;
   subject_specification?: string;
   class_time: {
-    start: string; 
-    end: string;   
+    start: string;
+    end: string;
   };
 }
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"] as const;
 
-// Explicitly define our 12 hourly intervals
 const TIME_BLOCKS = [
   { start: "7:00 AM" },
   { start: "8:00 AM" },
@@ -37,7 +36,7 @@ const TIME_BLOCKS = [
 const getTimeGridLine = (timeStr: string): number => {
   if (!timeStr) return 2;
   const cleanTime = timeStr.trim().toUpperCase();
-  
+
   const match = cleanTime.match(/^(\d+):/);
   if (!match) return 2;
   const hour = parseInt(match[1]);
@@ -49,8 +48,8 @@ const getTimeGridLine = (timeStr: string): number => {
 
   const baseHour = 7;
   const trackLine = (militaryHour - baseHour) + 2;
-  
-  return Math.max(2, Math.min(trackLine, 14)); 
+
+  return Math.max(2, Math.min(trackLine, 14));
 };
 
 export default function StudentSchedulePage() {
@@ -85,7 +84,7 @@ export default function StudentSchedulePage() {
         setLoading(true);
         const response = await fetch(`/api/portal/student?getSchedule=true`);
         const result = await response.json();
-        
+
         if (result && result.success && result.subjects) {
           setSchedules(result.subjects);
         } else {
@@ -116,7 +115,7 @@ export default function StudentSchedulePage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-start bg-gradient-to-br from-slate-100 to-slate-300 p-2 md:p-10 font-sans gap-8">
       <div className="w-full max-w-7xl bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-200">
-        
+
         {/* Header Banner */}
         <div className="bg-black text-white p-5 border-b border-gray-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -142,14 +141,14 @@ export default function StudentSchedulePage() {
 
         {/* Dynamic CSS Grid Wrapper */}
         <div className="p-4 md:p-6 overflow-x-auto">
-          <div 
-            className="min-w-[950px] grid border border-gray-200 rounded-xl overflow-hidden bg-gray-50/30" 
-            style={{ 
-              gridTemplateColumns: "100px repeat(5, minmax(0, 1fr))", 
-              gridTemplateRows: "auto repeat(12, minmax(60px, auto))" 
+          <div
+            className="min-w-[950px] grid border border-gray-200 rounded-xl overflow-hidden bg-gray-50/30"
+            style={{
+              gridTemplateColumns: "100px repeat(5, minmax(0, 1fr))",
+              gridTemplateRows: "auto repeat(12, minmax(60px, auto))"
             }}
           >
-            
+
             {/* Row 1: Headers */}
             <div className="bg-black text-white p-3 px-4 text-center font-black border-b border-r border-gray-800 uppercase tracking-widest text-[9px] flex items-center justify-center min-w-0 w-[100px]">Time</div>
             {DAYS.map((day) => (
@@ -158,9 +157,9 @@ export default function StudentSchedulePage() {
               </div>
             ))}
 
-            {/* 🚀 FIXED: Map each interval directly to its corresponding row track */}
+            {/* Map each interval directly to its corresponding row track */}
             {TIME_BLOCKS.map((block, index) => {
-              const rowStart = index + 2; // Shift by 2 because row 1 is the header
+              const rowStart = index + 2;
               return (
                 <div
                   key={index}
@@ -168,9 +167,8 @@ export default function StudentSchedulePage() {
                     gridColumnStart: 1,
                     gridRowStart: rowStart,
                   }}
-                  className={`border-r border-b border-gray-200 font-mono text-[8px] text-gray-500 font-bold text-center flex flex-col items-center justify-center leading-normal bg-gray-50 w-[100px] min-w-0 p-1 ${
-                    block.isLunch ? "bg-yellow-50/40 text-yellow-700 font-black" : ""
-                  }`}
+                  className={`border-r border-b border-gray-200 font-mono text-[8px] text-gray-500 font-bold text-center flex flex-col items-center justify-center leading-normal bg-gray-50 w-[100px] min-w-0 p-1 ${block.isLunch ? "bg-yellow-50/40 text-yellow-700 font-black" : ""
+                    }`}
                 >
                   <span>{block.start}</span>
                 </div>
@@ -187,7 +185,7 @@ export default function StudentSchedulePage() {
               const dayIndex = DAYS.indexOf(sub["subject-day"] as any);
               if (dayIndex === -1) return null;
 
-              const colStart = dayIndex + 2; 
+              const colStart = dayIndex + 2;
               const startTrack = getTimeGridLine(sub.class_time?.start);
               const endTrack = getTimeGridLine(sub.class_time?.end);
 
@@ -223,7 +221,7 @@ export default function StudentSchedulePage() {
                   <div className="font-black leading-tight uppercase text-[10px] tracking-tight text-center line-clamp-2">
                     {sub.subject_name || sub.subject_id}
                   </div>
-                  
+
                   <div className="mt-1 text-left flex flex-col gap-0.5 border-t border-gray-200/50 pt-1">
                     <div className="text-[8px] text-gray-400 font-bold italic uppercase opacity-80 truncate">
                       Room: {sub.room || "—"}

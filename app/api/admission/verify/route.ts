@@ -31,9 +31,9 @@ export async function POST(request: NextRequest) {
         applicant_id: controlNumber.trim(),
         dob: dateOfBirth.trim(),
       },
-      { applicant_id: 1, status: 1 } // only pull the fields we actually need
+      { applicant_id: 1, status: 1 }
     )
-      .collation({ locale: "en", strength: 2 }) // strength 2 = case-insensitive comparison
+      .collation({ locale: "en", strength: 2 })
       .lean();
 
     if (!applicant) {

@@ -97,10 +97,6 @@ export default function SettingsConfigPage() {
     }
   };
 
-  // =========================================================================
-  // UNIFIED TOGGLE LOGIC
-  // =========================================================================
-
   const getToggleStatus = (field: ToggleField): boolean => {
     if (!config) return false;
     const val = config[field];
@@ -118,7 +114,6 @@ export default function SettingsConfigPage() {
     const currentStatus = getToggleStatus(field);
     const nextStatus = !currentStatus;
 
-    // 1. Instant optimistic update
     setConfig((prev) => (prev ? { ...prev, [field]: nextStatus } : prev));
 
     try {
@@ -135,16 +130,13 @@ export default function SettingsConfigPage() {
       const result = await res.json();
 
       if (res.ok && result?.data) {
-        // 2. Sync with verified server document
         setConfig(result.data);
       } else {
         console.error(`API error updating ${field}:`, result?.message);
-        // Revert UI on failure
         setConfig((prev) => (prev ? { ...prev, [field]: currentStatus } : prev));
       }
     } catch (error) {
       console.error(`Network error updating ${field}:`, error);
-      // Revert UI on failure
       setConfig((prev) => (prev ? { ...prev, [field]: currentStatus } : prev));
     }
   };
@@ -157,7 +149,6 @@ export default function SettingsConfigPage() {
     );
   }
 
-  // Strictly typed list sections
   const listSections: Array<{
     id: ListField;
     title: string;
@@ -183,7 +174,6 @@ export default function SettingsConfigPage() {
     },
   ];
 
-  // Strictly typed toggle sections
   const toggleSections: Array<{
     id: ToggleField;
     title: string;

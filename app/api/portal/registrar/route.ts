@@ -172,7 +172,7 @@ export async function GET(request: NextRequest) {
         },
         {
           $lookup: {
-            from: "students",         
+            from: "students",        
             localField: "student_id",
             foreignField: "student_id",
             as: "studentDetails"
@@ -193,7 +193,7 @@ export async function GET(request: NextRequest) {
           }
         },
         { $sort: { _id: -1 } }
-      ]);
+      ], { allowDiskUse: true }); 
 
       return NextResponse.json({ success: true, data: matchingRecords }, { status: 200 });
     }   
@@ -201,6 +201,7 @@ export async function GET(request: NextRequest) {
     const genericRecords = await TargetModel.find(queryConditions)
       .select(EXCLUDED_FIELDS[tableName] || "")
       .sort({ _id: -1 })
+      .allowDiskUse(true) 
       .lean();
 
     return NextResponse.json({ success: true, data: genericRecords }, { status: 200 });
@@ -211,7 +212,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Update to POST handler in route.ts
 export async function POST(request: NextRequest) {
   try {
     await connectDB();
@@ -242,7 +242,7 @@ export async function POST(request: NextRequest) {
       year,
       section,
       semester,
-      evaluation: "", // Default empty evaluation
+      evaluation: "", 
       subjects: Array.isArray(subjects) ? subjects : []
     };
 
@@ -250,20 +250,17 @@ export async function POST(request: NextRequest) {
 
     let savedDocument;
     if (!existingDoc) {
-      // Logic 1: Create a brand new record if non-existent
       savedDocument = await TargetModel.create({
         student_id,
         class: [newClassEntry]
       });
     } else if (actionType === "PUSH_NEW") {
-      // Logic 5: Push a NEW class entry when latest evaluation was "Approved"
       savedDocument = await TargetModel.findOneAndUpdate(
         { student_id },
         { $push: { class: newClassEntry } },
         { new: true }
       );
     } else {
-      // Fallback: Upsert based on year and semester matching
       const existingClassIndex = existingDoc.class?.findIndex(
         (c: any) => c.year === year && c.semester === semester
       );
@@ -310,7 +307,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Update to PUT handler in route.ts for updating existing latest class (Logic 3)
 export async function PUT(request: NextRequest) {
   try {
     await connectDB();
@@ -328,7 +324,6 @@ export async function PUT(request: NextRequest) {
     const { model: TargetModel } = ALLOWED_TABLES[tableName];
     const body = await request.json();
 
-    // 1. Handle Admissions Applications
     if (tableName === "admissions_applications") {
       const { applicant_id, status } = body;
 
@@ -348,7 +343,6 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ success: true, data: updatedDocument }, { status: 200 });
     }
 
-    // 2. Handle Student Section Allocation
     if (tableName === "student_section") {
       const { student_id, section, semester, year, subjects, targetYear, targetSemester } = body;
       
@@ -382,7 +376,6 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ success: true, data: updatedDocument }, { status: 200 });
     }
 
-    // 3. Handle Students Table Updates (Fixes ?table=students calls)
     if (tableName === "students") {
       const { id, student_id, status } = body;
 
@@ -404,7 +397,6 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ success: true, data: updatedDocument }, { status: 200 });
     }
     
-    // Fallback if an unhandled allowed table is requested
     return NextResponse.json({ message: `No update logic defined for table: ${tableName}` }, { status: 400 });
 
   } catch (error: any) {

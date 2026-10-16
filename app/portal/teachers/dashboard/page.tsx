@@ -1,8 +1,7 @@
-"use client"; 
+"use client";
 
 import { useState, useEffect } from 'react';
 
-// Helper function to get a cookie value by name
 function getCookie(name: string): string | null {
   if (typeof document === "undefined") return null;
   const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
@@ -20,7 +19,7 @@ export default function Dashboard() {
         const loggedInTeacherId = getCookie("username");
 
         const res = await fetch(
-          loggedInTeacherId 
+          loggedInTeacherId
             ? `/api/teachers?teacher_id=${loggedInTeacherId}`
             : `/api/teachers`
         );

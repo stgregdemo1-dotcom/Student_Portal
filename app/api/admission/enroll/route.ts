@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
-import { Student, Credentials, Audit } from "@/models/Schema"; // 🚀 Ensure Audit is imported here
+import { Student, Credentials, Audit } from "@/models/Schema";
 
 const connectDB = async () => {
   if (mongoose.connection.readyState >= 1) return;
@@ -30,7 +30,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: "Missing required fields." }, { status: 400 });
     }
 
-    // Validate mandatory profile fields explicitly
     const missingField = REQUIRED_PROFILE_FIELDS.find((field) => !studentProfile[field]);
     if (missingField) {
       return NextResponse.json(
@@ -46,7 +45,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Reject duplicates up front
     const [existingStudent, existingCredential] = await Promise.all([
       Student.findOne({ student_id: studentProfile.student_id }).select("_id").lean(),
       Credentials.findOne({ username: accountSetup.username }).select("_id").lean(),
@@ -90,7 +88,7 @@ export async function POST(request: NextRequest) {
 
     const credentialRecordPayload = {
       username: accountSetup.username,
-      password: accountSetup.password, 
+      password: accountSetup.password,
       user_type: accountSetup.user_type || "student",
     };
 
@@ -103,11 +101,10 @@ export async function POST(request: NextRequest) {
 
       await session.commitTransaction();
 
-      // 🚀 PUT AUDIT LOGIC HERE (After transaction is safely committed)
       const currentOperator = getAuditUser(request);
       const studentFullName = `${studentProfile.first_name} ${studentProfile.last_name}`.trim();
       const activityDescription = `Enrolled new student: (${studentFullName} - ID: ${studentProfile.student_id})`;
-      
+
       await createAuditLog(currentOperator, activityDescription);
 
       return NextResponse.json(

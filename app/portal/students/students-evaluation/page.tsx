@@ -20,7 +20,7 @@ export default function Page() {
       try {
         const res = await fetch("/api/portal/student?getEvaluationStatus=true");
         const result = await res.json();
-        
+
         if (result.success) {
           setEvaluation(result.evaluation);
         } else {
@@ -38,23 +38,20 @@ export default function Page() {
 
   const handleEnrollment = async () => {
     if (!evaluation) return;
-    
-    // Core Safety: Block function entirely if status is anything other than "Approved"
+
     if (evaluation.status !== "Approved") return;
-    
+
     setEnrolling(true);
     try {
-      // Fire PUT request directly to the student route to shift status to Pending
       const res = await fetch("/api/portal/student", {
         method: "PUT",
         headers: { "Content-Type": "application/json" }
       });
-      
+
       const result = await res.json();
       if (result.success) {
         alert("Successfully submitted enrollment for 2nd Semester!");
-        
-        // Optimistically update the UI status so the button disables itself 
+
         setEvaluation(prev => prev ? { ...prev, status: "Pending" } : null);
       } else {
         alert(result.message || "Enrollment failed.");
@@ -83,7 +80,7 @@ export default function Page() {
   return (
     <main className="min-h-screen flex items-center justify-center p-5 bg-gray-50">
       <div className="w-full max-w-3xl text-center">
-        
+
         {/* Main Content Card */}
         <div className="bg-white rounded-2xl p-10 shadow-sm border border-gray-200 text-left">
           <div className="mb-6">
@@ -133,13 +130,13 @@ export default function Page() {
                     onClick={handleEnrollment}
                     disabled={enrolling || evaluation.status !== "Approved"}
                     className={`w-full sm:w-auto px-6 py-2.5 rounded-xl font-medium text-sm transition shadow-sm border
-                      ${evaluation.status === "Approved" 
-                        ? "bg-indigo-600 hover:bg-indigo-700 text-white border-transparent cursor-pointer" 
+                      ${evaluation.status === "Approved"
+                        ? "bg-indigo-600 hover:bg-indigo-700 text-white border-transparent cursor-pointer"
                         : "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed pointer-events-none"}`}
                   >
                     {enrolling ? "Processing..." : `Enroll to 2nd Sem (A.Y. ${evaluation.year})`}
                   </button>
-                  
+
                   {/* Warning message only shows if NOT approved */}
                   {evaluation.status !== "Approved" && (
                     <p className="text-xs text-amber-600 mt-2 italic">
@@ -150,7 +147,7 @@ export default function Page() {
               )}
             </div>
           )}
-          
+
         </div>
 
       </div>

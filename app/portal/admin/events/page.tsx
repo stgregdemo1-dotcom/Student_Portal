@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 
-// Update types to include the Mongo identifier _id
 type CalendarEvent = {
   _id?: string;
   title: string;
@@ -11,23 +10,19 @@ type CalendarEvent = {
   endTime: string;
 };
 
-// Represents the mapped object state
 type EventMap = Record<string, CalendarEvent[]>;
 
 export default function CalendarModule() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState<EventMap>({});
   const [loading, setLoading] = useState(false);
-
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [title, setTitle] = useState("");
   const [startTime, setStartTime] = useState("07:00 AM");
   const [endTime, setEndTime] = useState("08:00 AM");
   const [color, setColor] = useState("bg-blue-500");
-
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [editEventId, setEditEventId] = useState<string | null>(null);
-
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
@@ -39,24 +34,19 @@ export default function CalendarModule() {
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-  // Generate 1-hour intervals from 07:00 AM to 07:00 PM
   const timeOptions = [
     "07:00 AM", "08:00 AM", "09:00 AM", "10:00 AM", "11:00 AM", "12:00 PM",
     "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM", "05:00 PM", "06:00 PM", "07:00 PM"
   ];
 
-  // --- API Integrations ---
-
-  // 1. Fetch Events from MongoDB
   const fetchEvents = async () => {
     setLoading(true);
     try {
       const response = await fetch("/api/portal/admin?table=events");
       if (!response.ok) throw new Error("Failed to fetch events");
-      
+
       const rawData = await response.json();
-      
-      // Transform flat DB array to localized nested key format: { "YYYY-MM-DD": [ ...events ] }
+
       const mappedEvents: EventMap = {};
       rawData.forEach((item: any) => {
         const dateKey = item.event_date;
@@ -84,7 +74,6 @@ export default function CalendarModule() {
     fetchEvents();
   }, [currentDate]);
 
-  // 2. Save (Add or Update) Event via POST or PUT
   const saveEvent = async () => {
     if (!selectedDay || !title) return;
 
@@ -100,7 +89,6 @@ export default function CalendarModule() {
 
     try {
       if (editEventId) {
-        // UPDATE Existing Event (PUT)
         const response = await fetch("/api/portal/admin?table=events", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -112,7 +100,6 @@ export default function CalendarModule() {
 
         if (!response.ok) throw new Error("Failed to update event");
       } else {
-        // CREATE New Event (POST)
         const response = await fetch("/api/portal/admin?table=events", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -122,7 +109,6 @@ export default function CalendarModule() {
         if (!response.ok) throw new Error("Failed to save event");
       }
 
-      // Refresh state directly from MongoDB & reset form
       await fetchEvents();
       closeModal();
     } catch (err) {
@@ -347,9 +333,8 @@ export default function CalendarModule() {
                 <button
                   key={c}
                   onClick={() => setColor(c)}
-                  className={`w-7 h-7 rounded-full ${c} ${
-                    color === c ? "ring-2 ring-black" : ""
-                  }`}
+                  className={`w-7 h-7 rounded-full ${c} ${color === c ? "ring-2 ring-black" : ""
+                    }`}
                 />
               ))}
             </div>

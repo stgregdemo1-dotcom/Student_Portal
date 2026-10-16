@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
-import { Teacher, Credentials } from "@/models/Schema"; // Ensure this path points to your schemas
+import { Teacher, Credentials } from "@/models/Schema";
 
 const connectDB = async () => {
   if (mongoose.connection.readyState >= 1) return;
@@ -14,7 +14,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { accountSetup } = body;
 
-    // 1. Validate payload structure
     if (!accountSetup) {
       return NextResponse.json(
         { success: false, message: "Missing required parameters: accountSetup must be provided." },
@@ -32,10 +31,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 3. Create and save a brand-new document record inside your 'credentials' collection
     const newCredential = new Credentials({
       username: targetTeacherId,
-      password: targetPassword, // Stored as a raw text string per implementation requirements
+      password: targetPassword,
       user_type: "teacher"
     });
 

@@ -9,7 +9,7 @@ interface InputFieldProps {
   placeholder?: string;
   readOnly?: boolean;
   value?: string;
-  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void; 
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   disabled?: boolean;
 }
 
@@ -29,26 +29,23 @@ const InputField: React.FC<InputFieldProps> = ({
       type={type}
       placeholder={placeholder}
       readOnly={readOnly}
-      value={value || ""} 
+      value={value || ""}
       onChange={onChange}
-      className={`w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm ${
-        readOnly ? "bg-slate-100 cursor-not-allowed text-slate-500 font-bold" : ""
-      }`}
+      className={`w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm ${readOnly ? "bg-slate-100 cursor-not-allowed text-slate-500 font-bold" : ""
+        }`}
     />
   </div>
 );
 
 export default function TeacherRegistrationForm() {
   const router = useRouter();
-  
+
   const [teacherControlId, setTeacherControlId] = useState<string | null>(null);
-  const [teacherData, setTeacherData] = useState<any>(null); // Stores data from the teachers collection
+  const [teacherData, setTeacherData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [agree, setAgree] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  // Mutable Form States
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [contactPerson, setContactPerson] = useState("");
@@ -56,50 +53,44 @@ export default function TeacherRegistrationForm() {
   const [contactNumber, setContactNumber] = useState("");
 
   useEffect(() => {
-  // 1. Retrieve the exact keys you set on the previous page
-  const cachedTeacherId = localStorage.getItem("cached_teacher_id");
-  const cachedSecurityCode = localStorage.getItem("cached_security_code");
+    const cachedTeacherId = localStorage.getItem("cached_teacher_id");
+    const cachedSecurityCode = localStorage.getItem("cached_security_code");
 
-  // If either key is missing, lock the page layout
-  if (!cachedTeacherId || !cachedSecurityCode) {
-    setLoading(false);
-    return;
-  }
-  
-  // Set the controller ID string state
-  setTeacherControlId(cachedTeacherId);
-
-  const fetchTeacherProfile = async () => {
-    try {
-      // 2. Pass the correct cached properties to your backend data router API.
-      // If your API expects the security code (id) to find the profile, use cachedSecurityCode here instead.
-      const res = await fetch(`/api/set-password/verify?table=teachers&teacher_id=${cachedTeacherId}`);
-      
-      if (res.ok) {
-        const jsonResponse = await res.json();
-        
-        // 3. Save the payload directly to state variable references
-        const applicationDetails = jsonResponse.data; 
-        setTeacherData(applicationDetails);
-      } else {
-        console.error("API error: Server returned status code", res.status);
-      }
-    } catch (err) {
-      console.error("Failed to recover teacher account session:", err);
-    } finally {
+    if (!cachedTeacherId || !cachedSecurityCode) {
       setLoading(false);
+      return;
     }
-  };
 
-  fetchTeacherProfile();
-}, []);
+    setTeacherControlId(cachedTeacherId);
+
+    const fetchTeacherProfile = async () => {
+      try {
+        const res = await fetch(`/api/set-password/verify?table=teachers&teacher_id=${cachedTeacherId}`);
+
+        if (res.ok) {
+          const jsonResponse = await res.json();
+
+          const applicationDetails = jsonResponse.data;
+          setTeacherData(applicationDetails);
+        } else {
+          console.error("API error: Server returned status code", res.status);
+        }
+      } catch (err) {
+        console.error("Failed to recover teacher account session:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTeacherProfile();
+  }, []);
 
   const handleTeacherSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const completeAddress = `${teacherData.street || ""}, ${teacherData.city || ""}, ${teacherData.province || ""}, ${teacherData.zip || ""}`
-          .replace(/^,\s*/, "") 
-          .replace(/,\s*$/, "");
+      .replace(/^,\s*/, "")
+      .replace(/,\s*$/, "");
 
     const payloadDetails = {
       status: "Active",
@@ -123,12 +114,12 @@ export default function TeacherRegistrationForm() {
     setSubmitting(true);
 
     try {
-      const response = await fetch("/api/set-password/setup", { // <-- Update path if necessary
+      const response = await fetch("/api/set-password/setup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          teacherProfile: payloadDetails, 
-          accountSetup: { 
+          teacherProfile: payloadDetails,
+          accountSetup: {
             username: teacherData.teacher_id,
             password: password,
             user_type: "teacher"
@@ -139,10 +130,9 @@ export default function TeacherRegistrationForm() {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        // ✅ Clear your exact active session cache string keys here
-        localStorage.removeItem("cached_teacher_id"); 
+        localStorage.removeItem("cached_teacher_id");
         localStorage.removeItem("cached_security_code");
-        
+
         router.push("/portal/log-in");
       } else {
         setErrorMsg(result.message || "Teacher registry account configuration processing failed.");
@@ -182,7 +172,7 @@ export default function TeacherRegistrationForm() {
           </button>
         </div>
       </div>
-    );     
+    );
   }
 
   const teacherFullName = `${teacherData.prefix ? `${teacherData.prefix} ` : ""}${teacherData.first_name} ${teacherData.middle_name ? `${teacherData.middle_name} ` : ""}${teacherData.last_name}`;
@@ -216,19 +206,19 @@ export default function TeacherRegistrationForm() {
             <h3 className="text-2xl font-black text-[#166534]">Account Setup</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
               <InputField label="Teacher ID" value={teacherData.teacher_id} readOnly />
-              <br/>
-              <InputField 
-                label="Password *" 
-                type="password" 
-                value={password} 
-                onChange={(e) => setPassword(e.target.value)} 
+              <br />
+              <InputField
+                label="Password *"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 disabled={submitting}
               />
-              <InputField 
-                label="Confirm Password *" 
-                type="password" 
-                value={confirmPassword} 
-                onChange={(e) => setConfirmPassword(e.target.value)} 
+              <InputField
+                label="Confirm Password *"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 disabled={submitting}
               />
             </div>
@@ -257,9 +247,8 @@ export default function TeacherRegistrationForm() {
           <button
             type="submit"
             disabled={!agree || submitting}
-            className={`w-full py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl transition-all ${
-              agree && !submitting ? "bg-[#166534] hover:bg-[#14532d] text-white" : "bg-slate-300 text-slate-500 cursor-not-allowed"
-            }`}
+            className={`w-full py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl transition-all ${agree && !submitting ? "bg-[#166534] hover:bg-[#14532d] text-white" : "bg-slate-300 text-slate-500 cursor-not-allowed"
+              }`}
           >
             {submitting ? "Processing Profile Setup..." : "Confirm Account Setup"}
           </button>

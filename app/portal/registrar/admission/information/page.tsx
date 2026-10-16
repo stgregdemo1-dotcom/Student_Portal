@@ -38,12 +38,10 @@ interface ApplicantData {
   }>;
 }
 
-// 1. Inner component where useSearchParams is executed
 function ApplicantDetailsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const applicantId = searchParams.get("id"); 
-
   const [applicant, setApplicant] = useState<ApplicantData | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -295,7 +293,6 @@ function ApplicantDetailsContent() {
   );
 }
 
-// 2. Export default wrapped inside a Suspense boundary
 export default function AdminApplicantDetailsPage() {
   return (
     <Suspense
@@ -310,7 +307,6 @@ export default function AdminApplicantDetailsPage() {
   );
 }
 
-// Helper components remain unchanged
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">

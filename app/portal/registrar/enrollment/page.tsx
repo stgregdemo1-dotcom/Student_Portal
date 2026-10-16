@@ -17,14 +17,10 @@ type SortableKeys = "student_id" | "studentName" | "track" | "status";
 export default function EnrollmentPage() {
   const [enrollments, setEnrollments] = useState<EnrollmentRequest[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-
-  // Sorting states
   const [sortKey, setSortKey] = useState<SortableKeys>("student_id");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
-
-  // 🚀 PAGINATION STATES
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const itemsPerPage = 20; // Exactly 20 records per page
+  const itemsPerPage = 20; 
 
   const fetchEnrollments = async () => {
     setIsLoading(true);
@@ -33,7 +29,7 @@ export default function EnrollmentPage() {
       if (res.ok) {
         const jsonResponse = await res.json();
         setEnrollments(Array.isArray(jsonResponse) ? jsonResponse : jsonResponse.data || []);
-        setCurrentPage(1); // Reset back to Page 1 when pulling fresh data
+        setCurrentPage(1); 
       }
     } catch (err) {
       console.error("Error loading enrollment requests:", err);
@@ -53,10 +49,9 @@ export default function EnrollmentPage() {
       setSortKey(key);
       setSortDirection("asc");
     }
-    setCurrentPage(1); // Reset back to Page 1 on sort change
+    setCurrentPage(1); 
   };
 
-  // Process inline client sorting
   const sortedEnrollments = [...enrollments].sort((a, b) => {
     let valueA = "";
     let valueB = "";
@@ -74,10 +69,8 @@ export default function EnrollmentPage() {
     return 0;
   });
 
-  // 🚀 PAGINATION SLICING
   const totalItems = sortedEnrollments.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
-
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedEnrollments = sortedEnrollments.slice(startIndex, endIndex);
@@ -169,7 +162,6 @@ export default function EnrollmentPage() {
                     </td>
                   </tr>
                 ) : (
-                  // 🚀 Render mapped page items slice
                   paginatedEnrollments.map((record) => (
                     <tr key={record._id} className="hover:bg-slate-50/70 transition-colors">
                       <td className="px-6 py-4 font-mono text-xs font-bold text-slate-600">

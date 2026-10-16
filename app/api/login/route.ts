@@ -77,22 +77,14 @@ export async function POST(request: Request) {
         { status: 403 }
       );
     }
-    // ----------------------------------------------
-
-    // --- AUDIT LOGGING LOGIC ---
-    // Create the audit log document instance
+ 
     const logEntry = new Audit({
       username: username,
       user_type: detectedUserType,
       activity: "log-in"
-      // createdAt auto-populates with Date.now based on your schema rule
     });
 
-    // Save the log entry into the 'audit_log_activity' collection
     await logEntry.save();
-    // ----------------------------
-
-    // Match found and verified! Return success response status
     return NextResponse.json({ message: "Authenticated successfully." }, { status: 200 });
 
   } catch (error) {

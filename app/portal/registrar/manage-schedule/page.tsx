@@ -1,38 +1,31 @@
-"use client"; // This must be the very first line
+"use client";
 
 import React, { useState, useEffect } from 'react';
 
 type SubjectRecord = {
   subject_id: string;
   subject_name: string;
-  subject_code?: string; // Standard matching field format variants
+  subject_code?: string;
 };
 
 export default function ClassSchedule() {
-  // 🚀 Track loaded subjects database records dynamically
   const [subjects, setSubjects] = useState<SubjectRecord[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(true);
-
-  // 🚀 Pull dynamic data array streams directly matching your subjects collection layout
   useEffect(() => {
     const fetchDropdownSubjects = async () => {
       try {
         setIsLoading(true);
         const res = await fetch("/api/portal/admin?table=subjects");
-        
+
         if (res.ok) {
           const data = await res.json();
           const records: SubjectRecord[] = Array.isArray(data) ? data : data.data || [];
-          
-          // Alphanumerically sort options naturally by subject name
-          records.sort((a, b) => 
+          records.sort((a, b) =>
             (a.subject_name || "").localeCompare(b.subject_name || "", undefined, { numeric: true })
           );
 
           setSubjects(records);
-
-          // Auto-select the first subject found if available
           if (records.length > 0) {
             setSelectedSubject(records[0].subject_name);
           }
@@ -54,7 +47,7 @@ export default function ClassSchedule() {
       <div className="bg-white p-6 rounded-lg shadow">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
           <h2 className="text-xl font-bold italic text-gray-800">Academic Timetable</h2>
-          
+
           {/* Subject Selection Dropdown */}
           <div className="flex items-center gap-2">
             <label htmlFor="subject-select" className="text-sm font-medium text-gray-600">
@@ -63,7 +56,7 @@ export default function ClassSchedule() {
             {isLoading ? (
               <span className="text-xs text-gray-400 animate-pulse">Loading subjects...</span>
             ) : (
-              <select 
+              <select
                 id="subject-select"
                 value={selectedSubject}
                 onChange={(e) => setSelectedSubject(e.target.value)}

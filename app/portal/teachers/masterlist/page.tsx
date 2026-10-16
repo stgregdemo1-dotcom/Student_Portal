@@ -3,12 +3,12 @@
 import React, { useState, useEffect } from "react";
 
 interface Subject {
-  _id: string; 
+  _id: string;
   sched_code: string;
   subject_id: string;
   subject_name: string;
   subject_year_section: string;
-  room: string; // Used for display directly in the table row matrix
+  room: string;
   subject_specification?: string;
   semester: string;
 }
@@ -19,7 +19,6 @@ export default function MasterListPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState<boolean>(true);
 
-  // 1. Safe cookie reader helper
   const getCookie = (name: string): string => {
     if (typeof document === "undefined") return "";
     const value = `; ${document.cookie}`;
@@ -28,7 +27,6 @@ export default function MasterListPage() {
     return "";
   };
 
-  // 2. Load teacher account context on mount
   useEffect(() => {
     const cachedUsername = getCookie("username");
     if (cachedUsername) {
@@ -39,7 +37,6 @@ export default function MasterListPage() {
     }
   }, []);
 
-  // 3. Dynamic database pipeline lookup matching your GET handler
   useEffect(() => {
     if (!teacherId) return;
 
@@ -48,7 +45,7 @@ export default function MasterListPage() {
         setLoading(true);
         const response = await fetch(`/api/portal/teacher?id=${teacherId}&action=subjects`);
         const result = await response.json();
-        
+
         if (result && result.subjects) {
           setSubjects(result.subjects);
         }
@@ -62,7 +59,6 @@ export default function MasterListPage() {
     fetchTeacherSubjects();
   }, [teacherId]);
 
-  // 4. Live keyword query filtering
   const filteredSubjects = subjects.filter(
     (s) =>
       s.subject_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||

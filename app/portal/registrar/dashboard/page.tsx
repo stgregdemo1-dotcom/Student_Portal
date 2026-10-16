@@ -8,8 +8,6 @@ export default function DashboardPage() {
   const [pendingStudentCount, setPendingStudentCount] = useState<number>(0);
   const [recentAdmissionCount, setRecentAdmissionCount] = useState<number>(0);
   const [recentEnrollmentCount, setRecentEnrollmentCount] = useState<number>(0);
-
-  // Tracking refresh states
   const [isFetching, setIsFetching] = useState<boolean>(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
@@ -26,9 +24,7 @@ export default function DashboardPage() {
         fetch("/api/portal/registrar?table=students&count=true&status=Enrolled"),
         fetch("/api/portal/registrar?table=admissions_applications&count=true&status=Pending"),
         fetch("/api/portal/registrar?table=students&count=true&status=Pending"),
-        // 🚀 Fetch admissions created within the last 24 hours
         fetch("/api/portal/registrar?table=admissions_applications&count=true&last24hours=true"),
-        // 🚀 Fetch student enrollment requests created within the last 24 hours
         fetch("/api/portal/registrar?table=students&count=true&last24hours=true"),
       ]);
 

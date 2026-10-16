@@ -48,7 +48,7 @@ const InputField: React.FC<InputFieldProps> = ({
 const SelectField: React.FC<SelectFieldProps> = ({ label, name, options, value, onChange }) => (
   <div className="flex flex-col gap-2">
     <label className="text-[10px] font-black uppercase text-slate-400 ml-1">{label}</label>
-    <select 
+    <select
       name={name}
       value={value}
       onChange={onChange}
@@ -69,11 +69,9 @@ export default function AdmissionForm() {
   const [enrollmentType, setEnrollmentType] = useState<string>("New Student");
   const [gradeLevel, setGradeLevel] = useState<string>("Grade 11");
 
-  // 🚀 Hydration-safe state for max birth date limit
   const [maxDobDate, setMaxDobDate] = useState<string | undefined>(undefined);
 
   useEffect(() => {
-    // Calculated post-hydration on client side
     const today = new Date();
     const cutoffDate = new Date(today.getFullYear() - 13, today.getMonth(), today.getDate());
     setMaxDobDate(cutoffDate.toISOString().split("T")[0]);
@@ -130,14 +128,14 @@ export default function AdmissionForm() {
     try {
       const res = await fetch("/api/admission", {
         method: "POST",
-        body: formData, 
+        body: formData,
       });
 
       const data = await res.json();
 
       if (res.ok) {
         setStatus({ type: "success", message: "Application submitted successfully!" });
-        (e.target as HTMLFormElement).reset(); 
+        (e.target as HTMLFormElement).reset();
         setSelectedFileCount(0);
         setEnrollmentType("New Student");
         setGradeLevel("Grade 11");
@@ -157,7 +155,7 @@ export default function AdmissionForm() {
     <div className="min-h-screen bg-slate-50 p-6 md:p-12 font-sans text-[#1E293B]">
       <div className="max-w-4xl mx-auto">
         <form onSubmit={handleSubmit} className="bg-white rounded-3xl p-8 md:p-12 shadow-xl space-y-10">
-          
+
           {status.message && (
             <div className={`p-4 rounded-xl text-sm font-bold ${status.type === "success" ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
               {status.message}
@@ -165,30 +163,30 @@ export default function AdmissionForm() {
           )}
 
           <div className="mb-10 flex justify-between items-end">
-          <div>
-            <h1 className="text-4xl font-black text-[#451a03]">
-              SGCST Admission
-            </h1>
+            <div>
+              <h1 className="text-4xl font-black text-[#451a03]">
+                SGCST Admission
+              </h1>
 
-            <p className="text-slate-500 font-medium italic">
-              Saint Gregory College of Science and Technology
-            </p>
+              <p className="text-slate-500 font-medium italic">
+                Saint Gregory College of Science and Technology
+              </p>
+
+              <a
+                href="/admission/verification"
+                className="text-slate-400 font-medium italic hover:text-slate-800 transition-colors"
+              >
+                already submitted an application?
+              </a>
+            </div>
 
             <a
-              href="/admission/verification"
-              className="text-slate-400 font-medium italic hover:text-slate-800 transition-colors"
+              href="/Home"
+              className="text-sm font-bold text-slate-400 hover:text-red-600 transition-colors"
             >
-              already submitted an application?
+              Back
             </a>
           </div>
-
-          <a
-            href="/Home"
-            className="text-sm font-bold text-slate-400 hover:text-red-600 transition-colors"
-          >
-            Back
-          </a>
-        </div>
 
           {/* Grid 1: Personal Data */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -197,10 +195,10 @@ export default function AdmissionForm() {
             <InputField label="Last Name *" name="lastName" placeholder="Dela Cruz" />
             <InputField label="Email Address *" name="email" type="email" placeholder="juan@example.com" />
             <InputField label="Phone Number *" name="phone" placeholder="+63 9xx xxx xxxx" />
-            <InputField 
-              label="Date of Birth *" 
-              name="dob" 
-              type="date" 
+            <InputField
+              label="Date of Birth *"
+              name="dob"
+              type="date"
               max={maxDobDate}
               onChange={handleDobValidation}
               onInvalid={(e) => e.currentTarget.setCustomValidity("You must be at least 15 years old to apply.")}
@@ -212,17 +210,17 @@ export default function AdmissionForm() {
           {/* Grid 2: Academic Profile */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <SelectField label="Desired Track/Strand *" name="track" options={["Information and Communication Technology", "Hotel and Restaurant Management"]} />
-            <SelectField 
-              label="Enrollment Type *" 
-              name="enrollmentType" 
-              options={["New Student", "Transferee"]} 
+            <SelectField
+              label="Enrollment Type *"
+              name="enrollmentType"
+              options={["New Student", "Transferee"]}
               value={enrollmentType}
               onChange={handleEnrollmentTypeChange}
             />
-            <SelectField 
-              label="Grade Level *" 
-              name="gradeLevel" 
-              options={gradeLevelOptions} 
+            <SelectField
+              label="Grade Level *"
+              name="gradeLevel"
+              options={gradeLevelOptions}
               value={gradeLevel}
               onChange={(e) => setGradeLevel(e.target.value)}
             />
@@ -251,7 +249,7 @@ export default function AdmissionForm() {
                 required
               />
             </div>
-            
+
             <div className="p-8 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50 text-center">
               <p className="text-sm font-bold text-slate-600">
                 Upload Required Documents *
@@ -259,19 +257,19 @@ export default function AdmissionForm() {
               <p className="text-xs text-slate-400 mb-4">
                 Report Card & Birth Certificate
               </p>
-              
-              <input 
-                type="file" 
+
+              <input
+                type="file"
                 name="files"
-                ref={fileInputRef} 
-                className="hidden" 
+                ref={fileInputRef}
+                className="hidden"
                 multiple
                 required
-                onChange={(e) => setSelectedFileCount(e.target.files?.length || 0)} 
+                onChange={(e) => setSelectedFileCount(e.target.files?.length || 0)}
               />
-              <button 
-                type="button" 
-                onClick={() => fileInputRef.current?.click()} 
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
                 className="px-6 py-2 bg-white border border-slate-300 rounded-lg text-xs font-black uppercase shadow-sm hover:bg-slate-100"
               >
                 Browse Files
@@ -282,7 +280,7 @@ export default function AdmissionForm() {
                   Selected {selectedFileCount} file(s) for upload
                 </p>
               )}
-            </div>            
+            </div>
 
             <label className="flex items-center gap-3">
               <input type="checkbox" className="w-5 h-5 accent-yellow-500" required />
@@ -292,8 +290,8 @@ export default function AdmissionForm() {
             </label>
           </div>
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={isSubmitting}
             className="w-full py-5 bg-[#451a03] text-white rounded-2xl font-black uppercase tracking-widest disabled:opacity-50"
           >

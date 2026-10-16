@@ -27,11 +27,10 @@ const InputField: React.FC<InputFieldProps> = ({
       placeholder={placeholder}
       readOnly={readOnly}
       value={value}
-      className={`w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm ${
-        readOnly
+      className={`w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm ${readOnly
           ? "bg-slate-100 cursor-not-allowed text-slate-500 font-bold"
           : ""
-      }`}
+        }`}
     />
   </div>
 );

@@ -1,6 +1,6 @@
-"use client";  
+"use client";
 
-import React, { useState, useEffect } from "react"; 
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 
 const TIME_SLOTS = [
@@ -11,13 +11,13 @@ const TIME_SLOTS = [
 const ITEMS_PER_PAGE = 15;
 
 type Subject = {
-  subject_id: string; 
+  subject_id: string;
   sched_code: string;
-  semester: string; 
+  semester: string;
   subject_specification: string;
   subject_name: string;
   subject_year_section: string;
-  teacher_id: string; 
+  teacher_id: string;
   class_time: {
     start: string;
     end: string;
@@ -37,7 +37,7 @@ interface SubjectModalProps {
   subject: Subject | null;
   onClose: () => void;
   onSave: (subject: Subject) => void;
-  dbTeachers: TeacherOption[]; 
+  dbTeachers: TeacherOption[];
 }
 
 function SubjectModal({ isOpen, subject, onClose, onSave, dbTeachers }: SubjectModalProps) {
@@ -68,11 +68,11 @@ function SubjectModalContent({
   const isEditMode = !!subject;
 
   const [dbSpecification, setDbSpecification] = useState<string[]>([]);
-  const [dbSection, setDbSection] = useState<string[]>([]); 
+  const [dbSection, setDbSection] = useState<string[]>([]);
   const [dbSubjectday, setDbSubjectDay] = useState<string[]>([]);
   const [dbSubjectstatus, setDbSubjectstatus] = useState<string[]>([]);
   const [dbRoom, setDbRoom] = useState<string[]>([]);
-  
+
   const [timeError, setTimeError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<Subject>(() => {
@@ -81,15 +81,15 @@ function SubjectModalContent({
     }
     return {
       subject_id: "",
-      sched_code: "",      
-      semester: "", 
+      sched_code: "",
+      semester: "",
       subject_specification: "",
       subject_name: "",
       subject_year_section: "",
       teacher_id: "",
       class_time: { start: "", end: "" },
       subject_day: "",
-      room: "", 
+      room: "",
       status: "Active",
     };
   });
@@ -100,12 +100,12 @@ function SubjectModalContent({
         const res = await fetch("/api/portal/admin?table=configuration");
         if (res.ok) {
           const configDoc = await res.json();
-          
+
           if (configDoc && Array.isArray(configDoc.specification)) {
             setDbSpecification(configDoc.specification);
           }
           if (configDoc && Array.isArray(configDoc.section)) {
-            const sortedSections = [...configDoc.section].sort((a, b) => 
+            const sortedSections = [...configDoc.section].sort((a, b) =>
               a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
             );
             setDbSection(sortedSections);
@@ -135,7 +135,7 @@ function SubjectModalContent({
     if (!timeString) return 0;
     const [time, modifier] = timeString.split(" ");
     let [hours, minutes] = time.split(":").map(Number);
-    
+
     if (hours === 12) {
       hours = modifier === "AM" ? 0 : 12;
     } else if (modifier === "PM") {
@@ -379,11 +379,9 @@ export default function ManageSubjects() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
   const [sortField, setSortField] = useState<keyof Subject | "composite_subject">("subject_id");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
-  
-  // Pagination State
+
   const [currentPage, setCurrentPage] = useState(1);
 
   const fetchSubjects = async () => {
@@ -410,7 +408,7 @@ export default function ManageSubjects() {
             teacher_id: tch.teacher_id,
             full_name: `${tch.first_name || ""} ${tch.last_name || ""}`.trim() || tch.teacher_id
           })).sort((a, b) => a.full_name.localeCompare(b.full_name));
-          
+
           setTeachers(mappedTeachers);
         }
       }
@@ -428,7 +426,6 @@ export default function ManageSubjects() {
     initDataFetch();
   }, []);
 
-  // Reset pagination to page 1 whenever searching turns up new results
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery]);
@@ -455,7 +452,7 @@ export default function ManageSubjects() {
   const filteredSubjects = subjects.filter(
     (s) =>
       s.sched_code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.subject_name?.toLowerCase().includes(searchQuery.toLowerCase()) 
+      s.subject_name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const sortedSubjects = [...filteredSubjects].sort((a, b) => {
@@ -478,7 +475,6 @@ export default function ManageSubjects() {
     return 0;
   });
 
-  // Pagination Math calculations
   const totalItems = sortedSubjects.length;
   const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -588,7 +584,7 @@ export default function ManageSubjects() {
                   </th>
                   <th className="pb-4 text-right">Actions</th>
                 </tr>
-              </thead> 
+              </thead>
 
               <tbody className="divide-y">
                 {paginatedSubjects.map((subject) => (
@@ -596,7 +592,7 @@ export default function ManageSubjects() {
                     <td className="py-4 font-mono text-gray-600">{subject.subject_id}</td>
                     <td className="py-4">
                       <div className="font-semibold">
-                        {subject.sched_code} {subject.subject_name} 
+                        {subject.sched_code} {subject.subject_name}
                       </div>
                       <div className="text-xs text-gray-500">{subject.subject_specification}</div>
                     </td>
@@ -607,19 +603,18 @@ export default function ManageSubjects() {
                     </td>
                     <td className="py-4">
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          subject.status === "Active"
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${subject.status === "Active"
                             ? "bg-green-100 text-green-700"
                             : subject.status === "Inactive"
-                            ? "bg-red-100 text-red-700"
-                            : "bg-yellow-100 text-yellow-700"
-                        }`}
+                              ? "bg-red-100 text-red-700"
+                              : "bg-yellow-100 text-yellow-700"
+                          }`}
                       >
                         {subject.status}
                       </span>
                     </td>
                     <td className="py-4 font-semibold">
-                      {subject.class_time?.start && subject.class_time?.end 
+                      {subject.class_time?.start && subject.class_time?.end
                         ? `${subject.class_time.start} - ${subject.class_time.end}`
                         : "No Time Set"}
                     </td>
@@ -656,11 +651,10 @@ export default function ManageSubjects() {
                   <button
                     onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                     disabled={currentPage === 1}
-                    className={`px-3 py-1.5 border rounded-lg font-medium transition ${
-                      currentPage === 1
+                    className={`px-3 py-1.5 border rounded-lg font-medium transition ${currentPage === 1
                         ? "bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed"
                         : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                    }`}
+                      }`}
                   >
                     Previous
                   </button>
@@ -670,11 +664,10 @@ export default function ManageSubjects() {
                   <button
                     onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                     disabled={currentPage === totalPages}
-                    className={`px-3 py-1.5 border rounded-lg font-medium transition ${
-                      currentPage === totalPages
+                    className={`px-3 py-1.5 border rounded-lg font-medium transition ${currentPage === totalPages
                         ? "bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed"
                         : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                    }`}
+                      }`}
                   >
                     Next
                   </button>
@@ -690,7 +683,7 @@ export default function ManageSubjects() {
         subject={selectedSubject}
         onClose={handleCloseModal}
         onSave={handleSaveSubject}
-        dbTeachers={teachers} 
+        dbTeachers={teachers}
       />
     </div>
   );

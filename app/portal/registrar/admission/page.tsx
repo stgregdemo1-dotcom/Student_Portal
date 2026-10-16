@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 
 interface AdmissionRequest {
   _id: string;
-  applicant_id?: string; 
+  applicant_id?: string;
   firstName?: string;
   lastName?: string;
   track?: string;
@@ -17,18 +17,10 @@ type SortableKeys = "applicant_id" | "studentName" | "track" | "status";
 export default function EnrollmentPage() {
   const [admissions, setAdmissions] = useState<AdmissionRequest[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-
-  // Search state
   const [searchTerm, setSearchTerm] = useState<string>("");
-
-  // Status Filter state
   const [statusFilter, setStatusFilter] = useState<string>("All");
-
-  // Sorting states
   const [sortKey, setSortKey] = useState<SortableKeys>("applicant_id");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
-
-  // PAGINATION STATES
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage] = useState<number>(20);
 
@@ -39,7 +31,7 @@ export default function EnrollmentPage() {
       if (res.ok) {
         const jsonResponse = await res.json();
         setAdmissions(jsonResponse.data || []);
-        setCurrentPage(1); // Reset to first page on refresh
+        setCurrentPage(1);
       }
     } catch (err) {
       console.error("Error loading admission requests:", err);
@@ -52,19 +44,16 @@ export default function EnrollmentPage() {
     fetchAdmissions();
   }, []);
 
-  // Handle search input change
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
-    setCurrentPage(1); // Reset to first page when searching
+    setCurrentPage(1);
   };
 
-  // Handle status filter change and reset to page 1
   const handleStatusFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setStatusFilter(e.target.value);
     setCurrentPage(1);
   };
 
-  // Handle sorting and reset back to Page 1
   const handleSort = (key: SortableKeys) => {
     if (sortKey === key) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -72,18 +61,15 @@ export default function EnrollmentPage() {
       setSortKey(key);
       setSortDirection("asc");
     }
-    setCurrentPage(1); // Reset to first page on sort
+    setCurrentPage(1);
   };
 
-  // 1. Filter raw admissions by status and search term (Student Name)
   const filteredAdmissions = admissions.filter((record) => {
-    // Status Filter
     if (statusFilter !== "All") {
       const currentStatus = (record.status || "Pending").toLowerCase();
       if (currentStatus !== statusFilter.toLowerCase()) return false;
     }
 
-    // Student Name Search Filter
     if (searchTerm.trim() !== "") {
       const fullName = `${record.firstName || ""} ${record.lastName || ""}`.toLowerCase();
       if (!fullName.includes(searchTerm.toLowerCase().trim())) {
@@ -94,7 +80,6 @@ export default function EnrollmentPage() {
     return true;
   });
 
-  // 2. Sort filtered admissions array
   const sortedAdmissions = [...filteredAdmissions].sort((a, b) => {
     let valueA = "";
     let valueB = "";
@@ -112,10 +97,9 @@ export default function EnrollmentPage() {
     return 0;
   });
 
-  // PAGINATION LOGIC: Slice sorted array into active page segments
   const totalItems = sortedAdmissions.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
-  
+
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedAdmissions = sortedAdmissions.slice(startIndex, endIndex);
@@ -145,17 +129,17 @@ export default function EnrollmentPage() {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="bg-white rounded-xl shadow overflow-hidden border border-gray-100 flex flex-col justify-between">
-        
+
         <div>
           {/* Table Header Section */}
           <div className="p-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            
+
             {/* Title & Search Bar Beside It */}
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1">
               <h3 className="text-lg font-semibold text-gray-800 whitespace-nowrap">
                 Admission Requests
               </h3>
-              
+
               <div className="relative w-full sm:w-64">
                 <input
                   type="text"
@@ -194,7 +178,7 @@ export default function EnrollmentPage() {
                 <option value="Rejected">Rejected</option>
               </select>
 
-              <button 
+              <button
                 onClick={fetchAdmissions}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
               >
@@ -208,26 +192,26 @@ export default function EnrollmentPage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th 
-                    onClick={() => handleSort("applicant_id")} 
+                  <th
+                    onClick={() => handleSort("applicant_id")}
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-100/70 transition-colors"
                   >
                     Applicant ID {renderSortIcon("applicant_id")}
                   </th>
-                  <th 
-                    onClick={() => handleSort("studentName")} 
+                  <th
+                    onClick={() => handleSort("studentName")}
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-100/70 transition-colors"
                   >
                     Student {renderSortIcon("studentName")}
                   </th>
-                  <th 
-                    onClick={() => handleSort("track")} 
+                  <th
+                    onClick={() => handleSort("track")}
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-100/70 transition-colors"
                   >
                     Strand / Track {renderSortIcon("track")}
                   </th>
-                  <th 
-                    onClick={() => handleSort("status")} 
+                  <th
+                    onClick={() => handleSort("status")}
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-100/70 transition-colors"
                   >
                     Status {renderSortIcon("status")}
@@ -257,8 +241,8 @@ export default function EnrollmentPage() {
                         {record.applicant_id || `ID-${record._id.slice(-6).toUpperCase()}`}
                       </td>
                       <td className="px-6 py-4 font-medium text-gray-900">
-                        {record.firstName || record.lastName 
-                          ? `${record.firstName || ""} ${record.lastName || ""}`.trim() 
+                        {record.firstName || record.lastName
+                          ? `${record.firstName || ""} ${record.lastName || ""}`.trim()
                           : "Unnamed Applicant"}
                       </td>
                       <td className="px-6 py-4 text-gray-500 font-medium">
@@ -270,8 +254,8 @@ export default function EnrollmentPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 flex items-center gap-3">
-                        <a 
-                          href={`/portal/registrar/admission/information?id=${record.applicant_id}`} 
+                        <a
+                          href={`/portal/registrar/admission/information?id=${record.applicant_id}`}
                           className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
                         >
                           View Profile
@@ -314,11 +298,10 @@ export default function EnrollmentPage() {
                   <button
                     key={pageNum}
                     onClick={() => handlePageChange(pageNum)}
-                    className={`w-8 h-8 text-xs font-semibold rounded-lg transition-colors ${
-                      currentPage === pageNum
-                        ? "bg-blue-600 text-white"
-                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-100"
-                    }`}
+                    className={`w-8 h-8 text-xs font-semibold rounded-lg transition-colors ${currentPage === pageNum
+                      ? "bg-blue-600 text-white"
+                      : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-100"
+                      }`}
                   >
                     {pageNum}
                   </button>

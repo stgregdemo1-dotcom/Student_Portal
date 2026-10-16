@@ -7,12 +7,12 @@ interface SubjectSchedule {
   subject_id: string;
   subject_name: string;
   room: string;
-  semester: string; 
-  subject_day: string; // 🚀 FIXED: Changed from "subject-day" to match MongoDB's subject_day
-  subject_specification?: string; 
+  semester: string;
+  subject_day: string;
+  subject_specification?: string;
   class_time: {
-    start: string; 
-    end: string;   
+    start: string;
+    end: string;
   };
 }
 
@@ -95,9 +95,9 @@ export default function TeacherSchedulePage() {
     const fetchTeacherSubjects = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/portal/teacher?table=subjects&id=${teacherId}&action=subjects`); 
+        const response = await fetch(`/api/portal/teacher?table=subjects&id=${teacherId}&action=subjects`);
         const result = await response.json();
-        
+
         if (result && result.subjects) {
           setSchedules(result.subjects);
         }
@@ -113,16 +113,16 @@ export default function TeacherSchedulePage() {
 
   const getColumnIndex = (dayString: string): number => {
     const idx = DAYS.findIndex(d => d.toLowerCase() === dayString?.toLowerCase().trim());
-    return idx !== -1 ? idx + 2 : 2; 
+    return idx !== -1 ? idx + 2 : 2;
   };
 
   const getTimeRowIndex = (timeString: string): number => {
     if (!timeString) return 1;
     const cleanTime = timeString.trim().toUpperCase();
-    
+
     const match = cleanTime.match(/^(\d+):/);
     if (!match) return 1;
-    
+
     const hour = parseInt(match[1]);
     const isPM = cleanTime.includes("PM");
 
@@ -150,7 +150,7 @@ export default function TeacherSchedulePage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-300 p-4 font-sans">
       <div className="w-full max-w-7xl bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-200">
-        
+
         {/* Banner Controls */}
         <div className="bg-black text-white p-5 border-b border-gray-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="text-center md:text-left">
@@ -177,7 +177,7 @@ export default function TeacherSchedulePage() {
         {/* Grid View */}
         <div className="p-4 md:p-6 overflow-x-auto">
           <div className="relative min-w-[900px]">
-            
+
             {/* BACKGROUND TABLE LAYOUT */}
             <table className="w-full border-collapse text-sm table-fixed">
               <thead>
@@ -207,13 +207,13 @@ export default function TeacherSchedulePage() {
             </table>
 
             {/* DYNAMIC ABSOLUTE GRID OVERLAY */}
-            <div 
+            <div
               className="absolute inset-0 pointer-events-none p-0 z-10"
-              style={{ 
+              style={{
                 display: "grid",
                 gridTemplateColumns: "140px repeat(5, 1fr)",
                 paddingTop: "2.75rem",
-                gridTemplateRows: `repeat(${HOURS.length - 1}, 5rem)` 
+                gridTemplateRows: `repeat(${HOURS.length - 1}, 5rem)`
               }}
             >
               {filteredSchedules.map((subj) => {
@@ -229,7 +229,6 @@ export default function TeacherSchedulePage() {
                   endTimeStr = timeParts[1]?.trim() || "";
                 }
 
-                // 🚀 FIXED: Passed subj.subject_day instead of subj["subject-day"]
                 const colStart = getColumnIndex(subj.subject_day);
                 const rowStart = getTimeRowIndex(startTimeStr);
                 const rowEnd = getTimeRowIndex(endTimeStr);
@@ -241,7 +240,7 @@ export default function TeacherSchedulePage() {
                     className="pointer-events-auto p-1 h-full w-full"
                     style={{
                       gridColumnStart: colStart,
-                      gridRow: `${rowStart} / ${rowEnd}` 
+                      gridRow: `${rowStart} / ${rowEnd}`
                     }}
                   >
                     <div className={`border rounded-xl p-2.5 text-left shadow-sm hover:shadow-md cursor-pointer transition-all h-full flex flex-col justify-between overflow-hidden ${styles.card} ${styles.border}`}>
@@ -250,19 +249,19 @@ export default function TeacherSchedulePage() {
                           <div className={`font-black text-[11px] leading-tight uppercase tracking-tight break-words ${styles.text}`}>
                             {subj.subject_name || subj.subject_id}
                           </div>
-                          
+
                           {subj.subject_specification && (
                             <span className={`text-[7px] font-black uppercase px-1.5 py-0.5 rounded-md tracking-wider shrink-0 ${styles.tag}`}>
                               {subj.subject_specification.replace('_', ' ')}
                             </span>
                           )}
                         </div>
-                        
+
                         <div className="text-[8px] text-gray-400 font-bold mt-1 tracking-wider uppercase">
                           Code: {subj.sched_code}
                         </div>
                       </div>
-                      
+
                       <div className="text-[8px] text-indigo-500 font-mono font-black mt-1 pt-1 border-t border-gray-100/50 flex justify-between items-center uppercase">
                         <span>📍 {subj.room || "TBA"}</span>
                         <span>⏱️ {startTimeStr} - {endTimeStr}</span>

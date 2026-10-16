@@ -22,9 +22,6 @@ export async function GET(request: NextRequest) {
     const studentId = usernameCookie.value;
     const { searchParams } = request.nextUrl;
 
-    // ==========================================================
-    // STUDENT NAME LOOKUP (For Header Welcome Banner)
-    // ==========================================================
     if (searchParams.get("getStudentName") === "true") {
       const studentProfile = await Student.findOne({ student_id: studentId }).lean();
 
@@ -39,9 +36,6 @@ export async function GET(request: NextRequest) {
       }, { status: 200 });
     }
 
-    // ==========================================================
-    // CALENDAR EVENTS LOOKUP
-    // ==========================================================
     if (searchParams.get("getCalendarEvents") === "true") {
       const EventModel = mongoose.models.Events || Events;
       const calendarEvents = await EventModel.find({}).lean();
@@ -58,9 +52,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: true, events: formattedEvents }, { status: 200 });
     }
 
-    // ==========================================================
-    // MASTER SCHEDULE LOOKUP
-    // ==========================================================
     if (searchParams.get("getSchedule") === "true") {
       const studentRecord = await StudentSection.findOne({ student_id: studentId }).lean();
 
@@ -112,9 +103,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: true, subjects: formattedGridSubjects }, { status: 200 });
     }
 
-    // ==========================================================
-    // EVALUATION STATUS LOOKUP
-    // ==========================================================
     if (searchParams.get("getEvaluationStatus") === "true") {
       const studentRecord = await StudentSection.findOne({ student_id: studentId }).lean();
 
@@ -140,9 +128,6 @@ export async function GET(request: NextRequest) {
       }, { status: 200 });
     }
 
-    // ==========================================================
-    // PROFILE LOOKUP
-    // ==========================================================
     if (!searchParams.get("getYearsOnly") && !searchParams.get("year") && !searchParams.get("semester")) {
       const studentProfile = await Student.findOne({ student_id: studentId }).lean();
 
@@ -176,9 +161,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: true, data: completeProfileData }, { status: 200 });
     }
 
-    // ==========================================================
-    // ACADEMIC / GRADES LOOKUP
-    // ==========================================================
     if (searchParams.get("getYearsOnly") === "true") {
       const studentRecord = await StudentSection.findOne({ student_id: studentId }).lean();
       

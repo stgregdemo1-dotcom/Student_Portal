@@ -7,7 +7,6 @@ export default function GradesPage() {
   const [generalAvg, setGeneralAvg] = useState<string>("—");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   const [selectedYear, setSelectedYear] = useState("");
   const [selectedSemester, setSelectedSemester] = useState("");
   const [availableYears, setAvailableYears] = useState<string[]>([]);
@@ -37,7 +36,6 @@ export default function GradesPage() {
       setLoading(true);
       setError(null);
 
-      // Pass the selected parameters directly to the endpoint
       const res = await fetch(
         `/api/portal/student?year=${encodeURIComponent(selectedYear)}&semester=${encodeURIComponent(selectedSemester)}`
       );
@@ -60,7 +58,7 @@ export default function GradesPage() {
     <div className="bg-white rounded-xl shadow-sm p-6">
       <div className="mb-8">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">Grades Management</h3>
-        
+
         <div className="flex flex-col md:flex-row items-end gap-4">
           <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -93,7 +91,7 @@ export default function GradesPage() {
             </div>
           </div>
 
-          <button 
+          <button
             onClick={handleFetchGrades}
             disabled={loading}
             className="w-full md:w-auto px-8 h-12 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap"
@@ -140,10 +138,9 @@ export default function GradesPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-center">
-                    <span className={`px-2.5 py-0.5 text-xs font-bold rounded-full ${
-                      g.status === "Passed" ? "bg-green-100 text-green-800" :
+                    <span className={`px-2.5 py-0.5 text-xs font-bold rounded-full ${g.status === "Passed" ? "bg-green-100 text-green-800" :
                       g.status === "Failed" ? "bg-red-100 text-red-800" : "bg-yellow-100 text-yellow-800"
-                    }`}>
+                      }`}>
                       {g.status}
                     </span>
                   </td>

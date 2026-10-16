@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 
 interface MappedSubject {
   subject_id: string;
-  sched_code: string; // From backend aggregation join pipeline
+  sched_code: string; 
   teacher_id: string;
   grade_1: string; 
   grade_2: string; 
@@ -15,8 +15,10 @@ interface MappedSubject {
 }
 
 interface MappedStudentRow {
-  id: string;              
+  id: string;               
   student_id: string;      
+  first_name?: string;     
+  last_name?: string;      
   year: string;            
   semester: string;        
   section: string;         
@@ -136,10 +138,10 @@ export default function GradesManagementPage() {
     setExpandedStudents((prev) => ({ ...prev, [uniqueKey]: !prev[uniqueKey] }));
   };
 
-  // Filter records and sort them by student_id ascending
   const filteredRecords = records
     .filter((row) => {
-      const matchesSearch = row.student_id.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = row.student_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            `${row.first_name || ""} ${row.last_name || ""}`.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesSemester = row.semester === activeSemester;
       const matchesSection = activeSectionFilter === "All Sections" || row.section === activeSectionFilter;
       return matchesSearch && matchesSemester && matchesSection;
@@ -171,7 +173,7 @@ export default function GradesManagementPage() {
           <div className="flex flex-col sm:flex-row gap-3 w-full md:max-w-xl">
             <input
               type="text"
-              placeholder="Search by Student ID..."
+              placeholder="Search by Student ID or Name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full text-sm border border-gray-200 rounded-lg px-4 py-2 bg-gray-50/50 outline-none focus:border-indigo-400 font-medium text-gray-800"
@@ -210,7 +212,7 @@ export default function GradesManagementPage() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50/70 border-b border-gray-100 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                  <th className="p-4">Student ID</th>
+                  <th className="p-4">Student Name & ID</th>
                   <th className="p-4">Section / School Year</th>
                   <th className="p-4">Schedule Code</th>
                   <th className="p-4 text-center">Prelim (G1)</th>
@@ -235,6 +237,10 @@ export default function GradesManagementPage() {
                         ? row.subjects 
                         : [row.subjects[0]];
 
+                    const lastName = row.last_name || "";
+                    const firstName = row.first_name || "";
+                    const formattedName = lastName || firstName ? `${lastName}, ${firstName}`.trim() : "Unknown Name";
+
                     return displayedSubjects.map((subject, sIdx) => {
                       const calculations = computeFinalGradeAndRemarks(
                         subject.grade_1, subject.grade_2, subject.grade_3, subject.grade_4
@@ -244,7 +250,8 @@ export default function GradesManagementPage() {
                         <tr key={`${uniqueRowKey}-${subject.subject_id}`} className="hover:bg-gray-50/40 transition-colors group">
                           {sIdx === 0 && (
                             <td className="p-4 align-top border-r border-gray-100/70" rowSpan={displayedSubjects.length}>
-                              <p className="font-bold text-gray-800">{row.student_id}</p>
+                              <p className="font-bold text-gray-900 capitalize">{formattedName}</p>
+                              <p className="text-xs text-indigo-600 font-semibold font-mono mt-0.5">{row.student_id}</p>
                               {hasSubjects && row.subjects.length > 1 && (
                                 <button
                                   onClick={() => toggleExpandStudent(uniqueRowKey)}

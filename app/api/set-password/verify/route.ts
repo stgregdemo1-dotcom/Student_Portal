@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
-import { Teacher, Credentials } from "@/models/Schema"; // Ensure this matches your path containing both models
+import { Teacher, Credentials } from "@/models/Schema";
 
 const connectDB = async () => {
   if (mongoose.connection.readyState >= 1) return;
   await mongoose.connect(process.env.MONGODB_URI!);
 };
 
-// --- GET Handler: Retrieves teacher document ---
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl;
@@ -52,7 +51,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// --- POST Handler: Form verification gate ---
 export async function POST(request: NextRequest) {
   try {
     await connectDB();
@@ -104,7 +102,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// --- PUT Handler: Processes profile activation and inserts new record into credentials model ---
 export async function PUT(request: NextRequest) {
   try {
     await connectDB();
@@ -112,7 +109,6 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { teacherProfile, accountSetup } = body;
 
-    // 1. Structural payload validations
     if (!teacherProfile || !accountSetup) {
       return NextResponse.json(
         { success: false, message: "Missing teacherProfile or accountSetup body parameters." },
@@ -130,7 +126,6 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // 2. Update existing teacher document status and emergency info inside 'teachers'
     const updatedTeacher = await Teacher.findOneAndUpdate(
       { teacher_id: targetTeacherId },
       {
@@ -152,10 +147,9 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // 3. Create and save an explicitly brand-new document using your imported Credentials model
     const newCredential = new Credentials({
       username: targetTeacherId,
-      password: targetPassword, // Raw, plain-text string formatting requirements
+      password: targetPassword,
       user_type: "teacher"
     });
 

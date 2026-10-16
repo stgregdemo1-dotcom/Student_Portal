@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 export default function EnrolleeDetailsPage() {
   const router = useRouter();
-  const [enrollee, setEnrollee] = useState<any>(null); 
+  const [enrollee, setEnrollee] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,7 +57,7 @@ export default function EnrolleeDetailsPage() {
   return (
     <div className="min-h-screen bg-gray-50/50 px-4 py-12 font-sans">
       <div className="max-w-4xl mx-auto space-y-6">
-        
+
         <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm flex flex-col md:flex-row items-center gap-6">
           <div className="w-24 h-24 bg-indigo-600 rounded-2xl flex items-center justify-center text-white text-3xl font-black shadow-lg shadow-indigo-100 uppercase">
             {initialLetters}
@@ -72,7 +72,7 @@ export default function EnrolleeDetailsPage() {
         </div>
 
         <div className="grid grid-cols-1 gap-6">
-          
+
           <Card title="Personal Details">
             <Grid>
               <Field label="Email Address" value={enrollee.email_address} />
@@ -120,7 +120,7 @@ export default function EnrolleeDetailsPage() {
 
           <Card title="Others">
             <div>
-              <Grid>            
+              <Grid>
                 <Field label="Enrollment Status" value={enrollee.status} />
                 <Field label="Assigned Section" value={enrollee.assigned_section} />
                 <Field label="Academic Year" value={enrollee.academic_year} />

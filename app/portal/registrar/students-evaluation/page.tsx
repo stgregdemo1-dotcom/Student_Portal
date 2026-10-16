@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react"; 
+import { useEffect, useState, useCallback } from "react";
 
 interface SubjectReference {
   subject_id: string;
@@ -24,31 +24,28 @@ export default function EnrollmentPage() {
   const [requests, setRequests] = useState<StudentSectionRecord[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-
-  // PAGINATION STATES
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const itemsPerPage = 20; // Display exactly 20 records per page
+  const itemsPerPage = 20;
 
   const fetchEvaluationRequests = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const response = await fetch("/api/portal/registrar?table=student_section");
-      
+
       if (!response.ok) {
         throw new Error("Failed to load evaluation requests.");
       }
 
       const data = await response.json();
       const records = Array.isArray(data) ? data : data.data || [];
-      
-      // 🚀 Explicitly typed parameters 'a' and 'b' to resolve the implicit any type error
-      const sortedRecords = records.sort((a: StudentSectionRecord, b: StudentSectionRecord) => 
+
+      const sortedRecords = records.sort((a: StudentSectionRecord, b: StudentSectionRecord) =>
         (a.student_id || "").localeCompare(b.student_id || "")
       );
 
       setRequests(sortedRecords);
-      setCurrentPage(1); // Always reset back to page 1 on fresh load/refresh
+      setCurrentPage(1);
     } catch (err: any) {
       setError(err.message || "Something went wrong.");
     } finally {
@@ -60,10 +57,8 @@ export default function EnrollmentPage() {
     fetchEvaluationRequests();
   }, [fetchEvaluationRequests]);
 
-  // PAGINATION MATHEMATICS
   const totalItems = requests.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
-
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedRequests = requests.slice(startIndex, endIndex);
@@ -79,7 +74,7 @@ export default function EnrollmentPage() {
       <div className="bg-white rounded-xl shadow overflow-hidden">
         <div className="p-4 border-b border-gray-200 flex justify-between items-center">
           <h3 className="text-lg font-semibold text-gray-800">Students Evaluation Requests</h3>
-          <button 
+          <button
             onClick={fetchEvaluationRequests}
             disabled={loading}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-opacity"
@@ -123,8 +118,8 @@ export default function EnrollmentPage() {
                 /* Map over the paginated subset */
                 paginatedRequests.map((record) => {
                   const hasFullName = record.first_name || record.last_name;
-                  const fullName = hasFullName 
-                    ? `${record.first_name} ${record.last_name}` 
+                  const fullName = hasFullName
+                    ? `${record.first_name} ${record.last_name}`
                     : "Unknown Name";
 
                   return (
@@ -135,8 +130,8 @@ export default function EnrollmentPage() {
                       <td className="px-6 py-4 text-sm text-gray-500">{record.semester}</td>
                       <td className="px-6 py-4 text-sm text-gray-500">{record.section}</td>
                       <td className="px-6 py-4 text-sm">
-                        <a 
-                          href={`/portal/registrar/students-evaluation/information?id=${record.student_id}`} 
+                        <a
+                          href={`/portal/registrar/students-evaluation/information?id=${record.student_id}`}
                           className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
                         >
                           View
@@ -179,11 +174,10 @@ export default function EnrollmentPage() {
                   <button
                     key={pageNum}
                     onClick={() => handlePageChange(pageNum)}
-                    className={`w-8 h-8 text-xs font-semibold rounded-lg transition-colors ${
-                      currentPage === pageNum
-                        ? "bg-blue-600 text-white border border-transparent"
-                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-                    }`}
+                    className={`w-8 h-8 text-xs font-semibold rounded-lg transition-colors ${currentPage === pageNum
+                      ? "bg-blue-600 text-white border border-transparent"
+                      : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                      }`}
                   >
                     {pageNum}
                   </button>

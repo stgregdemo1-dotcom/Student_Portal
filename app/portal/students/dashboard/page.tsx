@@ -29,22 +29,22 @@ export default function DashboardPage() {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
   const currentYear = new Date().getFullYear();
-  const isMinMonth = month === 0;   // January boundary
-  const isMaxMonth = month === 11;  // December boundary
+  const isMinMonth = month === 0;
+  const isMaxMonth = month === 11;
 
   const fetchEvents = async () => {
     setLoading(true);
     try {
       const response = await fetch("/api/portal/student?getCalendarEvents=true");
       if (!response.ok) throw new Error("Failed to fetch calendar events");
-      
+
       const result = await response.json();
-      
+
       if (result.success && result.events) {
         const mappedEvents: EventMap = {};
-        
+
         result.events.forEach((item: any) => {
-          const dateKey = item.date; // Expects "YYYY-MM-DD"
+          const dateKey = item.date;
           if (!dateKey) return;
 
           if (!mappedEvents[dateKey]) {
@@ -122,9 +122,8 @@ export default function DashboardPage() {
         cols.push(
           <td
             key={`day-${currentDay}`}
-            className={`border border-slate-100 h-24 align-top p-2 transition w-[14.28%] min-w-0 overflow-hidden ${
-              isToday ? 'bg-blue-50/20 font-black' : 'bg-white'
-            }`}
+            className={`border border-slate-100 h-24 align-top p-2 transition w-[14.28%] min-w-0 overflow-hidden ${isToday ? 'bg-blue-50/20 font-black' : 'bg-white'
+              }`}
           >
             <div className="flex flex-col h-full justify-between">
               <div className={`text-xs font-bold ${isToday ? 'text-blue-600' : 'text-slate-500'}`}>
@@ -162,7 +161,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6 p-4 bg-gray-50/50 min-h-screen">
       <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-        
+
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <h3 className="text-sm md:text-lg font-black text-slate-800 tracking-tight">
             {monthNames[month]}{" "}
@@ -176,11 +175,10 @@ export default function DashboardPage() {
             <button
               onClick={() => changeMonth(-1)}
               disabled={isMinMonth}
-              className={`px-3 py-1 text-[10px] font-bold transition-colors ${
-                isMinMonth
+              className={`px-3 py-1 text-[10px] font-bold transition-colors ${isMinMonth
                   ? "text-slate-300 cursor-not-allowed"
                   : "text-slate-500 hover:text-black"
-              }`}
+                }`}
             >
               Prev
             </button>
@@ -195,11 +193,10 @@ export default function DashboardPage() {
             <button
               onClick={() => changeMonth(1)}
               disabled={isMaxMonth}
-              className={`px-3 py-1 text-[10px] font-bold transition-colors ${
-                isMaxMonth
+              className={`px-3 py-1 text-[10px] font-bold transition-colors ${isMaxMonth
                   ? "text-slate-300 cursor-not-allowed"
                   : "text-slate-500 hover:text-black"
-              }`}
+                }`}
             >
               Next
             </button>

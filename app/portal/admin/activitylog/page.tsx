@@ -14,19 +14,15 @@ export default function AdminAuditLogsPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  
-  // Pagination State Configurations
+
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
-
-  // Fetch log activity entries from the backend API pipeline
   const fetchAuditLogs = async () => {
     setIsLoading(true);
     try {
       const res = await fetch("/api/portal/admin?table=audit_logs");
       if (res.ok) {
         const data = await res.json();
-        // Fallback checks to prevent parsing structural map errors
         setLogs(Array.isArray(data) ? data : data.data || []);
       } else {
         console.error("Failed to recover log activity records from database storage.");
@@ -42,7 +38,6 @@ export default function AdminAuditLogsPage() {
     fetchAuditLogs();
   }, []);
 
-  // Filter conditions targeting tracking descriptors or operator identities
   const filteredLogs = logs.filter((log) => {
     const searchString = searchQuery.toLowerCase();
     return (
@@ -52,13 +47,11 @@ export default function AdminAuditLogsPage() {
     );
   });
 
-  // Calculate parameters for structural pagination steps
   const totalPages = Math.ceil(filteredLogs.length / itemsPerPage) || 1;
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentLogsLayout = filteredLogs.slice(indexOfFirstItem, indexOfLastItem);
 
-  // Auto-reset down to first screen page during keyword structural shifts
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery]);
@@ -66,7 +59,7 @@ export default function AdminAuditLogsPage() {
   return (
     <div className="p-6 min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto space-y-4">
-        
+
         {/* Banner Section Contextual Header */}
         <div className="p-4 bg-white flex flex-col md:flex-row justify-between items-start md:items-center shadow-sm rounded-xl border border-gray-100 gap-4">
           <div>
@@ -74,7 +67,7 @@ export default function AdminAuditLogsPage() {
             <p className="text-xs text-gray-500 mt-0.5">
             </p>
           </div>
-          
+
           <div className="relative w-full md:w-80">
             <input
               type="text"
@@ -115,15 +108,14 @@ export default function AdminAuditLogsPage() {
                       </td>
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         <span
-                          className={`px-2 py-0.5 rounded-md text-[11px] font-bold uppercase tracking-wide ${
-                            log.user_type === "admin"
+                          className={`px-2 py-0.5 rounded-md text-[11px] font-bold uppercase tracking-wide ${log.user_type === "admin"
                               ? "bg-purple-50 text-purple-700 border border-purple-200"
                               : log.user_type === "registrar"
-                              ? "bg-blue-50 text-blue-700 border border-blue-200"
-                              : log.user_type === "teacher"
-                              ? "bg-amber-50 text-amber-700 border border-amber-200"
-                              : "bg-gray-50 text-gray-600 border border-gray-200"
-                          }`}
+                                ? "bg-blue-50 text-blue-700 border border-blue-200"
+                                : log.user_type === "teacher"
+                                  ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                  : "bg-gray-50 text-gray-600 border border-gray-200"
+                            }`}
                         >
                           {log.user_type}
                         </span>
@@ -149,7 +141,7 @@ export default function AdminAuditLogsPage() {
                   <span className="text-xs font-medium text-gray-500">
                     Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredLogs.length)} of {filteredLogs.length} activity actions
                   </span>
-                  
+
                   <div className="flex gap-2">
                     <button
                       disabled={currentPage === 1}

@@ -6,8 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 function SetPasswordVerificationContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
-  // Captures "?id=XXXX" passing down from the setup email link payload
+
   const urlTeacherId = searchParams.get("id") || "";
 
   const [teacherId, setTeacherId] = useState("");
@@ -45,12 +44,10 @@ function SetPasswordVerificationContent() {
       const data = await res.json();
 
       if (res.ok && data.success) {
-        // ✅ CACHING VALUES HERE FOR LATER USE
         localStorage.setItem("cached_teacher_id", teacherId.trim());
         localStorage.setItem("cached_security_code", securityCode.trim());
         localStorage.setItem("cached_mongo_id", String(data.applicantId));
 
-        // Forward user straight to creation interface view
         router.push(`/set-password/setup`);
       } else {
         setErrorMsg(data.message || "Verification failed. Access denied.");
@@ -84,7 +81,7 @@ function SetPasswordVerificationContent() {
             setErrorMsg(null);
           }}
           className="w-full px-4 py-2 border border-gray-300 rounded-md mb-4 outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-60 text-center text-gray-800"
-        /> 
+        />
 
         <p className="text-gray-600 mb-4 text-sm">
           Please enter your security code:
@@ -100,7 +97,7 @@ function SetPasswordVerificationContent() {
             setErrorMsg(null);
           }}
           className="w-full px-4 py-2 border border-gray-300 rounded-md mb-4 outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-60 text-center text-gray-800"
-        /> 
+        />
 
         <button
           type="submit"

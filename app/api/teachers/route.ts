@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
 
-// Minimal Schemas for counting
 const StudentSchema = new mongoose.Schema(
   { status: { type: String, required: true } },
   { collection: "students" }
@@ -30,37 +29,30 @@ export async function GET(request: NextRequest) {
   try {
     await connectDB();
 
-    // Extract teacher_id directly from the 'username' cookie
     const teacherIdCookie = request.cookies.get("username")?.value;
-
-    // Fallback to query string if cookie isn't present
     const { searchParams } = request.nextUrl;
     const teacherId = teacherIdCookie || searchParams.get("teacher_id");
-
-    // 1. Query for total enrolled students
-    const enrolledCount = await Student.countDocuments({ 
-      status: { $regex: /^enrolled$/i } 
+    const enrolledCount = await Student.countDocuments({
+      status: { $regex: /^enrolled$/i }
     });
 
-    // 2. Query for total classes/subjects assigned to this teacher
     let classCount = 0;
     if (teacherId) {
-      classCount = await Subject.countDocuments({ 
-        teacher_id: teacherId 
+      classCount = await Subject.countDocuments({
+        teacher_id: teacherId
       });
     }
 
-    // 🚀 3. Query for upcoming events (event_date >= current time)
     const upcomingEventsCount = await Event.countDocuments({
       event_date: { $gte: new Date() }
     });
 
     return NextResponse.json(
-      { 
+      {
         totalEnrolledStudents: enrolledCount,
         totalClasses: classCount,
         upcomingEvents: upcomingEventsCount
-      }, 
+      },
       { status: 200 }
     );
   } catch (error) {

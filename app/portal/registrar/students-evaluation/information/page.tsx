@@ -1,4 +1,4 @@
-"use client"; 
+"use client";
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -74,10 +74,10 @@ function AdminStudentDetailsContent() {
       const res = await fetch(`/api/portal/registrar?table=student_section&id=${record.student_id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           evaluation: newStatus,
           year: currentClass.year,
-          semester: currentClass.semester 
+          semester: currentClass.semester
         }),
       });
 
@@ -127,8 +127,8 @@ function AdminStudentDetailsContent() {
     );
   }
 
-  const fullName = record.first_name || record.last_name 
-    ? `${record.first_name || ""} ${record.last_name || ""}`.trim() 
+  const fullName = record.first_name || record.last_name
+    ? `${record.first_name || ""} ${record.last_name || ""}`.trim()
     : "Student Details";
 
   return (
@@ -142,11 +142,10 @@ function AdminStudentDetailsContent() {
           </button>
 
           <div className="flex gap-3">
-            <span className={`px-3 py-1 rounded-full text-sm font-semibold flex items-center ${
-              currentClass.evaluation === "Approved" ? "bg-green-100 text-green-800" :
+            <span className={`px-3 py-1 rounded-full text-sm font-semibold flex items-center ${currentClass.evaluation === "Approved" ? "bg-green-100 text-green-800" :
               currentClass.evaluation === "Rejected" ? "bg-red-100 text-red-800" :
-              "bg-yellow-100 text-yellow-800"
-            }`}>
+                "bg-yellow-100 text-yellow-800"
+              }`}>
               {currentClass.evaluation || "Pending"}
             </span>
           </div>
@@ -161,7 +160,7 @@ function AdminStudentDetailsContent() {
 
         {/* Split UI Layout Frame */}
         <div className="grid lg:grid-cols-3 gap-6">
-          
+
           {/* Main Academic Metadata Section */}
           <div className="lg:col-span-2 space-y-6">
             <Card title="Current Enrollment">
@@ -205,10 +204,9 @@ function AdminStudentDetailsContent() {
                           <td className="px-6 py-3 text-center text-gray-600">{sub.grade_3 || "—"}</td>
                           <td className="px-6 py-3 text-center text-gray-600">{sub.grade_4 || "—"}</td>
                           <td className="px-6 py-3">
-                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                              sub.remarks === "Passed" ? "bg-green-50 text-green-700" :
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${sub.remarks === "Passed" ? "bg-green-50 text-green-700" :
                               sub.remarks === "Failed" ? "bg-red-50 text-red-700" : "bg-gray-100 text-gray-600"
-                            }`}>
+                              }`}>
                               {sub.remarks || "Pending"}
                             </span>
                           </td>
@@ -225,14 +223,14 @@ function AdminStudentDetailsContent() {
           <div className="space-y-6">
             <Card title="Action">
               <div className="space-y-3">
-                <button 
+                <button
                   disabled={actionLoading || currentClass.evaluation === "Approved" || currentClass.evaluation === "Rejected"}
                   onClick={() => updateEvaluationStatus("Approved")}
                   className="w-full bg-green-600 hover:bg-green-700 text-white py-2.5 px-4 rounded-lg text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
                 >
                   Approve Evaluation Request
                 </button>
-                <button 
+                <button
                   disabled={actionLoading || currentClass.evaluation === "Approved" || currentClass.evaluation === "Rejected"}
                   onClick={() => updateEvaluationStatus("Rejected")}
                   className="w-full bg-red-100 hover:bg-red-200 text-red-700 py-2.5 px-4 rounded-lg text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"

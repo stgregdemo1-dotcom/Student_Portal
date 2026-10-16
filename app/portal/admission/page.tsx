@@ -20,7 +20,6 @@ interface SelectFieldProps {
   disabled?: boolean;
 }
 
-// --- Helper Components ---
 const InputField: React.FC<InputFieldProps> = ({ label, type = "text", placeholder, defaultValue, readOnly, value, disabled }) => (
   <div className="flex flex-col gap-2">
     <label className="text-[10px] font-black uppercase text-slate-400 ml-1">{label}</label>
@@ -57,7 +56,7 @@ const SelectField: React.FC<SelectFieldProps> = ({ label, options, onChange, dis
 
 export default function AdmissionDashboard() {
   const [activeTab, setActiveTab] = useState<'admission' | 'enrollment'>('admission');
-  const [isApproved, setIsApproved] = useState<boolean>(false); // This controls when Enrollment opens AND when Admission locks
+  const [isApproved, setIsApproved] = useState<boolean>(false); 
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   const [enrollmentType, setEnrollmentType] = useState<string>("");
 

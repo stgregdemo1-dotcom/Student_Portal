@@ -1,4 +1,4 @@
-"use client"; 
+"use client";
 import React, { useState, useEffect } from 'react';
 
 interface Schedule {
@@ -9,8 +9,8 @@ interface Schedule {
 interface RosterStudent {
   student_id: string;
   grades: number[];
-  remarks: string; 
-  evaluation?: string; 
+  remarks: string;
+  evaluation?: string;
 }
 
 const GradingSheet = () => {
@@ -21,11 +21,7 @@ const GradingSheet = () => {
   const [grades, setGrades] = useState<{ [key: string]: (number | string)[] }>({});
   const [rosterList, setRosterList] = useState<RosterStudent[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  
-  // Configuration Toggle State
   const [canSubmitFinal, setCanSubmitFinal] = useState<boolean>(false);
-
-  // Confirmation Modal State
   const [isConfirmOpen, setIsConfirmOpen] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
 
@@ -47,7 +43,6 @@ const GradingSheet = () => {
     }
   }, []);
 
-  // Fetch system submission flag
   useEffect(() => {
     const fetchConfig = async () => {
       try {
@@ -69,7 +64,7 @@ const GradingSheet = () => {
     const fetchSchedules = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/portal/teacher?table=subjects&id=${teacherId}&action=subjects`); 
+        const response = await fetch(`/api/portal/teacher?table=subjects&id=${teacherId}&action=subjects`);
         const result = await response.json();
         if (result && result.subjects) {
           setSchedules(result.subjects);
@@ -96,8 +91,7 @@ const GradingSheet = () => {
         const response = await fetch(`/api/portal/teacher?table=student_section&id=${activeClass.subject_id}&action=students`);
         const data = await response.json();
         if (data && data.students) {
-          // Sort the students by student_id in ascending order
-          const sortedStudents = [...data.students].sort((a, b) => 
+          const sortedStudents = [...data.students].sort((a, b) =>
             (a.student_id || "").localeCompare(b.student_id || "")
           );
 
@@ -110,7 +104,7 @@ const GradingSheet = () => {
               std.grades[1] || 0,
               std.grades[2] || 0,
               std.grades[3] || 0,
-              std.remarks || "" 
+              std.remarks || ""
             ];
           });
           setGrades(initialGradesMap);
@@ -123,11 +117,11 @@ const GradingSheet = () => {
   }, [selectedCode, activeClass]);
 
   const hasLockedEvaluation = rosterList.some(
-    (student) => student.evaluation && student.evaluation.trim() !== "" 
+    (student) => student.evaluation && student.evaluation.trim() !== ""
   );
 
   const updateGradeState = (studentId: string, colIndex: number, val: number | string) => {
-    if (hasLockedEvaluation) return;  
+    if (hasLockedEvaluation) return;
     setGrades(prev => {
       const studentGrades = prev[studentId] || [0, 0, 0, 0, ""];
       const newGrades = [...studentGrades];
@@ -162,11 +156,11 @@ const GradingSheet = () => {
 
   const executeFinalSubmission = async (isFinal: boolean = true) => {
     if (!selectedCode || !activeClass || hasLockedEvaluation) return;
-    
+
     try {
       setSubmitting(true);
       const formattedGrades = Object.keys(grades).reduce((acc, studentId) => {
-        const studentGrades = grades[studentId]; 
+        const studentGrades = grades[studentId];
 
         acc[studentId] = [
           studentGrades[0] || 0,
@@ -178,16 +172,16 @@ const GradingSheet = () => {
         return acc;
       }, {} as { [key: string]: (number | string)[] });
 
-      const payload = { 
-        scheduleCode: activeClass.subject_id, 
+      const payload = {
+        scheduleCode: activeClass.subject_id,
         grades: formattedGrades,
-        isDraft: !isFinal 
+        isDraft: !isFinal
       };
 
       const response = await fetch('/api/portal/teacher?table=student_section', {
         method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json' 
+        headers: {
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(payload)
       });
@@ -208,7 +202,7 @@ const GradingSheet = () => {
           const refreshResponse = await fetch(`/api/portal/teacher?table=student_section&id=${activeClass.subject_id}&action=students`);
           const refreshData = await refreshResponse.json();
           if (refreshData && refreshData.students) {
-            const sortedRefreshed = [...refreshData.students].sort((a, b) => 
+            const sortedRefreshed = [...refreshData.students].sort((a, b) =>
               (a.student_id || "").localeCompare(b.student_id || "")
             );
             setRosterList(sortedRefreshed);
@@ -241,7 +235,7 @@ const GradingSheet = () => {
   return (
     <div className="min-h-screen bg-[#FFFDF0] py-10 px-4 font-sans relative">
       <div className="max-w-5xl mx-auto">
-        
+
         {/* Header Section */}
         <div className="bg-white border-t-4 border-[#FFD700] p-6 rounded-xl shadow-md mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -249,10 +243,10 @@ const GradingSheet = () => {
             <p className="text-gray-500 font-medium italic">School Year 2026-2027</p>
             <p className="text-xs text-[#28a745] font-bold mt-1">Logged in as: {teacherId}</p>
           </div>
-          
+
           <div className="flex items-center gap-3">
-            <select 
-              value={selectedCode} 
+            <select
+              value={selectedCode}
               onChange={(e) => {
                 setSelectedCode(e.target.value);
                 setIsEditing(false);
@@ -264,8 +258,8 @@ const GradingSheet = () => {
             </select>
 
             {activeClass && (
-              <button 
-                disabled={hasLockedEvaluation} 
+              <button
+                disabled={hasLockedEvaluation}
                 onClick={async () => {
                   if (isEditing) {
                     await handleDraftSave();
@@ -273,13 +267,12 @@ const GradingSheet = () => {
                     setIsEditing(true);
                   }
                 }}
-                className={`px-6 py-2.5 rounded-lg font-bold text-white transition-all shadow-md transform active:scale-95 ${
-                  hasLockedEvaluation
+                className={`px-6 py-2.5 rounded-lg font-bold text-white transition-all shadow-md transform active:scale-95 ${hasLockedEvaluation
                     ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none"
-                    : isEditing 
-                      ? "bg-[#28a745] hover:bg-[#218838]" 
+                    : isEditing
+                      ? "bg-[#28a745] hover:bg-[#218838]"
                       : "bg-[#FFD700] hover:bg-[#e6c200] text-[#856404]"
-                }`}
+                  }`}
               >
                 {hasLockedEvaluation ? "🔒 Evaluation Completed" : isEditing ? "✓ Save Draft" : "✎ Edit Grades"}
               </button>
@@ -289,7 +282,7 @@ const GradingSheet = () => {
 
         {activeClass ? (
           <div className="space-y-6">
-            
+
             {hasLockedEvaluation && (
               <div className="bg-red-50 p-4 rounded-xl border border-red-200 text-red-800 text-sm font-semibold flex items-center gap-3 shadow-sm">
                 <span>⚠️</span>
@@ -304,9 +297,9 @@ const GradingSheet = () => {
                   <h3 className="font-bold text-[#856404]">Grading Sheet Record</h3>
                 </div>
               </div>
-              <input 
-                type="file" 
-                disabled={hasLockedEvaluation} 
+              <input
+                type="file"
+                disabled={hasLockedEvaluation}
                 className="text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-[#28a745] file:text-white hover:file:bg-[#218838] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
@@ -320,7 +313,7 @@ const GradingSheet = () => {
                   {rosterList.length} Enrolled
                 </span>
               </div>
-              
+
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
                   <thead>
@@ -338,32 +331,31 @@ const GradingSheet = () => {
                     {rosterList.map((student, sIndex) => {
                       const currentStudentId = student.student_id;
                       const currentGradesMap = grades[currentStudentId] || [0, 0, 0, 0, ""];
-                      
+
                       const numericGrades = currentGradesMap.slice(0, 4) as number[];
                       const currentRemarks = (currentGradesMap[4] as string) || "";
 
                       return (
                         <tr key={sIndex} className="hover:bg-[#FFFDE7]/50 transition-colors">
                           <td className="px-6 py-4 font-bold text-gray-700">{currentStudentId}</td>
-                          
+
                           {numericGrades.map((gradeValue, colIndex) => (
                             <td key={colIndex} className="px-6 py-4 text-center">
                               {isEditing && !hasLockedEvaluation ? (
-                                <input 
-                                  type="number" 
+                                <input
+                                  type="number"
                                   value={gradeValue === 0 ? "" : gradeValue}
                                   onChange={(e) => handleGradeChange(currentStudentId, colIndex, e)}
                                   onBlur={(e) => validateMin(currentStudentId, colIndex, e)}
                                   min="60"
                                   max="100"
-                                  className="w-20 bg-white border-2 border-[#FFD700] text-gray-900 text-center text-sm rounded-lg focus:ring-2 focus:ring-[#28a745] p-2 outline-none font-bold" 
+                                  className="w-20 bg-white border-2 border-[#FFD700] text-gray-900 text-center text-sm rounded-lg focus:ring-2 focus:ring-[#28a745] p-2 outline-none font-bold"
                                 />
                               ) : (
-                                <span className={`inline-block min-w-[40px] py-1 px-2 rounded-md font-black ${
-                                  gradeValue >= 85 ? "text-[#155724] bg-[#d4edda]" : 
-                                  gradeValue >= 75 ? "text-[#856404] bg-[#fff3cd]" : 
-                                  gradeValue > 0 ? "text-[#721c24] bg-[#f8d7da]" : "text-gray-400 bg-gray-100"
-                                }`}>
+                                <span className={`inline-block min-w-[40px] py-1 px-2 rounded-md font-black ${gradeValue >= 85 ? "text-[#155724] bg-[#d4edda]" :
+                                    gradeValue >= 75 ? "text-[#856404] bg-[#fff3cd]" :
+                                      gradeValue > 0 ? "text-[#721c24] bg-[#f8d7da]" : "text-gray-400 bg-gray-100"
+                                  }`}>
                                   {gradeValue === 0 ? "-" : gradeValue}
                                 </span>
                               )}
@@ -382,22 +374,20 @@ const GradingSheet = () => {
                                 <option value="Failed">Failed</option>
                               </select>
                             ) : (
-                              <span className={`inline-block min-w-[70px] py-1 px-2.5 rounded-md text-xs font-black uppercase tracking-wider ${
-                                currentRemarks === "Passed" ? "text-emerald-700 bg-emerald-100" :
-                                currentRemarks === "Failed" ? "text-red-700 bg-red-100" : "text-gray-400 bg-gray-100 font-normal normal-case"
-                              }`}>
+                              <span className={`inline-block min-w-[70px] py-1 px-2.5 rounded-md text-xs font-black uppercase tracking-wider ${currentRemarks === "Passed" ? "text-emerald-700 bg-emerald-100" :
+                                  currentRemarks === "Failed" ? "text-red-700 bg-red-100" : "text-gray-400 bg-gray-100 font-normal normal-case"
+                                }`}>
                                 {currentRemarks || "-"}
                               </span>
                             )}
                           </td>
 
                           <td className="px-6 py-4 text-center font-bold text-xs uppercase">
-                            <span className={`px-2.5 py-1 rounded-full ${
-                              student.evaluation === "Failed" ? "bg-red-100 text-red-700" :
-                              student.evaluation === "Incomplete" ? "bg-amber-100 text-amber-700" :
-                              student.evaluation === "Pending" ? "bg-blue-100 text-blue-700" :
-                              "text-gray-400"
-                            }`}>
+                            <span className={`px-2.5 py-1 rounded-full ${student.evaluation === "Failed" ? "bg-red-100 text-red-700" :
+                                student.evaluation === "Incomplete" ? "bg-amber-100 text-amber-700" :
+                                  student.evaluation === "Pending" ? "bg-blue-100 text-blue-700" :
+                                    "text-gray-400"
+                              }`}>
                               {student.evaluation || "Pending"}
                             </span>
                           </td>
@@ -420,12 +410,11 @@ const GradingSheet = () => {
               <div className="flex justify-end pt-2">
                 <button
                   onClick={() => setIsConfirmOpen(true)}
-                  disabled={isEditing || !selectedCode || hasLockedEvaluation} 
-                  className={`w-full md:w-auto px-10 py-3.5 rounded-xl font-black text-white tracking-wide shadow-lg transition-all transform active:scale-95 ${
-                    isEditing || !selectedCode || hasLockedEvaluation
+                  disabled={isEditing || !selectedCode || hasLockedEvaluation}
+                  className={`w-full md:w-auto px-10 py-3.5 rounded-xl font-black text-white tracking-wide shadow-lg transition-all transform active:scale-95 ${isEditing || !selectedCode || hasLockedEvaluation
                       ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none"
                       : "bg-[#856404] hover:bg-[#6c5103]"
-                  }`}
+                    }`}
                 >
                   Submit Final Grades
                 </button>
@@ -452,7 +441,7 @@ const GradingSheet = () => {
                 Confirm Final Submission
               </h3>
               <p className="text-gray-600 text-sm mb-6 leading-relaxed">
-                Are you sure you want to finalize grades for <span className="font-bold text-gray-800">{activeClass?.subject_id}</span>? 
+                Are you sure you want to finalize grades for <span className="font-bold text-gray-800">{activeClass?.subject_id}</span>?
                 Once submitted, evaluations will be processed and grades may be locked against future edits.
               </p>
             </div>

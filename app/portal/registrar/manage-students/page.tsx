@@ -9,11 +9,11 @@ export default function ManageStudents() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  
+
   const [selectedSemesterFilter, setSelectedSemesterFilter] = useState<string>("All");
 
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const itemsPerPage = 20; 
+  const itemsPerPage = 20;
 
   const [sortConfig, setSortConfig] = useState<{ key: SortableKeys; direction: 'asc' | 'desc' } | null>({
     key: 'studentId',
@@ -74,7 +74,7 @@ export default function ManageStudents() {
       });
 
       setStudents(merged);
-      setCurrentPage(1); 
+      setCurrentPage(1);
     } catch (err) {
       console.error("Database connecting query error:", err);
       setError("Network error connecting to student collections pipeline.");
@@ -97,7 +97,7 @@ export default function ManageStudents() {
       direction = 'desc';
     }
     setSortConfig({ key, direction });
-    setCurrentPage(1); 
+    setCurrentPage(1);
   };
 
   const getSortIndicator = (key: SortableKeys) => {
@@ -111,12 +111,12 @@ export default function ManageStudents() {
     const sId = student.student_id || "";
     const fullName = `${first} ${last}`.toLowerCase();
 
-    const matchesSearch = 
+    const matchesSearch =
       fullName.includes(searchQuery.toLowerCase()) ||
       sId.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesSemester = 
-      selectedSemesterFilter === "All" || 
+    const matchesSemester =
+      selectedSemesterFilter === "All" ||
       String(student.semester) === selectedSemesterFilter;
 
     return matchesSearch && matchesSemester;
@@ -318,11 +318,10 @@ export default function ManageStudents() {
                   <button
                     key={pageNum}
                     onClick={() => handlePageChange(pageNum)}
-                    className={`w-8 h-8 text-xs font-semibold rounded-lg transition-colors ${
-                      currentPage === pageNum
+                    className={`w-8 h-8 text-xs font-semibold rounded-lg transition-colors ${currentPage === pageNum
                         ? "bg-blue-600 text-white border border-transparent"
                         : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-                    }`}
+                      }`}
                   >
                     {pageNum}
                   </button>

@@ -3,11 +3,10 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-// 1. Form component that consumes useSearchParams()
 function AccessControlForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   const urlControlNumber = searchParams.get("controlNumber") || "";
 
   const [controlNumber, setControlNumber] = useState("");
@@ -47,13 +46,10 @@ function AccessControlForm() {
       if (res.ok && data.success) {
         const confirmedId = data.applicantId;
 
-        // Save to LocalStorage
         localStorage.setItem("enrollment_control_number", confirmedId);
 
-        // Save to Session Cookie
         document.cookie = `enrollment_control_number=${confirmedId}; path=/; max-age=3600; SameSite=Strict`;
 
-        // Redirect
         router.push("/admission/enrollment");
       } else {
         setErrorMsg(data.message || "Verification failed. Access denied.");
@@ -86,7 +82,7 @@ function AccessControlForm() {
           setErrorMsg(null);
         }}
         className="w-full px-4 py-2 border border-gray-300 rounded-md mb-4 outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-60 text-center"
-      /> 
+      />
 
       <p className="text-gray-600 mb-4 text-sm">
         Please enter your date of birth:
@@ -101,7 +97,7 @@ function AccessControlForm() {
           setErrorMsg(null);
         }}
         className="w-full px-4 py-2 border border-gray-300 rounded-md mb-4 outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-60 text-center"
-      /> 
+      />
 
       <button
         type="submit"
@@ -120,7 +116,6 @@ function AccessControlForm() {
   );
 }
 
-// 2. Main export page wrapped in a Suspense boundary
 export default function Page() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 px-4">

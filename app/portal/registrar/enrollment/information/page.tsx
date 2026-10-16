@@ -257,7 +257,6 @@ function StudentDetailsContent() {
   );
 }
 
-// Wrapper export with Suspense boundary to prevent Next.js useSearchParams client bailouts
 export default function AdminStudentDetailsPage() {
   return (
     <Suspense
@@ -272,7 +271,6 @@ export default function AdminStudentDetailsPage() {
   );
 }
 
-// Layout helper subcomponents
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
