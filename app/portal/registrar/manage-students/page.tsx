@@ -39,24 +39,28 @@ export default function ManageStudents() {
         return;
       }
 
-      let studentSectionMap = new Map<string, { section: string; semester: string }>();
+      let studentSectionMap = new Map<string, { section: string | null; semester: string | null; allCompleted: boolean }>();
       if (sectionsRes.ok) {
         const sectionsJson = await sectionsRes.json();
         if (sectionsJson.success && Array.isArray(sectionsJson.data)) {
           sectionsJson.data.forEach((rec: any) => {
-            if (rec.section && rec.semester) {
+            let activeClass = rec;
+            
+            if (rec.class && Array.isArray(rec.class)) {
+              activeClass = rec.class.find((c: any) => c.year === currentYear) || rec.class[rec.class.length - 1];
+            }
+
+            if (activeClass) {
+              const subjects = activeClass.subjects || [];
+              const allCompleted = subjects.length > 0 && subjects.every(
+                (sub: any) => String(sub.status || "").trim().toLowerCase() === "completed"
+              );
+
               studentSectionMap.set(rec.student_id, {
-                section: rec.section,
-                semester: rec.semester
+                section: activeClass.section || null,
+                semester: activeClass.semester || null,
+                allCompleted: rec.allSubjectsCompleted ?? allCompleted,
               });
-            } else if (rec.class && Array.isArray(rec.class)) {
-              const activeClass = rec.class.find((c: any) => c.year === currentYear) || rec.class[0];
-              if (activeClass) {
-                studentSectionMap.set(rec.student_id, {
-                  section: activeClass.section,
-                  semester: activeClass.semester
-                });
-              }
             }
           });
         }
@@ -66,10 +70,15 @@ export default function ManageStudents() {
 
       const merged = studentsJson.data.map((student: any) => {
         const assignment = studentSectionMap.get(student.student_id);
+        
+        // If all subjects in the semester are completed, section & semester become null/unassigned
+        const isAllCompleted = assignment?.allCompleted ?? false;
+
         return {
           ...student,
-          section: assignment ? assignment.section : null,
-          semester: assignment ? assignment.semester : null,
+          section: isAllCompleted ? null : assignment?.section ?? null,
+          semester: isAllCompleted ? null : assignment?.semester ?? null,
+          allSubjectsCompleted: isAllCompleted,
         };
       });
 

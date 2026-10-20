@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 interface StudentData {
-  _id: string; 
+  _id: string;
   student_id: string;
   first_name: string;
   middle_name: string;
@@ -28,7 +28,7 @@ interface StudentData {
 function StudentDetailsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const studentId = searchParams.get("id"); 
+  const studentId = searchParams.get("id");
 
   const [student, setStudent] = useState<StudentData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -68,12 +68,12 @@ function StudentDetailsContent() {
 
       if (res.ok) {
         setStudent((prev) => prev ? { ...prev, status: newStatus } : null);
-        
-        const emailSubject = newStatus === "Enrolled" 
-          ? "Enrollment Update: Application Approved! 🎉" 
+
+        const emailSubject = newStatus === "Enrolled"
+          ? "Enrollment Update: Application Approved! 🎉"
           : "Enrollment Update: Application Status Profile";
 
-        const emailHtmlContent = newStatus === "Enrolled" 
+        const emailHtmlContent = newStatus === "Enrolled"
           ? `
             <div style="font-family: sans-serif; max-width: 600px; color: #333; line-height: 1.6;">
               <h2 style="color: #2575fc;">Congratulations, ${student.first_name}!</h2>
@@ -101,7 +101,7 @@ function StudentDetailsContent() {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              to: student.email_address, 
+              to: student.email_address,
               subject: emailSubject,
               htmlContent: emailHtmlContent,
             }),
@@ -162,11 +162,10 @@ function StudentDetailsContent() {
           </button>
 
           <div className="flex gap-3">
-            <span className={`px-3 py-1 rounded-full text-sm font-semibold flex items-center ${
-              student.status === "Approved" || student.status === "Enrolled" ? "bg-green-100 text-green-800" :
-              student.status === "Rejected" ? "bg-red-100 text-red-800" :
-              "bg-yellow-100 text-yellow-800"
-            }`}>
+            <span className={`px-3 py-1 rounded-full text-sm font-semibold flex items-center ${student.status === "Approved" || student.status === "Enrolled" ? "bg-green-100 text-green-800" :
+                student.status === "Rejected" ? "bg-red-100 text-red-800" :
+                  "bg-yellow-100 text-yellow-800"
+              }`}>
               {student.status || "Pending"}
             </span>
           </div>
@@ -183,7 +182,7 @@ function StudentDetailsContent() {
 
         {/* Main Content Layout Grid */}
         <div className="grid lg:grid-cols-3 gap-6">
-          
+
           <div className="lg:col-span-2 space-y-6">
             <Card title="Personal Information">
               <Grid>
@@ -233,15 +232,15 @@ function StudentDetailsContent() {
 
             <Card title="Application Assessment Review">
               <div className="grid grid-cols-2 gap-3">
-                <button 
-                  disabled={actionLoading || student.status !== "Pending"}
+                <button
+                  disabled={actionLoading || !student.status?.startsWith("Pending")}
                   onClick={() => updateStatus("Enrolled")}
                   className="bg-green-100 text-green-700 py-2.5 px-4 rounded-lg hover:bg-green-200 text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Approve Enrollment
                 </button>
-                <button 
-                  disabled={actionLoading || student.status !== "Pending"}
+                <button
+                  disabled={actionLoading || !student.status?.startsWith("Pending")}
                   onClick={() => updateStatus("Rejected")}
                   className="bg-red-100 text-red-700 py-2.5 px-4 rounded-lg hover:bg-red-200 text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >

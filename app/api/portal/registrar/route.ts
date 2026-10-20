@@ -135,14 +135,11 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // If querying student_section by student_id (targetId), preserve student-specific embedded subject statuses.
-      // Optionally fallback to the global Subject status ONLY if the student-level subject status is undefined/empty.
       if (tableName === "student_section" && record.class && Array.isArray(record.class)) {
         for (const cls of record.class) {
-          if (Array.isArray(cls.subjects)) {
+          if (Array.isArray(cls.subjects) && cls.subjects.length > 0) {
             for (let i = 0; i < cls.subjects.length; i++) {
               const sub = cls.subjects[i];
-              // If student-specific subject status is missing, fallback to main Subject collection
               if (!sub.status) {
                 const subId = sub.subject_id || sub.subject_code;
                 if (subId) {
@@ -156,6 +153,12 @@ export async function GET(request: NextRequest) {
                 }
               }
             }
+
+            cls.allSubjectsCompleted = cls.subjects.every(
+              (s: any) => String(s.status || "").trim().toLowerCase() === "completed"
+            );
+          } else {
+            cls.allSubjectsCompleted = false;
           }
         }
       }
@@ -206,7 +209,6 @@ export async function GET(request: NextRequest) {
           }
         },
         { $unwind: { path: "$studentDetails", preserveNullAndEmptyArrays: false } },
-        // Filter strictly for "Enrolled" status
         {
           $match: {
             "studentDetails.status": "Enrolled"
@@ -238,8 +240,7 @@ export async function GET(request: NextRequest) {
                   $mergeObjects: ["$$sub",
                     {
                       status: {
-                        $ifNull: [
-                          "$$sub.status",
+                        $ifNull: [ "$$sub.status",
                           {
                             $arrayElemAt: [
                               "$liveSubjects.status",
@@ -257,7 +258,18 @@ export async function GET(request: NextRequest) {
         { $sort: { _id: -1 } }
       ], { allowDiskUse: true });
 
-      return NextResponse.json({ success: true, data: matchingRecords }, { status: 200 });
+      const processedRecords = matchingRecords.map((record: any) => {
+        const subjects = record.subjects || [];
+        const allSubjectsCompleted = subjects.length > 0 && subjects.every(
+          (s: any) => String(s.status || "").trim().toLowerCase() === "completed"
+        );
+        return {
+          ...record,
+          allSubjectsCompleted
+        };
+      });
+
+      return NextResponse.json({ success: true, data: processedRecords }, { status: 200 });
     }
 
     const genericRecords = await TargetModel.find(queryConditions)
@@ -291,7 +303,7 @@ export async function POST(request: NextRequest) {
     const { model: TargetModel } = ALLOWED_TABLES[tableName];
     const body = await request.json();
 
-    const { student_id, year, section, semester, subjects, actionType } = body;
+    const { student_id, year, section, semester, subjects } = body;
 
     if (!student_id || !year || !section || !semester) {
       return NextResponse.json(
@@ -315,30 +327,12 @@ export async function POST(request: NextRequest) {
         student_id,
         class: [newClassEntry]
       });
-    } else if (actionType === "PUSH_NEW") {
+    } else {
       savedDocument = await TargetModel.findOneAndUpdate(
         { student_id },
         { $push: { class: newClassEntry } },
         { new: true }
       );
-    } else {
-      const existingClassIndex = existingDoc.class?.findIndex(
-        (c: any) => c.year === year && c.semester === semester
-      );
-
-      if (existingClassIndex !== undefined && existingClassIndex > -1) {
-        savedDocument = await TargetModel.findOneAndUpdate(
-          { student_id, "class.year": year, "class.semester": semester },
-          { $set: { "class.$": newClassEntry } },
-          { new: true }
-        );
-      } else {
-        savedDocument = await TargetModel.findOneAndUpdate(
-          { student_id },
-          { $push: { class: newClassEntry } },
-          { new: true }
-        );
-      }
     }
 
     const cookieStore = await cookies();
@@ -404,68 +398,8 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ success: true, data: updatedDocument }, { status: 200 });
     }
 
-    if (tableName === "student_section") {
-      const { student_id, year, semester, subject_status } = body;
-
-      if (subject_status) {
-        const updatedDocument = await TargetModel.findOneAndUpdate(
-          {
-            student_id,
-            "class.year": year,
-            "class.semester": semester,
-          },
-          {
-            $set: {
-              "class.$.subjects.$[].status": subject_status,
-            },
-          },
-          { new: true }
-        ).lean();
-
-        if (!updatedDocument) {
-          return NextResponse.json(
-            { message: `No class record found to update for Student ID ${student_id}.` },
-            { status: 404 }
-          );
-        }
-
-        return NextResponse.json({ success: true, data: updatedDocument }, { status: 200 });
-      }
-
-      const { section, subjects, targetYear, targetSemester } = body;
-      const matchYear = targetYear || year || new Date().getFullYear().toString();
-      const matchSemester = targetSemester || semester;
-
-      const updatedDocument = await TargetModel.findOneAndUpdate(
-        {
-          student_id,
-          "class.year": matchYear,
-          "class.semester": matchSemester
-        },
-        {
-          $set: {
-            "class.$.section": section,
-            "class.$.semester": semester,
-            "class.$.year": year,
-            "class.$.subjects": subjects || []
-          }
-        },
-        { new: true, runValidators: true }
-      ).lean();
-
-      if (!updatedDocument) {
-        return NextResponse.json(
-          { message: `No class record found to update for Student ID ${student_id}.` },
-          { status: 404 }
-        );
-      }
-
-      return NextResponse.json({ success: true, data: updatedDocument }, { status: 200 });
-    }
-
     if (tableName === "students") {
       const { id, student_id, status } = body;
-
       const query = id ? { _id: id } : { student_id };
 
       const updatedDocument = await TargetModel.findOneAndUpdate(

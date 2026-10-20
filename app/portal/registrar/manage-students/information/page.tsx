@@ -80,6 +80,16 @@ function AdminStudentDetailsContent() {
     return sectionsList;
   }, [sectionsList, student?.track]);
 
+  // Check if the selected year, semester, and section combination already exists for the student
+  const exactClassMatch = useMemo(() => {
+    if (!studentSectionDoc || !studentSectionDoc.class || studentSectionDoc.class.length === 0) {
+      return false;
+    }
+    return studentSectionDoc.class.some(
+      (c) => c.year === currentYear && c.semester === selectedSemester && c.section === selectedSection
+    );
+  }, [studentSectionDoc, currentYear, selectedSemester, selectedSection]);
+
   const latestClass = useMemo<ClassEntry | null>(() => {
     if (!studentSectionDoc || !studentSectionDoc.class || studentSectionDoc.class.length === 0) {
       return null;
@@ -91,13 +101,6 @@ function AdminStudentDetailsContent() {
     });
     return sorted[0];
   }, [studentSectionDoc]);
-
-  const { buttonLabel, actionType } = useMemo(() => {
-    if (!studentSectionDoc || !latestClass) {
-      return { buttonLabel: "Assign Section", actionType: "CREATE" };
-    }
-    return { buttonLabel: "Update Section", actionType: "UPDATE" };
-  }, [studentSectionDoc, latestClass]);
 
   const fetchStudentDetails = async () => {
     if (!studentId) return;
@@ -180,8 +183,8 @@ function AdminStudentDetailsContent() {
     fetchFilteredSubjects();
   }, [selectedSection, selectedSemester, currentYear]);
 
-  const handleAssignOrUpdateSection = async () => {
-    if (!student || !selectedSection || selectedSection === "" || !selectedSemester || subjectsLoading || subjectsList.length === 0) return;
+  const handleAssignSection = async () => {
+    if (!student || !selectedSection || selectedSection === "" || !selectedSemester || subjectsLoading || subjectsList.length === 0 || exactClassMatch) return;
     setActionLoading(true);
 
     try {
@@ -202,35 +205,30 @@ function AdminStudentDetailsContent() {
         section: selectedSection,
         semester: selectedSemester,
         subjects: formattedSubjects,
-        actionType: actionType,
-        targetYear: latestClass?.year,
-        targetSemester: latestClass?.semester,
       };
 
       const res = await fetch("/api/portal/registrar?table=student_section", {
-        method: actionType === "UPDATE" ? "PUT" : "POST",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
       if (res.ok) {
-        alert(
-          actionType === "UPDATE"
-            ? `Successfully updated section to "${selectedSection}" for Semester ${selectedSemester}, Year ${currentYear}!`
-            : `Successfully assigned section "${selectedSection}" with ${formattedSubjects.length} subjects!`
-        );
+        alert(`Successfully assigned section "${selectedSection}" with ${formattedSubjects.length} subjects!`);
         await fetchStudentDetails();
       } else {
         const errorData = await res.json();
         alert(errorData.message || "Failed to process section allocation.");
       }
     } catch (err) {
-      console.error("Section update execution error:", err);
+      console.error("Section assignment execution error:", err);
       alert("A network problem blocked saving section details.");
     } finally {
       setActionLoading(false);
     }
   };
+
+  const isButtonDisabled = actionLoading || !selectedSection || selectedSection === "" || subjectsLoading || subjectsList.length === 0 || exactClassMatch;
 
   if (!studentId) {
     return (
@@ -333,7 +331,7 @@ function AdminStudentDetailsContent() {
           <div className="space-y-6">
 
             {/* Section Assignment Block */}
-            <Card title={buttonLabel === "Update Section" ? "Update Section" : "Assign Section"}>
+            <Card title="Assign Section">
               <div className="space-y-4">
 
                 <div>
@@ -383,15 +381,15 @@ function AdminStudentDetailsContent() {
                 </div>
 
                 <button
-                  disabled={actionLoading || !selectedSection || selectedSection === "" || subjectsLoading || subjectsList.length === 0}
-                  onClick={handleAssignOrUpdateSection}
+                  disabled={isButtonDisabled}
+                  onClick={handleAssignSection}
                   className={`w-full py-2.5 px-4 rounded-lg text-sm font-semibold transition-colors shadow-sm mt-2 ${
-                    actionLoading || !selectedSection || selectedSection === "" || subjectsLoading || subjectsList.length === 0
+                    isButtonDisabled
                       ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                       : "bg-indigo-600 hover:bg-indigo-700 text-white"
                   }`}
                 >
-                  {actionLoading ? "Processing..." : buttonLabel}
+                  {actionLoading ? "Processing..." : "Assign Section"}
                 </button>
 
               </div>

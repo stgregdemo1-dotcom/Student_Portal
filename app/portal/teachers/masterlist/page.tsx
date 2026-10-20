@@ -13,11 +13,22 @@ interface Subject {
   semester: string;
 }
 
+interface StudentRecord {
+  student_id: string;
+  grades: number[];
+  remarks: string;
+}
+
 export default function MasterListPage() {
   const [teacherId, setTeacherId] = useState<string>("");
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState<boolean>(true);
+
+  // Expandable row state & student cache
+  const [expandedSubjectId, setExpandedSubjectId] = useState<string | null>(null);
+  const [studentsCache, setStudentsCache] = useState<Record<string, StudentRecord[]>>({});
+  const [loadingStudents, setLoadingStudents] = useState<Record<string, boolean>>({});
 
   const getCookie = (name: string): string => {
     if (typeof document === "undefined") return "";
@@ -59,6 +70,35 @@ export default function MasterListPage() {
     fetchTeacherSubjects();
   }, [teacherId]);
 
+  // Toggle row expansion and fetch students on demand if not already cached
+  const toggleRowExpansion = async (subject: Subject) => {
+    const targetId = subject.subject_id;
+
+    if (expandedSubjectId === targetId) {
+      setExpandedSubjectId(null); // Collapse if already open
+      return;
+    }
+
+    setExpandedSubjectId(targetId);
+
+    // If students are already fetched for this subject, skip re-fetching
+    if (studentsCache[targetId]) return;
+
+    try {
+      setLoadingStudents((prev) => ({ ...prev, [targetId]: true }));
+      const response = await fetch(`/api/portal/teacher?id=${targetId}&action=students`);
+      const result = await response.json();
+
+      if (result && result.students) {
+        setStudentsCache((prev) => ({ ...prev, [targetId]: result.students }));
+      }
+    } catch (error) {
+      console.error("Failed to fetch enrolled students:", error);
+    } finally {
+      setLoadingStudents((prev) => ({ ...prev, [targetId]: false }));
+    }
+  };
+
   const filteredSubjects = subjects.filter(
     (s) =>
       s.subject_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -84,7 +124,7 @@ export default function MasterListPage() {
           <div>
             <h2 className="text-xl font-bold text-gray-800">Master List</h2>
             <p className="text-xs text-gray-500 hidden md:block">
-              Overview of all active subjects assigned to Teacher: <span className="font-mono font-bold text-blue-600">{teacherId || "N/A"}</span>
+              Overview of all active subjects assigned to Teacher: <span className="font-mono font-bold text-blue-600">{teacherId || "N/A"}</span>. Click a row to view enrolled students.
             </p>
           </div>
 
@@ -108,44 +148,119 @@ export default function MasterListPage() {
               <th className="p-4 font-semibold text-gray-700">Schedule Code</th>
               <th className="p-4 font-semibold text-gray-700">Subject Details</th>
               <th className="p-4 font-semibold text-gray-700">Year & Section</th>
-              {/* REPLACED: Changed from Actions to Room header column */}
               <th className="p-4 font-semibold text-gray-700 text-center">Room</th>
             </tr>
           </thead>
 
           <tbody className="divide-y divide-gray-100">
-            {filteredSubjects.map((item) => (
-              <tr key={item.sched_code} className="hover:bg-gray-50/80 transition">
-                {/* Schedule Code */}
-                <td className="p-4 text-gray-500 font-mono text-sm font-bold">
-                  {item.sched_code}
-                </td>
+            {filteredSubjects.map((item) => {
+              const isExpanded = expandedSubjectId === item.subject_id;
+              const students = studentsCache[item.subject_id] || [];
+              const isLoadingList = loadingStudents[item.subject_id];
 
-                {/* Subject Name Details */}
-                <td className="p-4">
-                  <div className="font-bold text-gray-800 leading-tight">
-                    {item.subject_name}
-                  </div>
-                  <div className="text-[10px] text-gray-400 font-mono mt-0.5 uppercase tracking-wider">
-                    ID: {item.subject_id} | {item.subject_specification || "General"}
-                  </div>
-                </td>
+              return (
+                <React.Fragment key={item.sched_code}>
+                  {/* Main Subject Row */}
+                  <tr
+                    onClick={() => toggleRowExpansion(item)}
+                    className={`cursor-pointer transition ${
+                      isExpanded ? "bg-blue-50/60" : "hover:bg-gray-50/80"
+                    }`}
+                  >
+                    {/* Schedule Code with Expand Icon */}
+                    <td className="p-4 text-gray-700 font-mono text-sm font-bold flex items-center gap-2">
+                      <span className="text-gray-400 text-xs">
+                        {isExpanded ? "▼" : "▶"}
+                      </span>
+                      {item.sched_code}
+                    </td>
 
-                {/* Year and Section Badge Display */}
-                <td className="p-4 text-gray-600">
-                  <span className="px-2.5 py-1 bg-slate-100 rounded-md text-xs font-bold text-slate-600 border border-slate-200 uppercase">
-                    {item.subject_year_section || "TBA"}
-                  </span>
-                </td>
+                    {/* Subject Name Details */}
+                    <td className="p-4">
+                      <div className="font-bold text-gray-800 leading-tight">
+                        {item.subject_name}
+                      </div>
+                      <div className="text-[10px] text-gray-400 font-mono mt-0.5 uppercase tracking-wider">
+                        ID: {item.subject_id} | {item.subject_specification || "General"}
+                      </div>
+                    </td>
 
-                {/* REPLACED: Injected dynamic room identifier string instead of action buttons */}
-                <td className="p-4 text-center">
-                  <span className="text-sm font-mono font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-lg border border-indigo-100 uppercase tracking-wide">
-                    {item.room || "TBA"}
-                  </span>
-                </td>
-              </tr>
-            ))}
+                    {/* Year and Section Badge Display */}
+                    <td className="p-4 text-gray-600">
+                      <span className="px-2.5 py-1 bg-slate-100 rounded-md text-xs font-bold text-slate-600 border border-slate-200 uppercase">
+                        {item.subject_year_section || "TBA"}
+                      </span>
+                    </td>
+
+                    {/* Room Identifier */}
+                    <td className="p-4 text-center">
+                      <span className="text-sm font-mono font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-lg border border-indigo-100 uppercase tracking-wide">
+                        {item.room || "TBA"}
+                      </span>
+                    </td>
+                  </tr>
+
+                  {/* Expanded Enrolled Students Sub-Row */}
+                  {isExpanded && (
+                    <tr>
+                      <td colSpan={4} className="p-4 bg-slate-50/80 border-b border-gray-200">
+                        <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-inner space-y-3">
+                          <div className="flex justify-between items-center border-b pb-2">
+                            <h4 className="text-xs font-bold uppercase tracking-wider text-gray-600">
+                              Enrolled Students Roster for <span className="text-blue-600 font-mono">{item.subject_name}</span>
+                            </h4>
+                            <span className="text-xs font-mono text-gray-500">
+                              Total Enrolled: {isLoadingList ? "Loading..." : students.length}
+                            </span>
+                          </div>
+
+                          {isLoadingList ? (
+                            <div className="py-6 text-center text-xs text-gray-400 animate-pulse">
+                              Fetching enrolled student records...
+                            </div>
+                          ) : students.length > 0 ? (
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-left text-xs border-collapse">
+                                <thead>
+                                  <tr className="bg-gray-100 text-gray-600 uppercase">
+                                    <th className="p-2.5 font-semibold">Student ID</th>
+                                    <th className="p-2.5 font-semibold text-center">Prelim</th>
+                                    <th className="p-2.5 font-semibold text-center">Midterm</th>
+                                    <th className="p-2.5 font-semibold text-center">Pre-Final</th>
+                                    <th className="p-2.5 font-semibold text-center">Final</th>
+                                    <th className="p-2.5 font-semibold">Remarks</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                  {students.map((student, idx) => (
+                                    <tr key={idx} className="hover:bg-gray-50">
+                                      <td className="p-2.5 font-mono font-bold text-gray-700">
+                                        {student.student_id}
+                                      </td>
+                                      <td className="p-2.5 text-center font-mono">{student.grades[0] ?? 0}</td>
+                                      <td className="p-2.5 text-center font-mono">{student.grades[1] ?? 0}</td>
+                                      <td className="p-2.5 text-center font-mono">{student.grades[2] ?? 0}</td>
+                                      <td className="p-2.5 text-center font-mono">{student.grades[3] ?? 0}</td>
+                                      <td className="p-2.5 text-gray-600 italic">
+                                        {student.remarks || "No remarks"}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          ) : (
+                            <div className="py-6 text-center text-xs text-gray-400 italic">
+                              No students are currently enrolled in this subject.
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              );
+            })}
           </tbody>
         </table>
 
