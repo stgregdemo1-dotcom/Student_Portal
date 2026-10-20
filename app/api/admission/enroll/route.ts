@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
 
       const currentOperator = getAuditUser(request);
       const studentFullName = `${studentProfile.first_name} ${studentProfile.last_name}`.trim();
-      const activityDescription = `Enrolled new student: (${studentFullName} - ID: ${studentProfile.student_id})`;
+      const activityDescription = `Enrolled new student: (${studentFullName} ID: ${studentProfile.student_id})`;
 
       await createAuditLog(currentOperator, activityDescription);
 
@@ -134,6 +134,47 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       { success: false, message: error.message || "Internal server data processing error." },
+      { status: 500 }
+    );
+  }
+}
+
+// 🚀 NEW: Added PUT handler to update password in credentials collection without modifying existing POST code
+export async function PUT(request: NextRequest) {
+  try {
+    await connectDB();
+    const body = await request.json();
+    const { username, password } = body;
+
+    if (!username || !password) {
+      return NextResponse.json({ success: false, message: "Missing username or password." }, { status: 400 });
+    }
+
+    if (password.length < 8) {
+      return NextResponse.json({ success: false, message: "Password must be at least 8 characters." }, { status: 400 });
+    }
+
+    const updatedCredential = await Credentials.findOneAndUpdate(
+      { username: String(username).trim() },
+      { $set: { password: String(password) } },
+      { new: true }
+    );
+
+    if (!updatedCredential) {
+      return NextResponse.json({ success: false, message: "Credential record not found for this username." }, { status: 404 });
+    }
+
+    const currentOperator = getAuditUser(request);
+    await createAuditLog(currentOperator, `Reset/Updated password for student username: ${username}`);
+
+    return NextResponse.json(
+      { success: true, message: "Password updated successfully." },
+      { status: 200 }
+    );
+  } catch (error: any) {
+    console.error("Password Update Error:", error);
+    return NextResponse.json(
+      { success: false, message: error.message || "Internal server error." },
       { status: 500 }
     );
   }

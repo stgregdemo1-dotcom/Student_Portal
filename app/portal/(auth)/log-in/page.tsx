@@ -197,12 +197,22 @@ export default function Portal() {
             {isStaff ? "Staff Login" : "Student Login"}
           </button>
         </form>
-        <Link
-          href="/portal/forgot-password"
-          className="inline-block mt-6 text-[#2575fc] text-sm hover:underline"
-        >
-          Forgot Password?
-        </Link>
+
+        {/* Dynamic Reset Password Helper Text vs Link */}
+        <div className="mt-6">
+          {isStaff ? (
+            <span className="text-[#666] text-xs font-medium">
+              Need to reset your password? Ask the Admin to send the link
+            </span>
+          ) : (
+            <Link
+              href="/portal/forgot-password"
+              className="text-[#2575fc] text-sm hover:underline"
+            >
+              Forgot Password?
+            </Link>
+          )}
+        </div>
 
       </div>
     </div>

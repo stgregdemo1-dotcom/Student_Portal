@@ -367,7 +367,13 @@ export async function PUT(request: NextRequest) {
     await connectDB();
 
     const { searchParams } = request.nextUrl;
-    const tableName = searchParams.get("table") || "admissions_applications";
+    const body = await request.json();
+
+    // Determine target table from query params or payload body, defaulting to students if action is status update
+    const tableName =
+      searchParams.get("table") ||
+      body.table ||
+      (body.action === "updateStudentStatus" ? "students" : "admissions_applications");
 
     if (!ALLOWED_TABLES[tableName]) {
       return NextResponse.json(
@@ -377,7 +383,6 @@ export async function PUT(request: NextRequest) {
     }
 
     const { model: TargetModel } = ALLOWED_TABLES[tableName];
-    const body = await request.json();
 
     if (tableName === "admissions_applications") {
       const { applicant_id, status } = body;
@@ -400,7 +405,16 @@ export async function PUT(request: NextRequest) {
 
     if (tableName === "students") {
       const { id, student_id, status } = body;
-      const query = id ? { _id: id } : { student_id };
+      const targetStudentId = student_id || id;
+
+      if (!targetStudentId || !status) {
+        return NextResponse.json(
+          { message: "Missing required parameters: student_id (or id) and status must be specified." },
+          { status: 400 }
+        );
+      }
+
+      const query = id ? { _id: id } : { student_id: targetStudentId };
 
       const updatedDocument = await TargetModel.findOneAndUpdate(
         query,
@@ -415,7 +429,19 @@ export async function PUT(request: NextRequest) {
         );
       }
 
-      return NextResponse.json({ success: true, data: updatedDocument }, { status: 200 });
+      // Record audit log entry
+      try {
+        const cookieStore = await cookies();
+        const auditUser = cookieStore.get("audit_user")?.value || "Unknown System Staff";
+        await createAuditLog(
+          auditUser,
+          `Updated status for student ID: ${targetStudentId} to '${status}'.`
+        );
+      } catch (auditErr) {
+        console.error("Audit log creation error:", auditErr);
+      }
+
+      return NextResponse.json({ success: true, message: `Student status updated to ${status}`, data: updatedDocument }, { status: 200 });
     }
 
     return NextResponse.json({ message: `No update logic defined for table: ${tableName}` }, { status: 400 });
