@@ -108,7 +108,6 @@ export default function ClassSchedule() {
 
     const baseTimelineMinutes = 6 * 60;
     const targetMinutes = (hours * 60) + minutes;
-
     const relativeRow = ((targetMinutes - baseTimelineMinutes) / 60) + 1;
     return Math.max(1, relativeRow);
   };
@@ -116,11 +115,9 @@ export default function ClassSchedule() {
   return (
     <div className="p-6 relative">
       <div className="bg-white p-6 rounded-lg shadow">
-
         {/* Top Header Controls Bar */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
           <h2 className="text-xl font-bold italic text-gray-800">Academic Timetable</h2>
-
           {/* Wrapper flex layout row for both input items */}
           <div className="flex flex-wrap items-center gap-4">
 
@@ -238,7 +235,8 @@ export default function ClassSchedule() {
                           </div>
                         </div>
                         <div className="text-[9px] text-blue-600 font-semibold font-mono mt-1 opacity-90 border-t border-blue-100 pt-1">
-                          {subj.class_time?.start} - {subj.class_time?.end}
+                          {subj.class_time?.start}
+                         {subj.class_time?.end}
                         </div>
                       </div>
                     </div>
@@ -308,7 +306,8 @@ export default function ClassSchedule() {
                     {activeModalSubject.subject_day}
                   </span>
                   <span className="font-mono text-gray-700">
-                    {activeModalSubject.class_time?.start} - {activeModalSubject.class_time?.end}
+                    {activeModalSubject.class_time?.start}
+                   {activeModalSubject.class_time?.end}
                   </span>
                 </div>
               </div>
@@ -322,7 +321,6 @@ export default function ClassSchedule() {
                 Close Window
               </button>
             </div>
-
           </div>
         </div>
       )}

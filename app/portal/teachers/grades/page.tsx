@@ -4,13 +4,13 @@ import React, { useState, useEffect } from 'react';
 interface Schedule {
   sched_code: string;
   subject_id: string;
+  status?: string;
 }
 
 interface RosterStudent {
   student_id: string;
   grades: number[];
   remarks: string;
-  evaluation?: string;
 }
 
 const GradingSheet = () => {
@@ -58,23 +58,23 @@ const GradingSheet = () => {
     fetchConfig();
   }, []);
 
-  useEffect(() => {
+  const fetchSchedules = async () => {
     if (!teacherId) return;
-
-    const fetchSchedules = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(`/api/portal/teacher?table=subjects&id=${teacherId}&action=subjects`);
-        const result = await response.json();
-        if (result && result.subjects) {
-          setSchedules(result.subjects);
-        }
-      } catch (error) {
-        console.error("Error grabbing active rosters:", error);
-      } finally {
-        setLoading(false);
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/portal/teacher?table=subjects&id=${teacherId}&action=subjects`);
+      const result = await response.json();
+      if (result && result.subjects) {
+        setSchedules(result.subjects);
       }
-    };
+    } catch (error) {
+      console.error("Error grabbing active rosters:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchSchedules();
   }, [teacherId]);
 
@@ -116,12 +116,8 @@ const GradingSheet = () => {
     fetchRosterData();
   }, [selectedCode, activeClass]);
 
-  const hasLockedEvaluation = rosterList.some(
-    (student) => student.evaluation && student.evaluation.trim() !== ""
-  );
-
   const updateGradeState = (studentId: string, colIndex: number, val: number | string) => {
-    if (hasLockedEvaluation) return;
+    if (activeClass?.status === "Evaluating") return;
     setGrades(prev => {
       const studentGrades = prev[studentId] || [0, 0, 0, 0, ""];
       const newGrades = [...studentGrades];
@@ -131,7 +127,7 @@ const GradingSheet = () => {
   };
 
   const handleGradeChange = (studentId: string, colIndex: number, e: React.ChangeEvent<HTMLInputElement>) => {
-    if (hasLockedEvaluation) return;
+    if (activeClass?.status === "Evaluating") return;
     const rawValue = e.target.value;
     if (rawValue === "") {
       updateGradeState(studentId, colIndex, 0);
@@ -143,7 +139,7 @@ const GradingSheet = () => {
   };
 
   const validateMin = (studentId: string, colIndex: number, e: React.FocusEvent<HTMLInputElement>) => {
-    if (hasLockedEvaluation) return;
+    if (activeClass?.status === "Evaluating") return;
     const value = parseInt(e.target.value, 10);
     if (value < 60 || isNaN(value)) {
       updateGradeState(studentId, colIndex, 60);
@@ -155,7 +151,7 @@ const GradingSheet = () => {
   };
 
   const executeFinalSubmission = async (isFinal: boolean = true) => {
-    if (!selectedCode || !activeClass || hasLockedEvaluation) return;
+    if (!selectedCode || !activeClass || activeClass.status === "Evaluating") return;
 
     try {
       setSubmitting(true);
@@ -198,6 +194,7 @@ const GradingSheet = () => {
           setSelectedCode("");
           setRosterList([]);
           setGrades({});
+          await fetchSchedules();
         } else {
           const refreshResponse = await fetch(`/api/portal/teacher?table=student_section&id=${activeClass.subject_id}&action=students`);
           const refreshData = await refreshResponse.json();
@@ -216,6 +213,15 @@ const GradingSheet = () => {
       setSubmitting(false);
     }
   };
+
+  const allStudentsHaveRemarks = rosterList.length > 0 && rosterList.every(student => {
+    const studentGradesMap = grades[student.student_id];
+    const remark = studentGradesMap ? (studentGradesMap[4] as string) : "";
+    return remark && remark.trim() !== "";
+  });
+
+  const isSubjectActive = activeClass?.status === "Active";
+  const isEvaluating = activeClass?.status === "Evaluating";
 
   if (loading) {
     return <div className="text-center p-20 font-bold text-[#856404]">Syncing with Portal Records...</div>;
@@ -259,22 +265,24 @@ const GradingSheet = () => {
 
             {activeClass && (
               <button
-                disabled={hasLockedEvaluation}
+                disabled={isEvaluating}
                 onClick={async () => {
+                  if (isEvaluating) return;
                   if (isEditing) {
                     await handleDraftSave();
                   } else {
                     setIsEditing(true);
                   }
                 }}
-                className={`px-6 py-2.5 rounded-lg font-bold text-white transition-all shadow-md transform active:scale-95 ${hasLockedEvaluation
+                className={`px-6 py-2.5 rounded-lg font-bold text-white transition-all shadow-md transform active:scale-95 ${
+                  isEvaluating
                     ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none"
                     : isEditing
                       ? "bg-[#28a745] hover:bg-[#218838]"
                       : "bg-[#FFD700] hover:bg-[#e6c200] text-[#856404]"
-                  }`}
+                }`}
               >
-                {hasLockedEvaluation ? "🔒 Evaluation Completed" : isEditing ? "✓ Save Draft" : "✎ Edit Grades"}
+                {isEvaluating ? "🔒 Under Evaluation" : isEditing ? "✓ Save Draft" : "✎ Edit Grades"}
               </button>
             )}
           </div>
@@ -283,10 +291,10 @@ const GradingSheet = () => {
         {activeClass ? (
           <div className="space-y-6">
 
-            {hasLockedEvaluation && (
-              <div className="bg-red-50 p-4 rounded-xl border border-red-200 text-red-800 text-sm font-semibold flex items-center gap-3 shadow-sm">
+            {isEvaluating && (
+              <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 text-amber-800 text-sm font-semibold flex items-center gap-3 shadow-sm">
                 <span>⚠️</span>
-                <span>Grading updates are locked because one or more students have already been evaluated.</span>
+                <span>This subject is currently under evaluation. Grade updates are locked.</span>
               </div>
             )}
 
@@ -299,7 +307,7 @@ const GradingSheet = () => {
               </div>
               <input
                 type="file"
-                disabled={hasLockedEvaluation}
+                disabled={isEvaluating}
                 className="text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-[#28a745] file:text-white hover:file:bg-[#218838] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
@@ -324,7 +332,6 @@ const GradingSheet = () => {
                       <th className="px-6 py-5 text-center">Pre-Final</th>
                       <th className="px-6 py-5 text-center">Final</th>
                       <th className="px-6 py-5 text-center">Remarks</th>
-                      <th className="px-6 py-5 text-center">Evaluation</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -341,7 +348,7 @@ const GradingSheet = () => {
 
                           {numericGrades.map((gradeValue, colIndex) => (
                             <td key={colIndex} className="px-6 py-4 text-center">
-                              {isEditing && !hasLockedEvaluation ? (
+                              {isEditing && !isEvaluating ? (
                                 <input
                                   type="number"
                                   value={gradeValue === 0 ? "" : gradeValue}
@@ -352,10 +359,11 @@ const GradingSheet = () => {
                                   className="w-20 bg-white border-2 border-[#FFD700] text-gray-900 text-center text-sm rounded-lg focus:ring-2 focus:ring-[#28a745] p-2 outline-none font-bold"
                                 />
                               ) : (
-                                <span className={`inline-block min-w-[40px] py-1 px-2 rounded-md font-black ${gradeValue >= 85 ? "text-[#155724] bg-[#d4edda]" :
-                                    gradeValue >= 75 ? "text-[#856404] bg-[#fff3cd]" :
-                                      gradeValue > 0 ? "text-[#721c24] bg-[#f8d7da]" : "text-gray-400 bg-gray-100"
-                                  }`}>
+                                <span className={`inline-block min-w-[40px] py-1 px-2 rounded-md font-black ${
+                                  gradeValue >= 85 ? "text-[#155724] bg-[#d4edda]" :
+                                  gradeValue >= 75 ? "text-[#856404] bg-[#fff3cd]" :
+                                  gradeValue > 0 ? "text-[#721c24] bg-[#f8d7da]" : "text-gray-400 bg-gray-100"
+                                }`}>
                                   {gradeValue === 0 ? "-" : gradeValue}
                                 </span>
                               )}
@@ -363,7 +371,7 @@ const GradingSheet = () => {
                           ))}
 
                           <td className="px-6 py-4 text-center">
-                            {isEditing && !hasLockedEvaluation ? (
+                            {isEditing && !isEvaluating ? (
                               <select
                                 value={currentRemarks}
                                 onChange={(e) => updateGradeState(currentStudentId, 4, e.target.value)}
@@ -374,22 +382,13 @@ const GradingSheet = () => {
                                 <option value="Failed">Failed</option>
                               </select>
                             ) : (
-                              <span className={`inline-block min-w-[70px] py-1 px-2.5 rounded-md text-xs font-black uppercase tracking-wider ${currentRemarks === "Passed" ? "text-emerald-700 bg-emerald-100" :
-                                  currentRemarks === "Failed" ? "text-red-700 bg-red-100" : "text-gray-400 bg-gray-100 font-normal normal-case"
-                                }`}>
+                              <span className={`inline-block min-w-[70px] py-1 px-2.5 rounded-md text-xs font-black uppercase tracking-wider ${
+                                currentRemarks === "Passed" ? "text-emerald-700 bg-emerald-100" :
+                                currentRemarks === "Failed" ? "text-red-700 bg-red-100" : "text-gray-400 bg-gray-100 font-normal normal-case"
+                              }`}>
                                 {currentRemarks || "-"}
                               </span>
                             )}
-                          </td>
-
-                          <td className="px-6 py-4 text-center font-bold text-xs uppercase">
-                            <span className={`px-2.5 py-1 rounded-full ${student.evaluation === "Failed" ? "bg-red-100 text-red-700" :
-                                student.evaluation === "Incomplete" ? "bg-amber-100 text-amber-700" :
-                                  student.evaluation === "Pending" ? "bg-blue-100 text-blue-700" :
-                                    "text-gray-400"
-                              }`}>
-                              {student.evaluation || "Pending"}
-                            </span>
                           </td>
                         </tr>
                       );
@@ -410,11 +409,12 @@ const GradingSheet = () => {
               <div className="flex justify-end pt-2">
                 <button
                   onClick={() => setIsConfirmOpen(true)}
-                  disabled={isEditing || !selectedCode || hasLockedEvaluation}
-                  className={`w-full md:w-auto px-10 py-3.5 rounded-xl font-black text-white tracking-wide shadow-lg transition-all transform active:scale-95 ${isEditing || !selectedCode || hasLockedEvaluation
+                  disabled={isEditing || !selectedCode || !allStudentsHaveRemarks || !isSubjectActive || isEvaluating}
+                  className={`w-full md:w-auto px-10 py-3.5 rounded-xl font-black text-white tracking-wide shadow-lg transition-all transform active:scale-95 ${
+                    isEditing || !selectedCode || !allStudentsHaveRemarks || !isSubjectActive || isEvaluating
                       ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none"
                       : "bg-[#856404] hover:bg-[#6c5103]"
-                    }`}
+                  }`}
                 >
                   Submit Final Grades
                 </button>
@@ -442,7 +442,6 @@ const GradingSheet = () => {
               </h3>
               <p className="text-gray-600 text-sm mb-6 leading-relaxed">
                 Are you sure you want to finalize grades for <span className="font-bold text-gray-800">{activeClass?.subject_id}</span>?
-                Once submitted, evaluations will be processed and grades may be locked against future edits.
               </p>
             </div>
 

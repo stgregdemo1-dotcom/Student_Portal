@@ -132,6 +132,8 @@ const ConfigSchema = new mongoose.Schema(
     specification:    [{ type: String }],
     admission_button:   { type: Boolean },
     submit_final_grade: { type: Boolean },
+    current_year:     [{ type: String }],
+    current_semester: { type: String},
   },
   { collection: "configuration" }
 );
@@ -145,7 +147,6 @@ const StudentSectionSchema = new mongoose.Schema(
         year:       { type: String },
         semester:   { type: String },
         section:    { type: String },
-        evaluation: { type: String },
         subjects: [
           {
             subject_id: { type: String },

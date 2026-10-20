@@ -9,10 +9,10 @@ const connectDB = async () => {
 };
 
 const ALLOWED_TABLES: Record<string, { model: mongoose.Model<any>; idKey: string }> = {
-  students:                 { model: Student, idKey: "student_id" },
-  admissions_applications:  { model: Admission, idKey: "applicant_id" },
-  student_section:          { model: StudentSection, idKey: "student_id" },
-  subjects:                 { model: Subject, idKey: "subject_code" }, 
+  students: { model: Student, idKey: "student_id" },
+  admissions_applications: { model: Admission, idKey: "applicant_id" },
+  student_section: { model: StudentSection, idKey: "student_id" },
+  subjects: { model: Subject, idKey: "subject_code" },
 };
 
 const EXCLUDED_FIELDS: Record<string, string> = {
@@ -36,6 +36,15 @@ const buildQueryConditions = (searchParams: URLSearchParams) => {
 
   const subjectYearSectionFilter = searchParams.get("subject_year_section");
   if (subjectYearSectionFilter) conditions.subject_year_section = subjectYearSectionFilter;
+
+  const last24HoursFilter = searchParams.get("last24hours");
+  if (last24HoursFilter === "true") {
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const tableName = searchParams.get("table");
+
+    const dateField = tableName === "admissions_applications" ? "submittedAt" : "createdAt";
+    conditions[dateField] = { $gte: twentyFourHoursAgo };
+  }
 
   return conditions;
 };
@@ -122,7 +131,32 @@ export async function GET(request: NextRequest) {
           const activeClass = sectionDoc.class[0];
           record.assigned_section = activeClass.section;
           record.year = activeClass.year;
-          record.semester = activeClass.semester; 
+          record.semester = activeClass.semester;
+        }
+      }
+
+      // If querying student_section by student_id (targetId), preserve student-specific embedded subject statuses.
+      // Optionally fallback to the global Subject status ONLY if the student-level subject status is undefined/empty.
+      if (tableName === "student_section" && record.class && Array.isArray(record.class)) {
+        for (const cls of record.class) {
+          if (Array.isArray(cls.subjects)) {
+            for (let i = 0; i < cls.subjects.length; i++) {
+              const sub = cls.subjects[i];
+              // If student-specific subject status is missing, fallback to main Subject collection
+              if (!sub.status) {
+                const subId = sub.subject_id || sub.subject_code;
+                if (subId) {
+                  const liveSubject = await Subject.findOne({
+                    $or: [{ subject_id: subId }, { subject_code: subId }]
+                  }).select("status").lean();
+
+                  if (liveSubject?.status) {
+                    cls.subjects[i].status = liveSubject.status;
+                  }
+                }
+              }
+            }
+          }
         }
       }
 
@@ -150,58 +184,86 @@ export async function GET(request: NextRequest) {
 
     if (tableName === "student_section") {
       const targetYear = searchParams.get("year") || new Date().getFullYear().toString();
-      
-      const matchStage: Record<string, any> = {
-        "class.year": targetYear
-      };
 
       const sectionFilter = searchParams.get("section");
-      if (sectionFilter) matchStage["class.section"] = sectionFilter;
-
       const semesterFilter = searchParams.get("semester");
-      if (semesterFilter) matchStage["class.semester"] = semesterFilter;
 
       const matchingRecords = await TargetModel.aggregate([
         { $unwind: "$class" },
-        { 
+        {
           $match: {
             "class.year": targetYear,
             ...(sectionFilter ? { "class.section": sectionFilter } : {}),
             ...(semesterFilter ? { "class.semester": semesterFilter } : {})
-          } 
+          }
         },
         {
           $lookup: {
-            from: "students",        
+            from: "students",
             localField: "student_id",
             foreignField: "student_id",
             as: "studentDetails"
           }
         },
-        { $unwind: { path: "$studentDetails", preserveNullAndEmptyArrays: true } },
+        { $unwind: { path: "$studentDetails", preserveNullAndEmptyArrays: false } },
+        // Filter strictly for "Enrolled" status
+        {
+          $match: {
+            "studentDetails.status": "Enrolled"
+          }
+        },
+        {
+          $lookup: {
+            from: "subjects",
+            localField: "class.subjects.subject_id",
+            foreignField: "subject_id",
+            as: "liveSubjects"
+          }
+        },
         {
           $project: {
             _id: "$_id",
             student_id: "$student_id",
             first_name: { $ifNull: ["$studentDetails.first_name", ""] },
             last_name: { $ifNull: ["$studentDetails.last_name", ""] },
+            status: { $ifNull: ["$studentDetails.status", "Enrolled"] },
             year: "$class.year",
             semester: "$class.semester",
             section: "$class.section",
-            evaluation: "$class.evaluation",
-            subjects: "$class.subjects"
+            subjects: {
+              $map: {
+                input: "$class.subjects",
+                as: "sub",
+                in: {
+                  $mergeObjects: ["$$sub",
+                    {
+                      status: {
+                        $ifNull: [
+                          "$$sub.status",
+                          {
+                            $arrayElemAt: [
+                              "$liveSubjects.status",
+                              { $indexOfArray: ["$liveSubjects.subject_id", "$$sub.subject_id"] }]
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            }
           }
         },
         { $sort: { _id: -1 } }
-      ], { allowDiskUse: true }); 
+      ], { allowDiskUse: true });
 
       return NextResponse.json({ success: true, data: matchingRecords }, { status: 200 });
-    }   
-    
+    }
+
     const genericRecords = await TargetModel.find(queryConditions)
       .select(EXCLUDED_FIELDS[tableName] || "")
       .sort({ _id: -1 })
-      .allowDiskUse(true) 
+      .allowDiskUse(true)
       .lean();
 
     return NextResponse.json({ success: true, data: genericRecords }, { status: 200 });
@@ -242,7 +304,6 @@ export async function POST(request: NextRequest) {
       year,
       section,
       semester,
-      evaluation: "", 
       subjects: Array.isArray(subjects) ? subjects : []
     };
 
@@ -344,24 +405,50 @@ export async function PUT(request: NextRequest) {
     }
 
     if (tableName === "student_section") {
-      const { student_id, section, semester, year, subjects, targetYear, targetSemester } = body;
-      
+      const { student_id, year, semester, subject_status } = body;
+
+      if (subject_status) {
+        const updatedDocument = await TargetModel.findOneAndUpdate(
+          {
+            student_id,
+            "class.year": year,
+            "class.semester": semester,
+          },
+          {
+            $set: {
+              "class.$.subjects.$[].status": subject_status,
+            },
+          },
+          { new: true }
+        ).lean();
+
+        if (!updatedDocument) {
+          return NextResponse.json(
+            { message: `No class record found to update for Student ID ${student_id}.` },
+            { status: 404 }
+          );
+        }
+
+        return NextResponse.json({ success: true, data: updatedDocument }, { status: 200 });
+      }
+
+      const { section, subjects, targetYear, targetSemester } = body;
       const matchYear = targetYear || year || new Date().getFullYear().toString();
       const matchSemester = targetSemester || semester;
 
       const updatedDocument = await TargetModel.findOneAndUpdate(
-        { 
-          student_id, 
+        {
+          student_id,
           "class.year": matchYear,
           "class.semester": matchSemester
         },
-        { 
+        {
           $set: {
             "class.$.section": section,
             "class.$.semester": semester,
             "class.$.year": year,
             "class.$.subjects": subjects || []
-          } 
+          }
         },
         { new: true, runValidators: true }
       ).lean();
@@ -396,7 +483,7 @@ export async function PUT(request: NextRequest) {
 
       return NextResponse.json({ success: true, data: updatedDocument }, { status: 200 });
     }
-    
+
     return NextResponse.json({ message: `No update logic defined for table: ${tableName}` }, { status: 400 });
 
   } catch (error: any) {

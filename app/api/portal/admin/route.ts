@@ -7,7 +7,7 @@ import { Teacher }      from "@/models/Schema";
 import { Subject }      from "@/models/Schema";
 import { Student }      from "@/models/Schema";
 import { Config }       from "@/models/Schema";
-import { Events }        from "@/models/Schema";
+import { Events }       from "@/models/Schema";
 
 declare global {
   var _mongooseConnPromise: Promise<typeof mongoose> | undefined;
@@ -84,6 +84,8 @@ export async function GET(request: NextRequest) {
           employee_role: ["Teacher", "Department Head", "Coordinator", "Network Instructor"],
           prefix: ["Mr."],
           specification: ["Core"],
+          current_year: ["2025-2026"],
+          current_semester: "1",
           admission_button: false,
           submit_final_grade: false,
         });
@@ -148,8 +150,12 @@ export async function POST(request: NextRequest) {
         "employee_role", 
         "prefix", 
         "specification",
+        "current_year",
+        "current_semester",
         "admission_button",
-        "submit_final_grade"
+        "submit_final_grade",
+        "current_year",
+        "current_semester"
       ];
 
       if (!validFields.includes(field)) {
@@ -161,8 +167,8 @@ export async function POST(request: NextRequest) {
       if (action === "set") {
         const isBooleanField = field === "admission_button" || field === "submit_final_grade";
         
-        // Coerce strictly to boolean
-        const targetValue = isBooleanField ? Boolean(value) : value;
+        // Coerce strictly to boolean for toggle fields, assign scalar string values ("1" or "2") otherwise
+        const targetValue = isBooleanField ? Boolean(value) : String(value);
         
         updateQuery = { $set: { [field]: targetValue } };
       } else if (action === "add" || action === "push") {
@@ -195,7 +201,6 @@ export async function POST(request: NextRequest) {
       const idPrefix = `TCH-${currentYear}-`;
       const structuralId = await generateSequentialId(TargetModel, "teacher_id", idPrefix);
 
-      // 🚀 Auto-generate a unique 'id' string (security code) that does not exist in the database
       let securityCode = "";
       let isUnique = false;
       let attempts = 0;
@@ -204,7 +209,6 @@ export async function POST(request: NextRequest) {
         attempts++;
         const candidateCode = crypto.randomBytes(12).toString("hex");
         
-        // Check if candidateCode already exists in 'id' field
         const existingDoc = await TargetModel.findOne({ id: candidateCode }).lean();
         if (!existingDoc) {
           securityCode = candidateCode;
@@ -219,7 +223,7 @@ export async function POST(request: NextRequest) {
       bodyData = {
         ...bodyData,
         teacher_id: structuralId,
-        id: securityCode, // Attach unique security code to 'id'
+        id: securityCode, 
       };
     }
 

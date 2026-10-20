@@ -120,6 +120,7 @@ export default function GradesPage() {
               <th className="px-4 py-3 text-center">Final</th>
               <th className="px-4 py-3 text-center text-indigo-700 bg-indigo-50/50">Average</th>
               <th className="px-6 py-3 text-center">Remarks</th>
+              <th className="px-6 py-3 text-center">Status</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 text-sm">
@@ -138,9 +139,18 @@ export default function GradesPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-center">
-                    <span className={`px-2.5 py-0.5 text-xs font-bold rounded-full ${g.status === "Passed" ? "bg-green-100 text-green-800" :
-                      g.status === "Failed" ? "bg-red-100 text-red-800" : "bg-yellow-100 text-yellow-800"
-                      }`}>
+                    <span className={`px-2.5 py-0.5 text-xs font-bold rounded-full ${
+                      g.remarks === "Passed" ? "bg-green-100 text-green-800" :
+                      g.remarks === "Failed" ? "bg-red-100 text-red-800" : "bg-yellow-100 text-yellow-800"
+                    }`}>
+                      {g.remarks}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <span className={`px-2.5 py-0.5 text-xs font-bold rounded-full ${
+                      g.status === "Active" ? "bg-green-100 text-green-800" :
+                      g.status === "Evaluating" ? "bg-amber-100 text-amber-800" : "bg-gray-100 text-gray-800"
+                    }`}>
                       {g.status}
                     </span>
                   </td>
@@ -148,7 +158,7 @@ export default function GradesPage() {
               ))
             ) : (
               <tr>
-                <td colSpan={8} className="px-6 py-8 text-center text-sm text-gray-400 italic">
+                <td colSpan={9} className="px-6 py-8 text-center text-sm text-gray-400 italic">
                   No registered subjects found for the selected matrix criteria.
                 </td>
               </tr>

@@ -2,11 +2,20 @@
 
 import { useEffect, useState } from "react";
 
+interface SubjectEvaluation {
+  course: string;
+  remarks: string;
+  status: string;
+}
+
 interface EvaluationData {
   status: "Pending" | "Approved" | "Rejected" | string;
+  studentStatus?: string;
   year: string;
   semester: string;
   remarks: string;
+  subjects?: SubjectEvaluation[];
+  allPassedAndCompleted?: boolean;
 }
 
 export default function Page() {
@@ -39,7 +48,8 @@ export default function Page() {
   const handleEnrollment = async () => {
     if (!evaluation) return;
 
-    if (evaluation.status !== "Approved") return;
+    const isEligible = (evaluation.allPassedAndCompleted || evaluation.status === "Approved") && evaluation.studentStatus === "Enrolled";
+    if (!isEligible) return;
 
     setEnrolling(true);
     try {
@@ -51,8 +61,8 @@ export default function Page() {
       const result = await res.json();
       if (result.success) {
         alert("Successfully submitted enrollment for 2nd Semester!");
-
-        setEvaluation(prev => prev ? { ...prev, status: "Pending" } : null);
+        // Update both to reflect pending state in UI
+        setEvaluation(prev => prev ? { ...prev, status: "Pending - 2nd Sem", studentStatus: "Pending - 2nd Sem" } : null);
       } else {
         alert(result.message || "Enrollment failed.");
       }
@@ -67,6 +77,8 @@ export default function Page() {
     switch (status) {
       case "Approved":
         return "bg-green-50 text-green-700 border-green-200";
+      case "Pending - 2nd Sem":
+        return "bg-blue-50 text-blue-700 border-blue-200";
       case "Rejected":
         return "bg-red-50 text-red-700 border-red-200";
       case "Pending":
@@ -76,6 +88,8 @@ export default function Page() {
   };
 
   const isFirstSemester = evaluation?.semester === "1" || evaluation?.semester?.toLowerCase().includes("1st");
+  const isStudentEnrolled = evaluation?.studentStatus === "Enrolled";
+  const canEnroll = Boolean((evaluation?.allPassedAndCompleted || evaluation?.status === "Approved") && isStudentEnrolled);
 
   return (
     <main className="min-h-screen flex items-center justify-center p-5 bg-gray-50">
@@ -117,10 +131,44 @@ export default function Page() {
               </div>
 
               <div className="border-t border-gray-100 pt-5">
-                <h3 className="text-sm font-semibold text-gray-900">Evaluation Remarks</h3>
-                <p className="text-sm text-gray-600 mt-2 bg-gray-50/50 p-4 rounded-xl border border-dashed border-gray-200 italic">
+                <h3 className="text-sm font-semibold text-gray-900">Evaluation Remarks & Subjects Summary</h3>
+                <p className="text-sm text-gray-600 mt-2 bg-gray-50/50 p-4 rounded-xl border border-dashed border-gray-200 italic mb-4">
                   "{evaluation.remarks}"
                 </p>
+
+                {/* Subject Breakdown Table */}
+                {evaluation.subjects && evaluation.subjects.length > 0 ? (
+                  <div className="overflow-x-auto border border-gray-200 rounded-xl">
+                    <table className="w-full text-left border-collapse text-sm">
+                      <thead>
+                        <tr className="bg-gray-100 text-gray-700 font-semibold border-b border-gray-200">
+                          <th className="p-3">Course / Subject</th>
+                          <th className="p-3">Status</th>
+                          <th className="p-3">Remarks</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {evaluation.subjects.map((sub, index) => (
+                          <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+                            <td className="p-3 text-gray-800 font-medium">{sub.course}</td>
+                            <td className="p-3">
+                              <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${sub.status === "Completed" ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
+                                {sub.status}
+                              </span>
+                            </td>
+                            <td className="p-3">
+                              <span className={`font-medium ${sub.remarks.toLowerCase() === "passed" ? "text-green-600" : sub.remarks.toLowerCase() === "failed" ? "text-red-600" : "text-gray-500"}`}>
+                                {sub.remarks}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 italic">No subjects found for evaluation.</p>
+                )}
               </div>
 
               {/* Dynamic Action Button Zone */}
@@ -128,21 +176,22 @@ export default function Page() {
                 <div className="border-t border-gray-100 pt-5 flex flex-col items-end">
                   <button
                     onClick={handleEnrollment}
-                    disabled={enrolling || evaluation.status !== "Approved"}
+                    disabled={enrolling || !canEnroll}
                     className={`w-full sm:w-auto px-6 py-2.5 rounded-xl font-medium text-sm transition shadow-sm border
-                      ${evaluation.status === "Approved"
+                      ${canEnroll
                         ? "bg-indigo-600 hover:bg-indigo-700 text-white border-transparent cursor-pointer"
                         : "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed pointer-events-none"}`}
                   >
                     {enrolling ? "Processing..." : `Enroll to 2nd Sem (A.Y. ${evaluation.year})`}
                   </button>
 
-                  {/* Warning message only shows if NOT approved */}
-                  {evaluation.status !== "Approved" && (
+                  {/* Warning / Status messages */}
+                  {!canEnroll && isStudentEnrolled && (
                     <p className="text-xs text-amber-600 mt-2 italic">
-                      * Next semester enrollment activates once your status changes from <strong>{evaluation.status}</strong> to <strong>Approved</strong>.
+                      * Next semester enrollment activates once all subjects are marked as <strong>Completed</strong> and <strong>Passed</strong>.
                     </p>
                   )}
+                  
                 </div>
               )}
             </div>

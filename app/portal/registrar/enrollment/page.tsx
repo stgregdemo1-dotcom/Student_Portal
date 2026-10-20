@@ -25,10 +25,18 @@ export default function EnrollmentPage() {
   const fetchEnrollments = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/portal/registrar?table=students&status=Pending");
+      // Fetch all students to ensure variants like "Pending - 2nd Sem" or "Pending - 2nd yr" are not filtered out by the backend
+      const res = await fetch("/api/portal/registrar?table=students");
       if (res.ok) {
         const jsonResponse = await res.json();
-        setEnrollments(Array.isArray(jsonResponse) ? jsonResponse : jsonResponse.data || []);
+        const rawData = Array.isArray(jsonResponse) ? jsonResponse : jsonResponse.data || [];
+        
+        // Filter records where status contains "Pending" (case-insensitive)
+        const pendingRecords = rawData.filter((record: EnrollmentRequest) => 
+          String(record.status || "").toLowerCase().includes("pending")
+        );
+
+        setEnrollments(pendingRecords);
         setCurrentPage(1); 
       }
     } catch (err) {
@@ -87,14 +95,13 @@ export default function EnrollmentPage() {
   };
 
   const getStatusStyle = (status = "Pending") => {
-    switch (status.toLowerCase()) {
-      case "approved":
-      case "enrolled":
-        return "bg-green-100 text-green-800";
-      case "rejected":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-yellow-100 text-yellow-800";
+    const lowerStatus = status.toLowerCase();
+    if (lowerStatus.includes("approved") || lowerStatus.includes("enrolled")) {
+      return "bg-green-100 text-green-800";
+    } else if (lowerStatus.includes("rejected")) {
+      return "bg-red-100 text-red-800";
+    } else {
+      return "bg-yellow-100 text-yellow-800";
     }
   };
 

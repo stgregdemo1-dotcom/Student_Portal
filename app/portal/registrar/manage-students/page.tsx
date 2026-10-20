@@ -28,7 +28,7 @@ export default function ManageStudents() {
       setError(null);
 
       const [studentsRes, sectionsRes] = await Promise.all([
-        fetch("/api/portal/registrar?table=students&status=Enrolled"),
+        fetch("/api/portal/registrar?table=students"),
         fetch(`/api/portal/registrar?table=student_section&year=${currentYear}`),
       ]);
 
@@ -119,7 +119,10 @@ export default function ManageStudents() {
       selectedSemesterFilter === "All" ||
       String(student.semester) === selectedSemesterFilter;
 
-    return matchesSearch && matchesSemester;
+    // Hardcoded to only include Enrolled students
+    const matchesStatus = String(student.status || "").toLowerCase() === "enrolled";
+
+    return matchesSearch && matchesSemester && matchesStatus;
   });
 
   const sortedStudents = [...filteredStudents].sort((a, b) => {
@@ -194,7 +197,8 @@ export default function ManageStudents() {
         </div>
 
         {/* ACTION CONTAINER */}
-        <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+        <div className="flex items-center gap-3 w-full md:w-auto justify-end flex-wrap">
+          {/* Semester Filter Dropdown */}
           <select
             id="semester-filter-dropdown"
             value={selectedSemesterFilter}
@@ -260,7 +264,7 @@ export default function ManageStudents() {
                 </td>
                 <td className="py-4">
                   <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                    {student.status}
+                    {student.status || "Enrolled"}
                   </span>
                 </td>
                 <td className="py-4 text-sm font-semibold text-gray-800">
@@ -285,7 +289,7 @@ export default function ManageStudents() {
         {/* No Results Empty State */}
         {totalItems === 0 && (
           <div className="text-center py-10">
-            <p className="text-gray-500 italic">No enrolled students found matching the filter criteria.</p>
+            <p className="text-gray-500 italic">No enrolled students found matching the criteria.</p>
           </div>
         )}
 

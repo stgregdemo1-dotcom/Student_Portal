@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
-import { Student, StudentSection, Subject, Events } from "@/models/Schema"; 
+import { Student, StudentSection, Subject, Teacher, Events } from "@/models/Schema"; 
 import { cookies } from "next/headers";
 
 const connectDB = async () => {
@@ -105,11 +105,21 @@ export async function GET(request: NextRequest) {
 
     if (searchParams.get("getEvaluationStatus") === "true") {
       const studentRecord = await StudentSection.findOne({ student_id: studentId }).lean();
+      const studentProfile = await Student.findOne({ student_id: studentId }).lean();
+      const studentStatus = studentProfile?.status || "Enrolled";
 
       if (!studentRecord || !studentRecord.class || studentRecord.class.length === 0) {
         return NextResponse.json({ 
           success: true, 
-          evaluation: { status: "Pending", year: "—", semester: "—", remarks: "No record found" } 
+          evaluation: { 
+            status: "Pending", 
+            studentStatus: studentStatus,
+            year: "—", 
+            semester: "—", 
+            remarks: "No record found", 
+            subjects: [], 
+            allPassedAndCompleted: false 
+          } 
         }, { status: 200 });
       }
 
@@ -117,13 +127,59 @@ export async function GET(request: NextRequest) {
         (cls: any) => cls.evaluation && cls.evaluation.toLowerCase() !== "approved"
       ) || studentRecord.class[studentRecord.class.length - 1];
 
+      // Fetch master subjects for name mapping
+      const subjectIds = (unapprovedClass?.subjects || []).map((s: any) => s.subject_id).filter(Boolean);
+      const masterSubjects = await Subject.find({ subject_id: { $in: subjectIds } }).lean();
+      const masterSubjectMap = new Map();
+      masterSubjects.forEach((sub: any) => masterSubjectMap.set(sub.subject_id, sub));
+
+      let allPassedAndCompleted = true;
+      const evaluatedSubjects = (unapprovedClass?.subjects || []).map((sub: any) => {
+        const masterDetails = masterSubjectMap.get(sub.subject_id);
+        const courseName = masterDetails?.subject_name || sub.subject_id || "Unknown Subject";
+
+        const p = sub.grade_1 !== undefined && sub.grade_1 !== "" ? Number(sub.grade_1) : NaN;
+        const m = sub.grade_2 !== undefined && sub.grade_2 !== "" ? Number(sub.grade_2) : NaN;
+        const pf = sub.grade_3 !== undefined && sub.grade_3 !== "" ? Number(sub.grade_3) : NaN;
+        const f = sub.grade_4 !== undefined && sub.grade_4 !== "" ? Number(sub.grade_4) : NaN;
+
+        let calcRemarks = sub.remarks || "Pending";
+        if (!isNaN(p) && !isNaN(m) && !isNaN(pf) && !isNaN(f)) {
+          const avg = Math.round((p + m + pf + f) / 4);
+          if (!sub.remarks) {
+            calcRemarks = avg >= 75 ? "Passed" : "Failed";
+          }
+        } else {
+          calcRemarks = "Pending";
+        }
+
+        const isCompleted = sub.status && sub.status.toLowerCase() === "completed";
+        const subStatus = isCompleted ? "Completed" : "Pending";
+        const isPassed = calcRemarks.toLowerCase() === "passed";
+
+        if (!isPassed || !isCompleted) {
+          allPassedAndCompleted = false;
+        }
+
+        return {
+          course: courseName,
+          remarks: calcRemarks,
+          status: subStatus
+        };
+      });
+
+      const currentStatus = allPassedAndCompleted ? "Approved" : (unapprovedClass?.evaluation || "Pending");
+
       return NextResponse.json({
         success: true,
         evaluation: {
-          status: unapprovedClass?.evaluation || "Pending", 
+          status: currentStatus, 
+          studentStatus: studentStatus,
           year: unapprovedClass?.year || "—",
           semester: unapprovedClass?.semester || "—",
-          remarks: unapprovedClass?.evaluation_remarks || "Awaiting final review."
+          remarks: unapprovedClass?.evaluation_remarks || "Awaiting final review.",
+          subjects: evaluatedSubjects,
+          allPassedAndCompleted: allPassedAndCompleted
         }
       }, { status: 200 });
     }
@@ -203,6 +259,11 @@ export async function GET(request: NextRequest) {
     const masterSubjectMap = new Map();
     masterSubjects.forEach((sub: any) => masterSubjectMap.set(sub.subject_id, sub));
 
+    const teacherIds = Array.from(new Set(masterSubjects.map((s: any) => s.teacher_id).filter(Boolean)));
+    const teachersList = await Teacher.find({ teacher_id: { $in: teacherIds } }).lean();
+    const teacherMap = new Map();
+    teachersList.forEach((t: any) => teacherMap.set(t.teacher_id, t));
+
     let totalScore = 0;
     let gradedSubjectsCount = 0;
 
@@ -213,27 +274,43 @@ export async function GET(request: NextRequest) {
       const f = sub.grade_4 !== undefined && sub.grade_4 !== "" ? Number(sub.grade_4) : NaN;
 
       let calculatedFinal = "—";
-      let calculatedStatus = sub.status || "Pending";
+      let calculatedRemarks = sub.remarks || "Pending";
 
       if (!isNaN(p) && !isNaN(m) && !isNaN(pf) && !isNaN(f)) {
         const avg = Math.round((p + m + pf + f) / 4);
         calculatedFinal = String(avg);
-        calculatedStatus = avg >= 75 ? "Passed" : "Failed";
+        if (!sub.remarks) {
+          calculatedRemarks = avg >= 75 ? "Passed" : "Failed";
+        }
         totalScore += avg;
         gradedSubjectsCount++;
       }
 
       const masterDetails = masterSubjectMap.get(sub.subject_id);
+      const teacherDetails = masterDetails ? teacherMap.get(masterDetails.teacher_id) : null;
+
+      let teacherFullName = "Not Assigned";
+      if (teacherDetails) {
+        const prefix = teacherDetails.prefix ? `${teacherDetails.prefix} ` : "";
+        const firstName = teacherDetails.first_name || teacherDetails.firstName || "";
+        const lastName = teacherDetails.last_name || teacherDetails.lastName || "";
+        teacherFullName = `${prefix}${firstName} ${lastName}`.trim();
+        if (!teacherFullName) teacherFullName = masterDetails.teacher_id;
+      }
+
+      // Strictly display "Completed" or "Pending"
+      const subjectStatus = sub.status && sub.status.toLowerCase() === "completed" ? "Completed" : "Pending";
 
       return {
         course: masterDetails?.subject_name || sub.subject_id || "Unknown Subject",
-        Teacher: sub.teacher_id || "Not Assigned",
+        Teacher: teacherFullName,
         prelim: sub.grade_1 || "—",
         midterm: sub.grade_2 || "—",
         prefinal: sub.grade_3 || "—",
         finals: sub.grade_4 || "—",
         grade: calculatedFinal,
-        status: calculatedStatus
+        remarks: calculatedRemarks,
+        status: subjectStatus
       };
     });
 

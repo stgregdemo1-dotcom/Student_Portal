@@ -38,20 +38,6 @@ async function createAuditLog(username: string, activityDescription: string) {
   await logEntry.save();
 }
 
-const calculateEvaluationStatus = (gradeArray: any[]): string => {
-  const [prelim, midterm, preFinal, final, remarks] = gradeArray;
-  const numericGrades = [Number(prelim), Number(midterm), Number(preFinal), Number(final)];
-
-  if (remarks === "Passed") return "Pending"; 
-  if (remarks === "Failed") return "Failed";
-
-  const hasIncompleteGrades = numericGrades.some(grade => grade === 0 || isNaN(grade));
-  if (hasIncompleteGrades) return "Incomplete";
-
-  const hasFailedGrade = numericGrades.some(grade => grade < 75);
-  return hasFailedGrade ? "Failed" : "Pending"; 
-};
-
 export async function GET(request: NextRequest) { 
   try {
     await connectDB();
@@ -93,7 +79,6 @@ export async function GET(request: NextRequest) {
 
         const roster = enrolledStudents.map((doc: any) => {
           let foundSubject: any = null;
-          let currentEvaluation = "";
 
           if (Array.isArray(doc.class)) {
             for (const cls of doc.class) {
@@ -101,7 +86,6 @@ export async function GET(request: NextRequest) {
                 const sub = cls.subjects.find((s: any) => s.subject_id === subjectId);
                 if (sub) {
                   foundSubject = sub;
-                  currentEvaluation = cls.evaluation || "";
                   break;
                 }
               }
@@ -116,8 +100,7 @@ export async function GET(request: NextRequest) {
               parseInt(foundSubject?.grade_3, 10) || 0, // Pre-Final
               parseInt(foundSubject?.grade_4, 10) || 0, // Final
             ],
-            remarks: foundSubject?.remarks || "",
-            evaluation: currentEvaluation
+            remarks: foundSubject?.remarks || ""
           };
         });
 
@@ -212,9 +195,9 @@ export async function PUT(request: NextRequest) {
         "class.$[cElem].subjects.$[sElem].remarks": remarks != null ? String(remarks) : "",
       };
 
+      // Set the status of the specific subject inside student_section to "Evaluating" when finalizing
       if (!isDraft) {
-        const computedEvaluation = calculateEvaluationStatus(gradeArray);
-        updateFields["class.$[cElem].evaluation"] = computedEvaluation;
+        updateFields["class.$[cElem].subjects.$[sElem].status"] = "Evaluating";
       }
 
       return StudentSection.updateOne(
@@ -236,7 +219,15 @@ export async function PUT(request: NextRequest) {
 
     await Promise.all(updatePromises);
 
-    const actionLabel = isDraft ? "saved grade draft" : "submitted final grades";
+    // Continue updating status in the master Subject collection as well
+    if (!isDraft) {
+      await Subject.updateOne(
+        { subject_id: String(scheduleCode).trim() },
+        { $set: { status: "Evaluating" } }
+      );
+    }
+
+    const actionLabel = isDraft ? "saved grade draft" : "submitted final grades (status: Evaluating)";
     await createAuditLog(currentOperator, `Teacher successfully ${actionLabel} for schedule code: ${scheduleCode}`);
 
     return NextResponse.json(
@@ -244,7 +235,7 @@ export async function PUT(request: NextRequest) {
         success: true, 
         message: isDraft 
           ? "Draft saved successfully!" 
-          : "Grades, Remarks, and Student Evaluation updated successfully!" 
+          : "Final grades submitted and subject status updated to Evaluating!" 
       }, 
       { status: 200 }
     );

@@ -24,6 +24,12 @@ export default function EnrollmentPage() {
   const [requests, setRequests] = useState<StudentSectionRecord[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Filter States
+  const [selectedYear, setSelectedYear] = useState<string>("All");
+  const [selectedSemester, setSelectedSemester] = useState<string>("All");
+  const [selectedSection, setSelectedSection] = useState<string>("All");
+
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 20;
 
@@ -57,11 +63,28 @@ export default function EnrollmentPage() {
     fetchEvaluationRequests();
   }, [fetchEvaluationRequests]);
 
-  const totalItems = requests.length;
+  // Extract unique options for filter dropdowns from data
+  const uniqueYears = Array.from(new Set(requests.map((r) => r.year))).filter(Boolean).sort();
+  const uniqueSemesters = Array.from(new Set(requests.map((r) => r.semester))).filter(Boolean).sort();
+  const uniqueSections = Array.from(new Set(requests.map((r) => r.section))).filter(Boolean).sort();
+
+  // Filter logic based on selected dropdowns
+  const filteredRequests = requests.filter((record) => {
+    const matchesYear = selectedYear === "All" || record.year === selectedYear;
+    const matchesSemester = selectedSemester === "All" || record.semester === selectedSemester;
+    const matchesSection = selectedSection === "All" || record.section === selectedSection;
+    return matchesYear && matchesSemester && matchesSection;
+  });
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedYear, selectedSemester, selectedSection]);
+
+  const totalItems = filteredRequests.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const paginatedRequests = requests.slice(startIndex, endIndex);
+  const paginatedRequests = filteredRequests.slice(startIndex, endIndex);
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -72,19 +95,74 @@ export default function EnrollmentPage() {
   return (
     <div className="p-6">
       <div className="bg-white rounded-xl shadow overflow-hidden">
-        <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+        
+        {/* Top Header & Filter Controls Bar */}
+        <div className="p-4 border-b border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <h3 className="text-lg font-semibold text-gray-800">Students Evaluation Requests</h3>
-          <button
-            onClick={fetchEvaluationRequests}
-            disabled={loading}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-opacity"
-          >
-            {loading ? "Refreshing..." : "Refresh"}
-          </button>
+          
+          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
+            
+            {/* Year Filter Dropdown */}
+            <div className="flex items-center gap-1.5">
+              <label htmlFor="year-filter" className="text-xs font-medium text-gray-500">Year:</label>
+              <select
+                id="year-filter"
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(e.target.value)}
+                className="border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs font-medium bg-white outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+              >
+                <option value="All">All Years</option>
+                {uniqueYears.map((yr) => (
+                  <option key={yr} value={yr}>{yr}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Semester Filter Dropdown */}
+            <div className="flex items-center gap-1.5">
+              <label htmlFor="semester-filter" className="text-xs font-medium text-gray-500">Semester:</label>
+              <select
+                id="semester-filter"
+                value={selectedSemester}
+                onChange={(e) => setSelectedSemester(e.target.value)}
+                className="border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs font-medium bg-white outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+              >
+                <option value="All">All Semesters</option>
+                {uniqueSemesters.map((sem) => (
+                  <option key={sem} value={sem}>{sem}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Section Filter Dropdown */}
+            <div className="flex items-center gap-1.5">
+              <label htmlFor="section-filter" className="text-xs font-medium text-gray-500">Section:</label>
+              <select
+                id="section-filter"
+                value={selectedSection}
+                onChange={(e) => setSelectedSection(e.target.value)}
+                className="border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs font-medium bg-white outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+              >
+                <option value="All">All Sections</option>
+                {uniqueSections.map((sec) => (
+                  <option key={sec} value={sec}>{sec}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Refresh Button */}
+            <button
+              onClick={fetchEvaluationRequests}
+              disabled={loading}
+              className="px-4 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-opacity"
+            >
+              {loading ? "Refreshing..." : "Refresh"}
+            </button>
+          </div>
         </div>
 
         {error && (
-          <div className="p-4 bg-red-50 text-red-600 border-b border-red-100">
+          <div className="p-4 bg-red-50 text-red-600 border-b border-red-100 text-sm">
             {error}
           </div>
         )}
@@ -108,14 +186,13 @@ export default function EnrollmentPage() {
                     Loading pending evaluation requests...
                   </td>
                 </tr>
-              ) : requests.length === 0 ? (
+              ) : paginatedRequests.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-10 text-center text-gray-400">
-                    No pending evaluations found.
+                    No pending evaluations found matching the selected criteria.
                   </td>
                 </tr>
               ) : (
-                /* Map over the paginated subset */
                 paginatedRequests.map((record) => {
                   const hasFullName = record.first_name || record.last_name;
                   const fullName = hasFullName

@@ -19,7 +19,6 @@ interface ClassRecord {
   year: string;
   semester: string;
   section: string;
-  evaluation: string;
   subjects: SubjectRecord[];
 }
 
@@ -54,7 +53,7 @@ function AdminStudentDetailsContent() {
         console.error("Failed to load section document map.");
       }
     } catch (err) {
-      console.error("Error loading evaluation query pipeline details:", err);
+      console.error("Error loading query pipeline details:", err);
     } finally {
       setLoading(false);
     }
@@ -66,18 +65,25 @@ function AdminStudentDetailsContent() {
 
   const currentClass = record?.class?.[activeClassIndex];
 
-  const updateEvaluationStatus = async (newStatus: "Approved" | "Rejected") => {
+  const areAllSubjectsEvaluating = currentClass?.subjects && currentClass.subjects.length > 0
+    ? currentClass.subjects.every((sub) => sub.status === "Evaluating")
+    : false;
+
+  const handleActionClick = async (actionType: "Approved" | "Rejected") => {
     if (!record || !currentClass) return;
     setActionLoading(true);
 
     try {
-      const res = await fetch(`/api/portal/registrar?table=student_section&id=${record.student_id}`, {
+      const newStatus = actionType === "Approved" ? "Completed" : "Rejected";
+
+      const res = await fetch(`/api/portal/registrar?table=student_section`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          evaluation: newStatus,
+          student_id: record.student_id,
           year: currentClass.year,
-          semester: currentClass.semester
+          semester: currentClass.semester,
+          subject_status: newStatus,
         }),
       });
 
@@ -87,17 +93,22 @@ function AdminStudentDetailsContent() {
           const updatedClasses = [...prev.class];
           updatedClasses[activeClassIndex] = {
             ...updatedClasses[activeClassIndex],
-            evaluation: newStatus,
+            subjects: updatedClasses[activeClassIndex].subjects.map((sub) => ({
+              ...sub,
+              status: newStatus,
+            })),
           };
           return { ...prev, class: updatedClasses };
         });
-        alert(`Evaluation registry marked successfully as ${newStatus}.`);
+
+        alert(`All subject statuses updated successfully to "${newStatus}".`);
       } else {
-        alert("Failed to update execution context changes inside student_section data array.");
+        const errData = await res.json();
+        alert(`Failed to update subject statuses: ${errData.message || "Server error"}`);
       }
     } catch (err) {
-      console.error("Status modification pipeline crash:", err);
-      alert("A server problem blocked state synchronization.");
+      console.error("Failed to execute status update:", err);
+      alert("A network error occurred while updating subject statuses.");
     } finally {
       setActionLoading(false);
     }
@@ -114,7 +125,7 @@ function AdminStudentDetailsContent() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-400 font-medium animate-pulse">
-        Retrieving Section Evaluation Data Matrix...
+        Retrieving Section Data Matrix...
       </div>
     );
   }
@@ -122,7 +133,7 @@ function AdminStudentDetailsContent() {
   if (!record || !currentClass) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-500 italic">
-        Academic track assessment record could not be found for Student ID: {studentId}.
+        Academic track record could not be found for Student ID: {studentId}.
       </div>
     );
   }
@@ -140,15 +151,6 @@ function AdminStudentDetailsContent() {
           <button onClick={() => router.back()} className="text-gray-600 transition-colors hover:text-gray-900 font-medium">
             ← Back to Evaluation Requests
           </button>
-
-          <div className="flex gap-3">
-            <span className={`px-3 py-1 rounded-full text-sm font-semibold flex items-center ${currentClass.evaluation === "Approved" ? "bg-green-100 text-green-800" :
-              currentClass.evaluation === "Rejected" ? "bg-red-100 text-red-800" :
-                "bg-yellow-100 text-yellow-800"
-              }`}>
-              {currentClass.evaluation || "Pending"}
-            </span>
-          </div>
         </div>
 
         {/* Dynamic Context Identity Banner */}
@@ -168,7 +170,6 @@ function AdminStudentDetailsContent() {
                 <Field label="Academic Year" value={currentClass.year} />
                 <Field label="Active Semester" value={`${currentClass.semester}${currentClass.semester === "1" ? "st" : "nd"} Semester`} />
                 <Field label="Assigned Section" value={currentClass.section} />
-                <Field label="Evaluation Status" value={currentClass.evaluation || "Pending"} />
               </Grid>
             </Card>
 
@@ -178,13 +179,13 @@ function AdminStudentDetailsContent() {
                 <table className="min-w-full divide-y divide-gray-100 text-sm">
                   <thead className="bg-gray-50 text-gray-500 text-left text-xs uppercase tracking-wider">
                     <tr>
-                      <th className="px-6 py-2.5">Sched Code</th>
                       <th className="px-6 py-2.5">Subject ID</th>
                       <th className="px-6 py-2.5 text-center">Prelim</th>
                       <th className="px-6 py-2.5 text-center">Midterm</th>
                       <th className="px-6 py-2.5 text-center">Pre-Final</th>
                       <th className="px-6 py-2.5 text-center">Finals</th>
                       <th className="px-6 py-2.5">Remarks</th>
+                      <th className="px-6 py-2.5">Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 text-gray-700 bg-white">
@@ -197,7 +198,6 @@ function AdminStudentDetailsContent() {
                     ) : (
                       currentClass.subjects.map((sub, idx) => (
                         <tr key={sub.subject_id || idx} className="hover:bg-gray-50/40">
-                          <td className="px-6 py-3 font-semibold text-indigo-600">{sub.sched_code || "N/A"}</td>
                           <td className="px-6 py-3 font-medium text-gray-900">{sub.subject_id}</td>
                           <td className="px-6 py-3 text-center text-gray-600">{sub.grade_1 || "—"}</td>
                           <td className="px-6 py-3 text-center text-gray-600">{sub.grade_2 || "—"}</td>
@@ -208,6 +208,16 @@ function AdminStudentDetailsContent() {
                               sub.remarks === "Failed" ? "bg-red-50 text-red-700" : "bg-gray-100 text-gray-600"
                               }`}>
                               {sub.remarks || "Pending"}
+                            </span>
+                          </td>
+                          <td className="px-6 py-3">
+                            <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${sub.status === "Completed" ? "bg-green-100 text-green-800" :
+                                sub.status === "Active" ? "bg-blue-100 text-blue-800" :
+                                  sub.status === "Evaluating" ? "bg-amber-100 text-amber-800" :
+                                    sub.status === "Rejected" ? "bg-red-100 text-red-800" :
+                                      "bg-gray-100 text-gray-600"
+                              }`}>
+                              {sub.status || "—"}
                             </span>
                           </td>
                         </tr>
@@ -224,19 +234,24 @@ function AdminStudentDetailsContent() {
             <Card title="Action">
               <div className="space-y-3">
                 <button
-                  disabled={actionLoading || currentClass.evaluation === "Approved" || currentClass.evaluation === "Rejected"}
-                  onClick={() => updateEvaluationStatus("Approved")}
+                  disabled={actionLoading || !areAllSubjectsEvaluating}
+                  onClick={() => handleActionClick("Approved")}
                   className="w-full bg-green-600 hover:bg-green-700 text-white py-2.5 px-4 rounded-lg text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
                 >
                   Approve Evaluation Request
                 </button>
                 <button
-                  disabled={actionLoading || currentClass.evaluation === "Approved" || currentClass.evaluation === "Rejected"}
-                  onClick={() => updateEvaluationStatus("Rejected")}
+                  disabled={actionLoading || !areAllSubjectsEvaluating}
+                  onClick={() => handleActionClick("Rejected")}
                   className="w-full bg-red-100 hover:bg-red-200 text-red-700 py-2.5 px-4 rounded-lg text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Reject Evaluation Request
                 </button>
+                {!areAllSubjectsEvaluating && (
+                  <p className="text-[11px] text-amber-600 text-center font-medium mt-1">
+                    * All subjects must have a status of "Evaluating" before approval/rejection.
+                  </p>
+                )}
               </div>
             </Card>
           </div>

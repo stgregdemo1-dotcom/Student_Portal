@@ -4,24 +4,24 @@ import { useState, useEffect } from "react";
 
 interface MappedSubject {
   subject_id: string;
-  sched_code: string; 
+  sched_code: string;
   teacher_id: string;
-  grade_1: string; 
-  grade_2: string; 
-  grade_3: string; 
-  grade_4: string; 
+  grade_1: string;
+  grade_2: string;
+  grade_3: string;
+  grade_4: string;
   remarks: string;
-  status: string;
+  status: string; // Added status field to support subject-level evaluation states
 }
 
 interface MappedStudentRow {
-  id: string;               
-  student_id: string;      
-  first_name?: string;     
-  last_name?: string;      
-  year: string;            
-  semester: string;        
-  section: string;         
+  id: string;
+  student_id: string;
+  first_name?: string;
+  last_name?: string;
+  year: string;
+  semester: string;
+  section: string;
   subjects: MappedSubject[];
 }
 
@@ -29,9 +29,9 @@ export default function GradesManagementPage() {
   const [records, setRecords] = useState<MappedStudentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeSemester, setActiveSemester] = useState<string>("1"); 
+  const [activeSemester, setActiveSemester] = useState<string>("1");
   const [activeSectionFilter, setActiveSectionFilter] = useState<string>("All Sections");
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -44,12 +44,12 @@ export default function GradesManagementPage() {
       try {
         setLoading(true);
         setError(null);
-        
+
         const response = await fetch("/api/portal/registrar?table=student_section");
         if (!response.ok) {
           throw new Error("Failed to fetch records from student_section collection");
         }
-        
+
         const data = await response.json();
         const rawRows = Array.isArray(data) ? data : data.data || [];
         setRecords(rawRows);
@@ -118,15 +118,15 @@ export default function GradesManagementPage() {
       if (!response.ok) throw new Error("Failed to save changes to student_section.");
 
       setRecords((prevRecords) =>
-        prevRecords.map((item) => 
-          item.student_id === selectedRecord.student_id && 
-          item.year === selectedRecord.year && 
-          item.semester === selectedRecord.semester 
-            ? selectedRecord 
+        prevRecords.map((item) =>
+          item.student_id === selectedRecord.student_id &&
+            item.year === selectedRecord.year &&
+            item.semester === selectedRecord.semester
+            ? selectedRecord
             : item
         )
       );
-      
+
       setIsEditModalOpen(false);
     } catch (err) {
       alert("Error saving your grade matrices modifications back to DB.");
@@ -141,7 +141,7 @@ export default function GradesManagementPage() {
   const filteredRecords = records
     .filter((row) => {
       const matchesSearch = row.student_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            `${row.first_name || ""} ${row.last_name || ""}`.toLowerCase().includes(searchQuery.toLowerCase());
+        `${row.first_name || ""} ${row.last_name || ""}`.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesSemester = row.semester === activeSemester;
       const matchesSection = activeSectionFilter === "All Sections" || row.section === activeSectionFilter;
       return matchesSearch && matchesSemester && matchesSection;
@@ -160,7 +160,7 @@ export default function GradesManagementPage() {
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-8">
       <div className="max-w-7xl mx-auto space-y-6">
-        
+
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Grades Management</h1>
@@ -214,7 +214,7 @@ export default function GradesManagementPage() {
                 <tr className="bg-gray-50/70 border-b border-gray-100 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                   <th className="p-4">Student Name & ID</th>
                   <th className="p-4">Section / School Year</th>
-                  <th className="p-4">Schedule Code</th>
+                  <th className="p-4">Subject ID</th>
                   <th className="p-4 text-center">Prelim (G1)</th>
                   <th className="p-4 text-center">Midterm (G2)</th>
                   <th className="p-4 text-center">Pre-Finals (G3)</th>
@@ -230,11 +230,11 @@ export default function GradesManagementPage() {
                     const uniqueRowKey = getUniqueKey(row);
                     const hasSubjects = row.subjects && row.subjects.length > 0;
                     const isExpanded = !!expandedStudents[uniqueRowKey];
-                    
-                    const displayedSubjects = !hasSubjects 
-                      ? [] 
-                      : isExpanded 
-                        ? row.subjects 
+
+                    const displayedSubjects = !hasSubjects
+                      ? []
+                      : isExpanded
+                        ? row.subjects
                         : [row.subjects[0]];
 
                     const lastName = row.last_name || "";
@@ -269,7 +269,7 @@ export default function GradesManagementPage() {
                             </td>
                           )}
                           <td className="p-4 font-mono text-xs font-bold text-indigo-600 bg-indigo-50/10 uppercase">
-                            {subject.sched_code || "N/A"}
+                            {subject.subject_id || "N/A"}
                           </td>
                           <td className="p-4 text-center font-medium text-gray-800">
                             {subject.grade_1 || "—"}
@@ -287,17 +287,21 @@ export default function GradesManagementPage() {
                             {calculations.finalAvg}
                           </td>
                           <td className="p-4 text-center">
-                            <span className={`text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-md ${
-                              subject.remarks === "Passed" ? "bg-green-100 text-green-700" :
-                              subject.remarks === "Failed" ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-400"
-                            }`}>
+                            <span className={`text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-md ${subject.remarks === "Passed" ? "bg-green-100 text-green-700" :
+                                subject.remarks === "Failed" ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-400"
+                              }`}>
                               {subject.remarks || "—"}
                             </span>
                           </td>
                           <td className="p-4 text-right">
                             <button
+                              disabled={subject.status !== "Evaluating"}
                               onClick={() => handleOpenGradeModal(row, subject.subject_id)}
-                              className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50/0 group-hover:bg-indigo-50 px-2.5 py-1 rounded transition-colors"
+                              className={`text-xs font-semibold px-2.5 py-1 rounded transition-colors ${
+                                subject.status === "Evaluating"
+                                  ? "text-indigo-600 hover:text-indigo-800 bg-indigo-50/0 group-hover:bg-indigo-50 cursor-pointer"
+                                  : "text-gray-300 bg-gray-50/50 cursor-not-allowed"
+                              }`}
                             >
                               Edit Term Grades
                             </button>
@@ -324,11 +328,11 @@ export default function GradesManagementPage() {
       {isEditModalOpen && selectedRecord && getEditingSubject() && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl shadow-xl border border-gray-100 max-w-md w-full overflow-hidden space-y-4">
-            
+
             <div className="bg-gradient-to-r from-purple-600 to-indigo-700 p-4 text-white">
               <h2 className="text-md font-bold">Update Academic Performance Metrics</h2>
               <p className="text-xs opacity-90">Student Reference ID: <span className="font-mono font-bold text-yellow-200">{selectedRecord.student_id}</span></p>
-              <p className="text-[11px] opacity-80 mt-0.5">Sched Code: <span className="font-mono font-bold text-yellow-300">{getEditingSubject()?.sched_code}</span> | Section: {selectedRecord.section}</p>
+              <p className="text-[11px] opacity-80 mt-0.5">Subject ID: <span className="font-mono font-bold text-yellow-300">{getEditingSubject()?.subject_id}</span> | Section: {selectedRecord.section}</p>
             </div>
 
             <div className="p-6 space-y-4">

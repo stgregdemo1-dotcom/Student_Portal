@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 
 const TIME_SLOTS = [
@@ -377,6 +377,7 @@ export default function ManageSubjects() {
   const [teachers, setTeachers] = useState<TeacherOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedYear, setSelectedYear] = useState("");
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [sortField, setSortField] = useState<keyof Subject | "composite_subject">("subject_id");
@@ -428,12 +429,20 @@ export default function ManageSubjects() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery]);
+  }, [searchQuery, selectedYear]);
 
   const getTeacherFullName = (teacherId: string) => {
     const match = teachers.find((t) => t.teacher_id === teacherId);
     return match ? match.full_name : teacherId || "Unassigned";
   };
+
+  // Derive unique years from the first 4 characters of sched_code
+  const yearOptions = useMemo(() => {
+    const years = subjects
+      .map((s) => s.sched_code?.substring(0, 4))
+      .filter((year) => year && year.length === 4 && !isNaN(Number(year)));
+    return Array.from(new Set(years)).sort((a, b) => b.localeCompare(a));
+  }, [subjects]);
 
   const handleSort = (field: keyof Subject | "composite_subject") => {
     if (sortField === field) {
@@ -449,11 +458,16 @@ export default function ManageSubjects() {
     return sortDirection === "asc" ? <span className="text-blue-600 ml-1">▲</span> : <span className="text-blue-600 ml-1">▼</span>;
   };
 
-  const filteredSubjects = subjects.filter(
-    (s) =>
+  const filteredSubjects = subjects.filter((s) => {
+    const matchesSearch =
       s.sched_code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.subject_name?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+      s.subject_name?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const schedCodeYear = s.sched_code?.substring(0, 4);
+    const matchesYear = !selectedYear || schedCodeYear === selectedYear;
+
+    return matchesSearch && matchesYear;
+  });
 
   const sortedSubjects = [...filteredSubjects].sort((a, b) => {
     let aValue = "";
@@ -524,16 +538,30 @@ export default function ManageSubjects() {
   return (
     <div className="p-6">
       <div className="p-4 bg-white flex flex-col md:flex-row justify-between items-center shadow rounded-t-xl border-b border-gray-100 gap-4">
-        <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
+        <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
           <h2 className="text-xl font-bold text-gray-800">Subject Management</h2>
-          <div className="relative w-full md:w-64">
+          <div className="relative w-full sm:w-64">
             <input
               type="text"
-              placeholder="Search by name or ID..."
+              placeholder="Search by name or Sched Code..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-3 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+          </div>
+          <div className="w-full sm:w-auto">
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+              className="w-full sm:w-auto px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-700"
+            >
+              <option value="">All Years</option>
+              {yearOptions.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -635,7 +663,7 @@ export default function ManageSubjects() {
 
             {totalItems === 0 && (
               <div className="text-center py-10 text-gray-500 italic">
-                No subjects match your search.
+                No subjects match your search or selected year.
               </div>
             )}
 

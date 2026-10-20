@@ -9,6 +9,8 @@ interface DropdownConfig {
   employee_role: string[];
   prefix: string[];
   specification: string[];
+  current_year: string[];
+  current_semester: string | number;
   admission_button: boolean | string[];
   submit_final_grade: boolean | string[];
 }
@@ -20,7 +22,8 @@ type ListField =
   | "employee_status"
   | "employee_role"
   | "prefix"
-  | "specification";
+  | "specification"
+  | "current_year";
 
 export default function SettingsConfigPage() {
   const [config, setConfig] = useState<DropdownConfig | null>(null);
@@ -32,6 +35,7 @@ export default function SettingsConfigPage() {
     employee_role: "",
     prefix: "",
     specification: "",
+    current_year: "",
   });
 
   const fetchSettings = async () => {
@@ -94,6 +98,29 @@ export default function SettingsConfigPage() {
       }
     } catch (err) {
       console.error("Failed to eliminate variable tag:", err);
+    }
+  };
+
+  const handleSemesterChange = async (selectedSemester: string) => {
+    setConfig((prev) => (prev ? { ...prev, current_semester: selectedSemester } : prev));
+
+    try {
+      const res = await fetch("/api/portal/admin?table=configuration", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "set",
+          field: "current_semester",
+          value: selectedSemester,
+        }),
+      });
+
+      const result = await res.json();
+      if (res.ok && result?.data) {
+        setConfig(result.data);
+      }
+    } catch (err) {
+      console.error("Failed to update current semester:", err);
     }
   };
 
@@ -193,6 +220,8 @@ export default function SettingsConfigPage() {
     },
   ];
 
+  const selectedSemester = String(config?.current_semester ?? "1");
+
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-8 font-sans">
       <div>
@@ -205,6 +234,98 @@ export default function SettingsConfigPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Current Semester Card */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col justify-between space-y-4">
+          <div>
+            <h3 className="text-md font-bold text-gray-700 border-b pb-2 mb-3">
+              Current Semester
+            </h3>
+            <p className="text-xs text-gray-500 mb-4">
+              Select active academic semester.
+            </p>
+          </div>
+
+          <div className="flex items-center justify-around pt-2">
+            <label className="inline-flex items-center gap-2 cursor-pointer text-sm font-semibold text-gray-700">
+              <input
+                type="radio"
+                name="current_semester"
+                value="1"
+                checked={selectedSemester === "1"}
+                onChange={() => handleSemesterChange("1")}
+                className="w-4 h-4 text-blue-600 focus:ring-blue-500 cursor-pointer"
+              />
+              1st Semester
+            </label>
+
+            <label className="inline-flex items-center gap-2 cursor-pointer text-sm font-semibold text-gray-700">
+              <input
+                type="radio"
+                name="current_semester"
+                value="2"
+                checked={selectedSemester === "2"}
+                onChange={() => handleSemesterChange("2")}
+                className="w-4 h-4 text-blue-600 focus:ring-blue-500 cursor-pointer"
+              />
+              2nd Semester
+            </label>
+          </div>
+        </div>
+
+        {/* Current Academic Years Card */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col justify-between space-y-4">
+          <div>
+            <h3 className="text-md font-bold text-gray-700 border-b pb-2 mb-3">
+              Current Academic Years
+            </h3>
+
+            <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto p-1">
+              {Array.isArray(config?.current_year) &&
+                (config.current_year as string[]).map((item) => (
+                  <span
+                    key={item}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-red-700 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors group cursor-pointer"
+                    onClick={() => handleRemoveOption("current_year", item)}
+                    title="Click to remove option"
+                  >
+                    {item}
+                    <span className="text-slate-400 group-hover:text-red-500 font-bold">
+                      ✕
+                    </span>
+                  </span>
+                ))}
+              {Array.isArray(config?.current_year) &&
+                (config.current_year as string[]).length === 0 && (
+                  <span className="text-xs text-gray-400 italic">
+                    No options defined.
+                  </span>
+                )}
+            </div>
+          </div>
+
+          <div className="flex gap-2 pt-2">
+            <input
+              type="text"
+              placeholder="e.g., 2025-2026"
+              value={inputs["current_year"] || ""}
+              onChange={(e) =>
+                setInputs({ ...inputs, current_year: e.target.value })
+              }
+              onKeyDown={(e) =>
+                e.key === "Enter" && handleAddOption("current_year")
+              }
+              className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-xl outline-none focus:border-blue-500 bg-slate-50"
+            />
+            <button
+              type="button"
+              onClick={() => handleAddOption("current_year")}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold uppercase transition"
+            >
+              Add
+            </button>
+          </div>
+        </div>
+
         {/* Render Toggle Controls */}
         {toggleSections.map((sec) => {
           const isEnabled = getToggleStatus(sec.id);

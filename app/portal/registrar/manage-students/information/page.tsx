@@ -43,7 +43,6 @@ interface ClassEntry {
   year: string;
   semester: string;
   section: string;
-  evaluation: string;
   subjects: any[];
 }
 
@@ -69,6 +68,18 @@ function AdminStudentDetailsContent() {
   const [subjectsList, setSubjectsList] = useState<SubjectData[]>([]);
   const [subjectsLoading, setSubjectsLoading] = useState<boolean>(false);
 
+  // Filter sections based on student's track/program
+  const filteredSectionsList = useMemo(() => {
+    if (!sectionsList || sectionsList.length === 0) return [];
+    
+    const track = student?.track ? student.track.trim().toLowerCase() : "";
+    if (track.includes("information and communication technology")) {
+      return sectionsList.filter((sec) => sec.trim().toUpperCase().startsWith("ICT"));
+    }
+    
+    return sectionsList;
+  }, [sectionsList, student?.track]);
+
   const latestClass = useMemo<ClassEntry | null>(() => {
     if (!studentSectionDoc || !studentSectionDoc.class || studentSectionDoc.class.length === 0) {
       return null;
@@ -81,22 +92,11 @@ function AdminStudentDetailsContent() {
     return sorted[0];
   }, [studentSectionDoc]);
 
-  const { buttonLabel, isButtonDisabled, actionType } = useMemo(() => {
+  const { buttonLabel, actionType } = useMemo(() => {
     if (!studentSectionDoc || !latestClass) {
-      return { buttonLabel: "Assign Section", isButtonDisabled: false, actionType: "CREATE" };
+      return { buttonLabel: "Assign Section", actionType: "CREATE" };
     }
-
-    const evalStatus = latestClass.evaluation ? latestClass.evaluation.trim() : "";
-
-    if (evalStatus === "") {
-      return { buttonLabel: "Update Section", isButtonDisabled: false, actionType: "UPDATE" };
-    }
-
-    if (evalStatus === "Approved") {
-      return { buttonLabel: "Assign Section", isButtonDisabled: false, actionType: "PUSH_NEW" };
-    }
-
-    return { buttonLabel: "Assign Section", isButtonDisabled: true, actionType: "DISABLED" };
+    return { buttonLabel: "Update Section", actionType: "UPDATE" };
   }, [studentSectionDoc, latestClass]);
 
   const fetchStudentDetails = async () => {
@@ -181,7 +181,7 @@ function AdminStudentDetailsContent() {
   }, [selectedSection, selectedSemester, currentYear]);
 
   const handleAssignOrUpdateSection = async () => {
-    if (!student || !selectedSection || selectedSection === "" || !selectedSemester || isButtonDisabled) return;
+    if (!student || !selectedSection || selectedSection === "" || !selectedSemester || subjectsLoading || subjectsList.length === 0) return;
     setActionLoading(true);
 
     try {
@@ -374,7 +374,7 @@ function AdminStudentDetailsContent() {
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-indigo-500 bg-white outline-none transition"
                   >
                     <option value="">--Select Section--</option>
-                    {sectionsList.map((sec) => (
+                    {filteredSectionsList.map((sec) => (
                       <option key={sec} value={sec}>
                         {sec}
                       </option>
@@ -383,21 +383,16 @@ function AdminStudentDetailsContent() {
                 </div>
 
                 <button
-                  disabled={actionLoading || isButtonDisabled || !selectedSection || selectedSection === ""}
+                  disabled={actionLoading || !selectedSection || selectedSection === "" || subjectsLoading || subjectsList.length === 0}
                   onClick={handleAssignOrUpdateSection}
-                  className={`w-full py-2.5 px-4 rounded-lg text-sm font-semibold transition-colors shadow-sm mt-2 ${isButtonDisabled
+                  className={`w-full py-2.5 px-4 rounded-lg text-sm font-semibold transition-colors shadow-sm mt-2 ${
+                    actionLoading || !selectedSection || selectedSection === "" || subjectsLoading || subjectsList.length === 0
                       ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                       : "bg-indigo-600 hover:bg-indigo-700 text-white"
-                    }`}
+                  }`}
                 >
                   {actionLoading ? "Processing..." : buttonLabel}
                 </button>
-
-                {isButtonDisabled && (
-                  <p className="text-[11px] text-amber-600 bg-amber-50 p-2 rounded border border-amber-200">
-                    Cannot assign a new section until the latest academic evaluation is set to &ldquo;Approved&rdquo;. Current evaluation: &ldquo;{latestClass?.evaluation || "Pending"}&rdquo;.
-                  </p>
-                )}
 
               </div>
             </Card>
@@ -415,7 +410,7 @@ function AdminStudentDetailsContent() {
                   </p>
                 ) : subjectsList.length === 0 ? (
                   <p className="text-xs italic text-gray-400 text-center py-2">
-                    No subjects found for Section &ldquo;{selectedSection}&rdquo; ({currentYear} - Sem {selectedSemester}).
+                    No subjects found for Section &ldquo;{selectedSection}&rdquo; ({currentYear} Sem {selectedSemester}).
                   </p>
                 ) : (
                   <div className="border border-gray-200 rounded-lg divide-y divide-gray-100 max-h-64 overflow-y-auto shadow-inner bg-gray-50">
@@ -450,7 +445,6 @@ function AdminStudentDetailsContent() {
                       <th className="px-3 py-2.5">Year</th>
                       <th className="px-3 py-2.5">Sem</th>
                       <th className="px-3 py-2.5">Section</th>
-                      <th className="px-3 py-2.5">Evaluation</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 bg-white">
@@ -465,20 +459,10 @@ function AdminStudentDetailsContent() {
                         <td className="px-3 py-2.5 font-semibold text-indigo-600">
                           {latestClass.section || "—"}
                         </td>
-                        <td className="px-3 py-2.5">
-                          <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold border ${latestClass.evaluation === "Approved"
-                              ? "bg-green-50 text-green-700 border-green-200"
-                              : latestClass.evaluation === ""
-                                ? "bg-gray-100 text-gray-600 border-gray-200"
-                                : "bg-amber-50 text-amber-700 border-amber-200"
-                            }`}>
-                            {latestClass.evaluation === "" ? "Unassigned" : latestClass.evaluation}
-                          </span>
-                        </td>
                       </tr>
                     ) : (
                       <tr>
-                        <td colSpan={4} className="px-3 py-4 text-center text-gray-400 italic">
+                        <td colSpan={3} className="px-3 py-4 text-center text-gray-400 italic">
                           No active enrollment history found.
                         </td>
                       </tr>
