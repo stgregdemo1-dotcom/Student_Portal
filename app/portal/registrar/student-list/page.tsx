@@ -69,7 +69,7 @@ export default function StudentListPage() {
       if (res.ok && result.success) {
         // Update local state smoothly without re-fetching
         setStudents((prev) =>
-          prev.map((s) => (s.student_id === studentId ? { ...s, status: newStatus } : s))
+          prev.map((s) => (s.student_id === studentId || s._id === studentId ? { ...s, status: newStatus } : s))
         );
       } else {
         alert(result.message || "Failed to update student status.");
@@ -235,7 +235,7 @@ export default function StudentListPage() {
                             <td colSpan={5} className="p-6 bg-slate-50 border-b border-gray-200">
                               <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-inner space-y-4">
                                 <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 border-b pb-2">
-                                  Full Student Profile Details: <span className="font-mono text-blue-600">{record.student_id}</span>
+                                  Full Student Profile Details: <span className="font-mono text-blue-600">{studentId}</span>
                                 </h4>
 
                                 {/* Grid displaying all available fields from the student record */}
@@ -265,22 +265,22 @@ export default function StudentListPage() {
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      handleStatusUpdate(record.student_id, "Graduated");
+                                      handleStatusUpdate(studentId, "Graduated");
                                     }}
-                                    disabled={actionLoading === record.student_id}
+                                    disabled={actionLoading === studentId}
                                     className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors disabled:opacity-50"
                                   >
-                                    {actionLoading === record.student_id ? "Updating..." : "Graduated"}
+                                    {actionLoading === studentId ? "Updating..." : "Graduated"}
                                   </button>
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      handleStatusUpdate(record.student_id, "Archived");
+                                      handleStatusUpdate(studentId, "Archived");
                                     }}
-                                    disabled={actionLoading === record.student_id}
+                                    disabled={actionLoading === studentId}
                                     className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors disabled:opacity-50"
                                   >
-                                    {actionLoading === record.student_id ? "Updating..." : "Archive"}
+                                    {actionLoading === studentId ? "Updating..." : "Archive"}
                                   </button>
                                 </div>
                               </div>
