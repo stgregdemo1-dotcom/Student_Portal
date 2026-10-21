@@ -8,43 +8,38 @@ const Header: React.FC = () => {
         {/* Navbar height */}
         <nav className="flex justify-between items-center py-[20px] min-h-[100px]">
 
+          <div className="flex items-center gap-4">
+            <div className="relative w-[70px] h-[70px] flex-shrink-0 border-2 border-white/50 rounded-full bg-white shadow-sm overflow-hidden p-1">
+              <img 
+                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQRN3gQ0ep9JbWVXYw4ipX_NzoD8esE7ytbEA&s" 
+                alt="Saint Gregory College Logo"
+                className="w-full h-full object-contain rounded-full"
+              />
+            </div>
 
-<div className="flex items-center gap-4">
-
-  <div className="relative w-[70px] h-[70px] flex-shrink-0 border-2 border-white/50 rounded-full bg-white shadow-sm overflow-hidden p-1">
-    <img 
-      src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQRN3gQ0ep9JbWVXYw4ipX_NzoD8esE7ytbEA&s" 
-      alt="Saint Gregory College Logo"
-      className="w-full h-full object-contain rounded-full"
-    />
-  </div>
-
-
-  <div className="flex flex-col justify-center">
-    <h1 className="font-sans antialiased text-[#1a252f] leading-none">
-      <span className="text-[2rem] font-black tracking-tighter uppercase block">
-        Saint Gregory
-      </span>
-      <span className="text-[0.95rem] font-bold tracking-[0.05em] uppercase text-[#3d648b]">
-        College of Science and Technology
-      </span>
-    </h1>
-  </div>
-</div>
-
+            <div className="flex flex-col justify-center">
+              <h1 className="font-sans antialiased text-[#1a252f] leading-none">
+                <span className="text-[2rem] font-black tracking-tighter uppercase block">
+                  Saint Gregory
+                </span>
+                <span className="text-[0.95rem] font-bold tracking-[0.05em] uppercase text-[#3d648b]">
+                  College of Science and Technology
+                </span>
+              </h1>
+            </div>
+          </div>
 
           <div className="hidden md:flex items-center gap-[30px]">
-            <Link href="/Home" className="text-[#fafafa] font-semibold text-[1.1rem] transition-colors duration-300 hover:text-[#e74c3c]">
+            <Link href="#Home" className="text-[#fafafa] font-semibold text-[1.1rem] transition-colors duration-300 hover:text-[#e74c3c]">
               Home
             </Link>
-            <Link href="/Programs" className="text-[#fafafa] font-semibold text-[1.1rem] transition-colors duration-300 hover:text-[#e74c3c]">
+            <Link href="#Programs" className="text-[#fafafa] font-semibold text-[1.1rem] transition-colors duration-300 hover:text-[#e74c3c]">
               Programs
             </Link>
-            <Link href="/About-us" className="text-[#fafafa] font-semibold text-[1.1rem] transition-colors duration-300 hover:text-[#e74c3c]">
+            <Link href="#About-us" className="text-[#fafafa] font-semibold text-[1.1rem] transition-colors duration-300 hover:text-[#e74c3c]">
               About Us
             </Link>
           </div>
-
 
           <div className="flex items-center">
             <Link 
