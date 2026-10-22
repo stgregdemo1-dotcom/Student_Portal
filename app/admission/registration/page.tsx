@@ -174,9 +174,9 @@ export default function AdmissionForm() {
 
               <a
                 href="/admission/verification"
-                className="text-slate-400 font-medium italic hover:text-slate-800 transition-colors"
+                className="text-blue-550 font-medium italic underline hover:text-blue-800 transition-colors"
               >
-                already submitted an application?
+                Already submitted an application?
               </a>
             </div>
 
