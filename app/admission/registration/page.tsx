@@ -9,7 +9,12 @@ interface InputFieldProps {
   type?: string;
   placeholder?: string;
   max?: string;
+  value?: string;
+  maxLength?: number;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode'];
+  pattern?: string;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   onInvalid?: (e: React.InvalidEvent<HTMLInputElement>) => void;
 }
 
@@ -27,7 +32,12 @@ const InputField: React.FC<InputFieldProps> = ({
   type = "text",
   placeholder,
   max,
+  value,
+  maxLength,
+  inputMode,
+  pattern,
   onChange,
+  onKeyDown,
   onInvalid,
 }) => (
   <div className="flex flex-col gap-2">
@@ -37,7 +47,12 @@ const InputField: React.FC<InputFieldProps> = ({
       name={name}
       placeholder={placeholder}
       max={max}
+      value={value}
+      maxLength={maxLength}
+      inputMode={inputMode}
+      pattern={pattern}
       onChange={onChange}
+      onKeyDown={onKeyDown}
       onInvalid={onInvalid}
       className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-yellow-400 text-sm"
       required={label.includes("*")}
@@ -64,12 +79,24 @@ const SelectField: React.FC<SelectFieldProps> = ({ label, name, options, value, 
 export default function AdmissionForm() {
   const [status, setStatus] = React.useState<{ type: "success" | "error" | ""; message: string }>({ type: "", message: "" });
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [selectedFileCount, setSelectedFileCount] = useState(0);
+
+  // States for individual files and error messaging
+  const [profilePic, setProfilePic] = useState<File | null>(null);
+  const [reportCard, setReportCard] = useState<File | null>(null);
+  const [birthCert, setBirthCert] = useState<File | null>(null);
 
   const [enrollmentType, setEnrollmentType] = useState<string>("New Student");
   const [gradeLevel, setGradeLevel] = useState<string>("Grade 11");
 
+  // State for LRN to ensure only digits are entered
+  const [lrn, setLrn] = useState<string>("");
+
   const [maxDobDate, setMaxDobDate] = useState<string | undefined>(undefined);
+
+  // Refs for hidden file inputs
+  const profileInputRef = useRef<HTMLInputElement>(null);
+  const reportCardInputRef = useRef<HTMLInputElement>(null);
+  const birthCertInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const today = new Date();
@@ -86,6 +113,11 @@ export default function AdmissionForm() {
     if (selectedType === "New Student") {
       setGradeLevel("Grade 11");
     }
+  };
+
+  const handleLrnChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const numericValue = e.target.value.replace(/\D/g, ''); // Removes alphabets, spaces, and symbols
+    setLrn(numericValue);
   };
 
   const handleDobValidation = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -106,12 +138,28 @@ export default function AdmissionForm() {
     }
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setFile: (file: File | null) => void) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const maxSize = 2 * 1024 * 1024; // 2MB in bytes
+      if (file.size > maxSize) {
+        setStatus({ type: "error", message: `File "${file.name}" exceeds the 2MB size limit.` });
+        e.target.value = ""; // Reset input
+        setFile(null);
+        return;
+      }
+      setStatus({ type: "", message: "" });
+      setFile(file);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
     setStatus({ type: "", message: "" });
 
-    const formData = new FormData(e.currentTarget);
+    const formElement = e.currentTarget;
+    const formData = new FormData(formElement);
     const dobValue = formData.get("dob") as string;
 
     if (dobValue) {
@@ -125,6 +173,11 @@ export default function AdmissionForm() {
       }
     }
 
+    // Append individual files explicitly to FormData
+    if (profilePic) formData.set("profilePic", profilePic);
+    if (reportCard) formData.set("reportCard", reportCard);
+    if (birthCert) formData.set("birthCert", birthCert);
+
     try {
       const res = await fetch("/api/admission", {
         method: "POST",
@@ -135,10 +188,13 @@ export default function AdmissionForm() {
 
       if (res.ok) {
         setStatus({ type: "success", message: "Application submitted successfully!" });
-        (e.target as HTMLFormElement).reset();
-        setSelectedFileCount(0);
+        formElement.reset();
+        setProfilePic(null);
+        setReportCard(null);
+        setBirthCert(null);
         setEnrollmentType("New Student");
         setGradeLevel("Grade 11");
+        setLrn("");
       } else {
         setStatus({ type: "error", message: data.message || "Failed to submit application." });
       }
@@ -148,8 +204,6 @@ export default function AdmissionForm() {
       setIsSubmitting(false);
     }
   };
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   return (
     <div className="min-h-screen bg-slate-50 p-6 md:p-12 font-sans text-[#1E293B]">
@@ -171,13 +225,6 @@ export default function AdmissionForm() {
               <p className="text-slate-500 font-medium italic">
                 Saint Gregory College of Science and Technology
               </p>
-
-              <a
-                href="/admission/verification"
-                className="text-blue-550 font-medium italic underline hover:text-blue-800 transition-colors"
-              >
-                Already submitted an application?
-              </a>
             </div>
 
             <a
@@ -224,7 +271,21 @@ export default function AdmissionForm() {
               value={gradeLevel}
               onChange={(e) => setGradeLevel(e.target.value)}
             />
-            <InputField label="LRN" name="lrn" placeholder="12-digit LRN" />
+            <InputField
+              label="LRN"
+              name="lrn"
+              placeholder="12-digit LRN"
+              value={lrn}
+              onChange={handleLrnChange}
+              maxLength={12}
+              inputMode="numeric"
+              pattern="[0-9]*"
+              onKeyDown={(e) => {
+                if (['e', 'E', '+', '-', '.'].includes(e.key)) {
+                  e.preventDefault();
+                }
+              }}
+            />
             <InputField label="Last School Attended *" name="lastSchool" placeholder="School Name" />
           </div>
 
@@ -237,7 +298,7 @@ export default function AdmissionForm() {
             <InputField label="Country *" name="country" placeholder="Philippines" />
           </div>
 
-          {/* Text Area & Confirm Button */}
+          {/* Text Area & 3 Upload Buttons */}
           <div className="space-y-6">
             <div className="flex flex-col gap-2">
               <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Personal Statement *</label>
@@ -250,39 +311,99 @@ export default function AdmissionForm() {
               />
             </div>
 
-            <div className="p-8 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50 text-center">
-              <p className="text-sm font-bold text-slate-600">
-                Upload Required Documents *
-              </p>
-              <p className="text-xs text-slate-400 mb-4">
-                Report Card & Birth Certificate
-              </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* 1. Profile Picture Upload */}
+              <div className="p-6 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50 text-center flex flex-col justify-between">
+                <div>
+                  <p className="text-sm font-bold text-slate-600 mb-1">Profile Picture *</p>
+                  <p className="text-[10px] text-slate-400 mb-4">Max size: 2MB (JPG, PNG)</p>
+                </div>
+                <div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    ref={profileInputRef}
+                    className="hidden"
+                    required
+                    onChange={(e) => handleFileChange(e, setProfilePic)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => profileInputRef.current?.click()}
+                    className="w-full px-4 py-2 bg-white border border-slate-300 rounded-lg text-xs font-black uppercase shadow-sm hover:bg-slate-100 mb-2"
+                  >
+                    Browse Photo
+                  </button>
+                  {profilePic && (
+                    <p className="text-[11px] font-bold text-green-600 truncate">
+                      {profilePic.name}
+                    </p>
+                  )}
+                </div>
+              </div>
 
-              <input
-                type="file"
-                name="files"
-                ref={fileInputRef}
-                className="hidden"
-                multiple
-                required
-                onChange={(e) => setSelectedFileCount(e.target.files?.length || 0)}
-              />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="px-6 py-2 bg-white border border-slate-300 rounded-lg text-xs font-black uppercase shadow-sm hover:bg-slate-100"
-              >
-                Browse Files
-              </button>
+              {/* 2. Report Card Upload */}
+              <div className="p-6 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50 text-center flex flex-col justify-between">
+                <div>
+                  <p className="text-sm font-bold text-slate-600 mb-1">Report Card *</p>
+                  <p className="text-[10px] text-slate-400 mb-4">Max size: 2MB (PDF, Image)</p>
+                </div>
+                <div>
+                  <input
+                    type="file"
+                    accept=".pdf,image/*"
+                    ref={reportCardInputRef}
+                    className="hidden"
+                    required
+                    onChange={(e) => handleFileChange(e, setReportCard)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => reportCardInputRef.current?.click()}
+                    className="w-full px-4 py-2 bg-white border border-slate-300 rounded-lg text-xs font-black uppercase shadow-sm hover:bg-slate-100 mb-2"
+                  >
+                    Browse Card
+                  </button>
+                  {reportCard && (
+                    <p className="text-[11px] font-bold text-green-600 truncate">
+                      {reportCard.name}
+                    </p>
+                  )}
+                </div>
+              </div>
 
-              {selectedFileCount > 0 && (
-                <p className="mt-2 text-xs font-bold text-green-600 animate-pulse">
-                  Selected {selectedFileCount} file(s) for upload
-                </p>
-              )}
+              {/* 3. Birth Certificate Upload */}
+              <div className="p-6 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50 text-center flex flex-col justify-between">
+                <div>
+                  <p className="text-sm font-bold text-slate-600 mb-1">Birth Certificate *</p>
+                  <p className="text-[10px] text-slate-400 mb-4">Max size: 2MB (PDF, Image)</p>
+                </div>
+                <div>
+                  <input
+                    type="file"
+                    accept=".pdf,image/*"
+                    ref={birthCertInputRef}
+                    className="hidden"
+                    required
+                    onChange={(e) => handleFileChange(e, setBirthCert)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => birthCertInputRef.current?.click()}
+                    className="w-full px-4 py-2 bg-white border border-slate-300 rounded-lg text-xs font-black uppercase shadow-sm hover:bg-slate-100 mb-2"
+                  >
+                    Browse Cert
+                  </button>
+                  {birthCert && (
+                    <p className="text-[11px] font-bold text-green-600 truncate">
+                      {birthCert.name}
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
 
-            <label className="flex items-center gap-3">
+            <label className="flex items-center gap-3 pt-4">
               <input type="checkbox" className="w-5 h-5 accent-yellow-500" required />
               <span className="text-xs text-slate-500">
                 I certify that all information provided is true and correct.

@@ -11,13 +11,16 @@ const navItems = [
   { name: 'Settings', href: '/portal/teachers/settings', icon: 'fas fa-cog' },
 ];
 
-export default function Sidebar() {
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const pathname = usePathname();
   
-  // 🚀 NEW: Manage states for the authenticated teacher profile info
   const [teacherName, setTeacherName] = useState<string>("Loading profile...");
 
-  // Helper to extract cookie values on the client side
   const getCookie = (name: string) => {
     if (typeof document === "undefined") return null;
     const value = `; ${document.cookie}`;
@@ -29,7 +32,6 @@ export default function Sidebar() {
   useEffect(() => {
     const fetchTeacherProfile = async () => {
       try {
-        // 🚀 Extract logged-in teacher identity (checks cookie string or fallback storage token)
         const cachedId = getCookie("audit_user") || localStorage.getItem("teacher_id");
 
         if (!cachedId) {
@@ -37,7 +39,6 @@ export default function Sidebar() {
           return;
         }
 
-        // Hit your dynamic registrar/portal route for the 'teachers' collection
         const res = await fetch(`/api/portal/teacher?table=teachers&id=${cachedId}&action=profile`);
         if (res.ok) {
           const jsonResponse = await res.json();
@@ -48,7 +49,7 @@ export default function Sidebar() {
             const nameString = `${prefix} ${teacherData.first_name} ${teacherData.last_name}`;
             setTeacherName(nameString);
           } else {
-            setTeacherName(cachedId); // Fallback to raw ID string if record doesn't exist
+            setTeacherName(cachedId);
           }
         } else {
           setTeacherName(cachedId);
@@ -63,14 +64,36 @@ export default function Sidebar() {
   }, []);
 
   return (
-    <aside className="w-64 bg-yellow-400 text-yellow-950 flex flex-col h-full shrink-0 shadow-lg border-r border-yellow-500 font-sans">
-      <div className="p-6 border-b border-yellow-600/30">
-        <h1 className="text-xl font-bold uppercase tracking-tight">Teacher Portal</h1>
-        {/* 🚀 UPDATED: Outputs your active dynamically loaded state string */}
-        <p className="text-sm font-bold opacity-60 truncate" title={teacherName}>
-          {teacherName}
-        </p>
+    <aside 
+      className={`
+        fixed left-0 top-0 h-screen w-64 bg-yellow-400 text-yellow-950 flex flex-col z-50 shadow-lg border-r border-yellow-500 font-sans
+        transition-transform duration-300 ease-in-out
+        ${isOpen ? 'translate-x-0' : '-translate-x-full'} 
+        md:translate-x-0 md:static md:h-full md:shrink-0
+      `}
+    >
+      <div className="p-6 border-b border-yellow-600/30 flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold uppercase tracking-tight">Teacher Portal</h1>
+          <p className="text-sm font-bold opacity-60 truncate max-w-[160px]" title={teacherName}>
+            {teacherName}
+          </p>
+        </div>
+
+        {/* Mobile Close Button */}
+        {onClose && (
+          <button 
+            onClick={onClose}
+            className="p-1 rounded-lg hover:bg-yellow-500/40 text-yellow-950 md:hidden transition-colors"
+            aria-label="Close sidebar"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        )}
       </div>
+
       <nav className="flex-1 overflow-y-auto p-3">
         <ul className="space-y-1">
           {navItems.map((item) => {
@@ -79,6 +102,7 @@ export default function Sidebar() {
               <li key={item.name}>
                 <Link
                   href={item.href}
+                  onClick={() => onClose && onClose()}
                   className={`flex items-center gap-3 px-4 py-3 transition-all duration-200 rounded-lg group ${
                     isActive ? 'bg-yellow-500/60 text-yellow-950 font-bold shadow-sm' : 'text-yellow-900/80 hover:bg-yellow-500/40 hover:text-yellow-950 font-bold'
                   }`}
@@ -91,8 +115,13 @@ export default function Sidebar() {
           })}
         </ul>
       </nav>
+
       <div className="p-4 border-t border-yellow-600/30">
-        <Link href="/portal/log-in" className="flex items-center gap-3 w-full px-4 py-3 text-red-700 hover:bg-red-600 hover:text-white transition-all rounded-lg font-bold text-sm">
+        <Link 
+          href="/portal/log-in" 
+          onClick={() => onClose && onClose()}
+          className="flex items-center gap-3 w-full px-4 py-3 text-red-700 hover:bg-red-600 hover:text-white transition-all rounded-lg font-bold text-sm"
+        >
           <i className="fas fa-sign-out-alt w-5 text-center"></i> 
           <span className="font-bold">Logout</span>
         </Link>

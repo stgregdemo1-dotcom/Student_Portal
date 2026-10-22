@@ -45,6 +45,7 @@ function ApplicantDetailsContent() {
   const [applicant, setApplicant] = useState<ApplicantData | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
 
   const fetchApplicantDetails = async () => {
     if (!applicantId) return;
@@ -70,6 +71,11 @@ function ApplicantDetailsContent() {
 
   const updateStatus = async (newStatus: "Approved" | "Rejected") => {
     if (!applicant) return;
+    if (newStatus === "Rejected" && !rejectionReason.trim()) {
+      alert("Please provide a reason for rejection.");
+      return;
+    }
+
     setActionLoading(true);
     try {
       const res = await fetch("/api/portal/registrar", {
@@ -104,6 +110,8 @@ function ApplicantDetailsContent() {
               <p>Hello ${applicant.firstName},</p>
               <p>Thank you for your application to Saint Gregory College of Science and Technology.</p>
               <p>After a thorough review of your application details for the <strong>${applicant.track}</strong> track (ID: ${applicant.applicant_id}), we regret to inform you that we are unable to accept your admission application at this time.</p>
+              <p><strong>Reason for Rejection:</strong></p>
+              <p style="background-color: #f9fafb; padding: 12px; border-left: 4px solid #dc2626; margin: 15px 0; font-style: italic;">${rejectionReason}</p>
               <p>We wish you the absolute best in your future academic pursuits.</p>
               <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
               <p style="font-size: 12px; color: #666;">Saint Gregory College of Science and Technology</p>
@@ -268,21 +276,36 @@ function ApplicantDetailsContent() {
             </Card>
 
             <Card title="Application Assessment Review">
-              <div className="grid grid-cols-2 gap-3">
-                <button 
-                  disabled={actionLoading || applicant.status !== "Pending"}
-                  onClick={() => updateStatus("Approved")}
-                  className="bg-green-100 text-green-700 py-2.5 px-4 rounded-lg hover:bg-green-200 text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Approve Application
-                </button>
-                <button 
-                  disabled={actionLoading || applicant.status !== "Pending"}
-                  onClick={() => updateStatus("Rejected")}
-                  className="bg-red-100 text-red-700 py-2.5 px-4 rounded-lg hover:bg-red-200 text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Reject Application
-                </button>
+              <div className="space-y-3">
+                {applicant.status === "Pending" && (
+                  <div>
+                    <label className="text-xs font-semibold text-gray-700 block mb-1">
+                      Reason for Rejection <span className="text-red-500">*</span>
+                    </label>
+                    <textarea 
+                      value={rejectionReason}
+                      onChange={(e) => setRejectionReason(e.target.value)}
+                      placeholder="Specify the reason why this application is rejected..."
+                      className="w-full text-xs p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 min-h-[80px]"
+                    />
+                  </div>
+                )}
+                <div className="grid grid-cols-2 gap-3">
+                  <button 
+                    disabled={actionLoading || applicant.status !== "Pending"}
+                    onClick={() => updateStatus("Approved")}
+                    className="bg-green-100 text-green-700 py-2.5 px-4 rounded-lg hover:bg-green-200 text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Approve Application
+                  </button>
+                  <button 
+                    disabled={actionLoading || applicant.status !== "Pending" || !rejectionReason.trim()}
+                    onClick={() => updateStatus("Rejected")}
+                    className="bg-red-100 text-red-700 py-2.5 px-4 rounded-lg hover:bg-red-200 text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Reject Application
+                  </button>
+                </div>
               </div>
             </Card>
           </div>

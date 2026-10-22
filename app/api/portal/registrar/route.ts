@@ -19,6 +19,22 @@ const EXCLUDED_FIELDS: Record<string, string> = {
   admissions_applications: "-attachments.data",
 };
 
+/**
+ * Calculates the UTC date string/object representing 24 hours ago
+ * relative to Asia/Manila (UTC+8) time context.
+ */
+const getManilaLast24HoursThreshold = () => {
+  // Current UTC timestamp
+  const nowUtcMs = Date.now();
+  // Subtract 24 hours (24 * 60 * 60 * 1000 ms)
+  const twentyFourHoursAgoMs = nowUtcMs - 24 * 60 * 60 * 1000;
+
+  // MongoDB stores dates in UTC BSON format, so passing `new Date(twentyFourHoursAgoMs)`
+  // accurately filters records created/submitted within the last 24 real-time hours
+  // regardless of Manila (UTC+8) vs UTC storage differences.
+  return new Date(twentyFourHoursAgoMs);
+};
+
 const buildQueryConditions = (searchParams: URLSearchParams) => {
   const conditions: Record<string, any> = {};
 
@@ -39,7 +55,7 @@ const buildQueryConditions = (searchParams: URLSearchParams) => {
 
   const last24HoursFilter = searchParams.get("last24hours");
   if (last24HoursFilter === "true") {
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const twentyFourHoursAgo = getManilaLast24HoursThreshold();
     const tableName = searchParams.get("table");
 
     const dateField = tableName === "admissions_applications" ? "submittedAt" : "createdAt";
@@ -121,7 +137,12 @@ export async function GET(request: NextRequest) {
       }
 
       if (tableName === "students") {
-        const currentYear = new Date().getFullYear().toString();
+        // Derive current year using Manila timezone context
+        const currentYear = new Intl.DateTimeFormat("en-US", {
+          timeZone: "Asia/Manila",
+          year: "numeric",
+        }).format(new Date());
+
         const sectionDoc = await StudentSection.findOne(
           { student_id: targetId },
           { class: { $elemMatch: { year: currentYear } } }
@@ -167,7 +188,12 @@ export async function GET(request: NextRequest) {
     }
 
     if (tableName === "subjects") {
-      const targetYear = searchParams.get("year") || new Date().getFullYear().toString();
+      const currentYearManila = new Intl.DateTimeFormat("en-US", {
+        timeZone: "Asia/Manila",
+        year: "numeric",
+      }).format(new Date());
+
+      const targetYear = searchParams.get("year") || currentYearManila;
       const targetSemester = searchParams.get("semester") || "1";
       const targetSection = searchParams.get("subject_year_section") || "";
 
@@ -186,7 +212,12 @@ export async function GET(request: NextRequest) {
     }
 
     if (tableName === "student_section") {
-      const targetYear = searchParams.get("year") || new Date().getFullYear().toString();
+      const currentYearManila = new Intl.DateTimeFormat("en-US", {
+        timeZone: "Asia/Manila",
+        year: "numeric",
+      }).format(new Date());
+
+      const targetYear = searchParams.get("year") || currentYearManila;
 
       const sectionFilter = searchParams.get("section");
       const semesterFilter = searchParams.get("semester");
@@ -369,7 +400,6 @@ export async function PUT(request: NextRequest) {
     const { searchParams } = request.nextUrl;
     const body = await request.json();
 
-    // Determine target table from query params or payload body, defaulting to students if action is status update
     const tableName =
       searchParams.get("table") ||
       body.table ||
@@ -429,7 +459,6 @@ export async function PUT(request: NextRequest) {
         );
       }
 
-      // Record audit log entry
       try {
         const cookieStore = await cookies();
         const auditUser = cookieStore.get("audit_user")?.value || "Unknown System Staff";

@@ -43,6 +43,13 @@ export async function GET(request: NextRequest) {
       }
 
       const safeFilename = file.filename || "downloaded-file";
+      
+      return new NextResponse(rawBuffer, {
+        headers: {
+          "Content-Type": file.contentType || "application/octet-stream",
+          "Content-Disposition": `attachment; filename="${safeFilename}"`,
+        },
+      });
     }
 
     if (applicantId && !fileId && !tableName) {
@@ -81,19 +88,22 @@ export async function POST(request: NextRequest) {
     const fields: Record<string, any> = {};
 
     formData.forEach((value, key) => {
-      if (key !== "files") {
+      // Exclude individual file keys from general fields record
+      if (!["profilePic", "reportCard", "birthCert"].includes(key)) {
         fields[key] = value;
       }
     });
 
-    const rawFiles = formData.getAll("files") as File[];
+    const fileKeys = ["profilePic", "reportCard", "birthCert"];
     const processedAttachments = [];
+    const maxFileSize = 2 * 1024 * 1024; // 2MB limit per file
 
-    for (const file of rawFiles) {
-      if (file.size > 0 && file.name !== "undefined") {
-        if (file.size > 5 * 1024 * 1024) {
+    for (const key of fileKeys) {
+      const file = formData.get(key) as File | null;
+      if (file && file.size > 0 && file.name !== "undefined") {
+        if (file.size > maxFileSize) {
           return NextResponse.json(
-            { message: `File ${file.name} exceeds the max allowed limit of 5MB.` },
+            { message: `File "${file.name}" exceeds the max allowed limit of 2MB.` },
             { status: 400 }
           );
         }
@@ -102,7 +112,7 @@ export async function POST(request: NextRequest) {
         const buffer = Buffer.from(bytes);
 
         processedAttachments.push({
-          filename: file.name,
+          filename: `${key}_${file.name}`,
           contentType: file.type,
           data: buffer,
         });
@@ -152,7 +162,7 @@ export async function POST(request: NextRequest) {
 
     const currentOperator = getAuditUser(request);
     const applicantFullName = `${fields.firstName || ""} ${fields.lastName || ""}`.trim();
-    const activityDescription = `Submitted new admission application for applicant: (${applicantFullName} - ID: ${fields.applicant_id})`;
+    const activityDescription = `Submitted new admission application for applicant: ${applicantFullName} (ID: ${fields.applicant_id})`;
 
     await createAuditLog(currentOperator, activityDescription);
 
