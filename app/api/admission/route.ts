@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
 
       const safeFilename = file.filename || "downloaded-file";
       
-      return new NextResponse(rawBuffer, {
+      return new NextResponse(new Uint8Array(rawBuffer), {
         headers: {
           "Content-Type": file.contentType || "application/octet-stream",
           "Content-Disposition": `attachment; filename="${safeFilename}"`,
