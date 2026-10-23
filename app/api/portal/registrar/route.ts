@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import mongoose from "mongoose";
-import { Audit, Student, Admission, StudentSection, Subject } from "@/models/Schema";
+import { Audit, Student, Admission, StudentSection, Subject, Config } from "@/models/Schema";
 
 const connectDB = async () => {
   if (mongoose.connection.readyState >= 1) return;
@@ -13,6 +13,7 @@ const ALLOWED_TABLES: Record<string, { model: mongoose.Model<any>; idKey: string
   admissions_applications: { model: Admission, idKey: "applicant_id" },
   student_section: { model: StudentSection, idKey: "student_id" },
   subjects: { model: Subject, idKey: "subject_code" },
+  configuration: { model: Config, idKey: "key" },
 };
 
 const EXCLUDED_FIELDS: Record<string, string> = {
@@ -24,14 +25,8 @@ const EXCLUDED_FIELDS: Record<string, string> = {
  * relative to Asia/Manila (UTC+8) time context.
  */
 const getManilaLast24HoursThreshold = () => {
-  // Current UTC timestamp
   const nowUtcMs = Date.now();
-  // Subtract 24 hours (24 * 60 * 60 * 1000 ms)
   const twentyFourHoursAgoMs = nowUtcMs - 24 * 60 * 60 * 1000;
-
-  // MongoDB stores dates in UTC BSON format, so passing `new Date(twentyFourHoursAgoMs)`
-  // accurately filters records created/submitted within the last 24 real-time hours
-  // regardless of Manila (UTC+8) vs UTC storage differences.
   return new Date(twentyFourHoursAgoMs);
 };
 
@@ -74,6 +69,8 @@ export async function GET(request: NextRequest) {
     const tableName = searchParams.get("table");
     const targetId = searchParams.get("id");
     const shouldCount = searchParams.get("count") === "true";
+    const getStatusBreakdown = searchParams.get("statusBreakdown") === "true";
+    const getFailedRemarksBreakdown = searchParams.get("failedRemarksBreakdown") === "true";
 
     const applicantId = searchParams.get("applicantId");
     const fileId = searchParams.get("fileId");
@@ -102,7 +99,7 @@ export async function GET(request: NextRequest) {
       const finalDownloadBuffer = Buffer.from(targetData);
       const safeFilename = file.filename || "downloaded-file";
 
-      return new NextResponse(finalDownloadBuffer as any, {
+      return new NextResponse(new Uint8Array(finalDownloadBuffer), {
         status: 200,
         headers: {
           "Content-Type": file.contentType || "application/octet-stream",
@@ -122,6 +119,100 @@ export async function GET(request: NextRequest) {
     const { model: TargetModel, idKey } = ALLOWED_TABLES[tableName];
     const queryConditions = buildQueryConditions(searchParams);
 
+    // Handle Status Breakdown Request for admissions and students
+    if (getStatusBreakdown && (tableName === "admissions_applications" || tableName === "students")) {
+      const breakdown = await TargetModel.aggregate([
+        {
+          $group: {
+            _id: { $ifNull: ["$status", "Pending"] },
+            count: { $sum: 1 },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            status: "$_id",
+            count: 1,
+          },
+        },
+      ]);
+
+      return NextResponse.json({ success: true, data: breakdown }, { status: 200 });
+    }
+
+    // Handle Failed Remarks Breakdown in student_section filtered by configuration current_year
+    if (tableName === "student_section" && getFailedRemarksBreakdown) {
+      // 1. Get current_year from configuration collection (fallback to Manila year if config missing)
+      const currentYearManila = new Intl.DateTimeFormat("en-US", {
+        timeZone: "Asia/Manila",
+        year: "numeric",
+      }).format(new Date());
+
+      const configDoc = await Config.findOne({
+        $or: [{ key: "current_year" }, { name: "current_year" }, { current_year: { $exists: true } }]
+      }).lean();
+
+      const targetYear = (configDoc as any)?.current_year || (configDoc as any)?.value || currentYearManila;
+
+      // 2. Aggregate students in student_section matching current year and check for "Failed" remarks or status/grades
+      const studentRecords = await TargetModel.aggregate([
+        { $unwind: "$class" },
+        { $match: { "class.year": String(targetYear) } },
+        {
+          $project: {
+            student_id: 1,
+            hasFailed: {
+              $in: [
+                true,
+                {
+                  $map: {
+                    input: { $ifNull: ["$class.subjects", []] },
+                    as: "sub",
+                    in: {
+                      $or: [
+                        { $regexMatch: { input: { $toString: { $ifNull: ["$$sub.remarks", "$$sub.status"] } }, regex: /failed/i } },
+                        { $lt: [{ $ifNull: ["$$sub.grade", 100] }, 75] }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          $group: {
+            _id: "$student_id",
+            hasFailed: { $max: "$hasFailed" }
+          }
+        },
+        {
+          $group: {
+            _id: "$hasFailed",
+            count: { $sum: 1 }
+          }
+        }
+      ]);
+
+      let failedCount = 0;
+      let passedCount = 0;
+
+      studentRecords.forEach((item: any) => {
+        if (item._id === true) {
+          failedCount = item.count;
+        } else {
+          passedCount = item.count;
+        }
+      });
+
+      const breakdownData = [
+        { status: "Failed", count: failedCount },
+        { status: "Passed / Normal", count: passedCount }
+      ];
+
+      return NextResponse.json({ success: true, current_year: targetYear, data: breakdownData }, { status: 200 });
+    }
+
     if (shouldCount) {
       const totalCount = await TargetModel.countDocuments(queryConditions);
       return NextResponse.json({ count: totalCount }, { status: 200 });
@@ -137,7 +228,6 @@ export async function GET(request: NextRequest) {
       }
 
       if (tableName === "students") {
-        // Derive current year using Manila timezone context
         const currentYear = new Intl.DateTimeFormat("en-US", {
           timeZone: "Asia/Manila",
           year: "numeric",
@@ -218,7 +308,6 @@ export async function GET(request: NextRequest) {
       }).format(new Date());
 
       const targetYear = searchParams.get("year") || currentYearManila;
-
       const sectionFilter = searchParams.get("section");
       const semesterFilter = searchParams.get("semester");
 

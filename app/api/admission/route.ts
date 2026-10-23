@@ -94,6 +94,41 @@ export async function POST(request: NextRequest) {
       }
     });
 
+    // ==========================================
+    // Duplicate Application Check
+    // ==========================================
+    const firstNameVal = fields.firstName?.trim();
+    const middleNameVal = fields.middleName?.trim();
+    const lastNameVal = fields.lastName?.trim();
+    const dobVal = fields.dob;
+
+    if (firstNameVal && lastNameVal && dobVal) {
+      const query: any = {
+        firstName: new RegExp(`^${firstNameVal}$`, "i"),
+        lastName: new RegExp(`^${lastNameVal}$`, "i"),
+        dob: dobVal,
+        status: { $ne: "Rejected" },
+      };
+
+      if (middleNameVal) {
+        query.middleName = new RegExp(`^${middleNameVal}$`, "i");
+      } else {
+        query.middleName = { $in: [null, "", undefined] };
+      }
+
+      const existingApplication = await Admission.findOne(query);
+
+      if (existingApplication) {
+        return NextResponse.json(
+          { 
+            message: `An existing application for ${firstNameVal} ${lastNameVal} with this date of birth already exists (Status: ${existingApplication.status}).` 
+          },
+          { status: 400 }
+        );
+      }
+    }
+    // ==========================================
+
     const fileKeys = ["profilePic", "reportCard", "birthCert"];
     const processedAttachments = [];
     const maxFileSize = 2 * 1024 * 1024; // 2MB limit per file

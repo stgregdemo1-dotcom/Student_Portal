@@ -306,7 +306,7 @@ export default function SettingsConfigPage() {
           <div className="flex gap-2 pt-2">
             <input
               type="text"
-              placeholder="e.g., 2025-2026"
+              placeholder="e.g., 2026"
               value={inputs["current_year"] || ""}
               onChange={(e) =>
                 setInputs({ ...inputs, current_year: e.target.value })
