@@ -18,22 +18,43 @@ const Header: React.FC = () => {
   useEffect(() => {
     if (pathname !== "/Home") return;
 
+    const body = document.body;
+    const mobileViewport = window.matchMedia("(max-width: 767px)");
+    const previousOverflowAnchor = body.style.overflowAnchor;
+    const updateOverflowAnchor = () => {
+      body.style.overflowAnchor = mobileViewport.matches
+        ? "none"
+        : previousOverflowAnchor;
+    };
+
     const updateHeaderSize = () => {
       const scrollY = window.scrollY;
-      setCompactState((current) => ({
-        pathname,
-        isCompact:
+      setCompactState((current) => {
+        const isCompact =
           current.pathname === pathname
             ? current.isCompact
               ? scrollY > 24
               : scrollY > 64
-            : scrollY > 64,
-      }));
+            : scrollY > 64;
+
+        if (current.pathname === pathname && current.isCompact === isCompact) {
+          return current;
+        }
+
+        return { pathname, isCompact };
+      });
     };
+
+    updateOverflowAnchor();
     updateHeaderSize();
     window.addEventListener("scroll", updateHeaderSize, { passive: true });
+    mobileViewport.addEventListener("change", updateOverflowAnchor);
 
-    return () => window.removeEventListener("scroll", updateHeaderSize);
+    return () => {
+      window.removeEventListener("scroll", updateHeaderSize);
+      mobileViewport.removeEventListener("change", updateOverflowAnchor);
+      body.style.overflowAnchor = previousOverflowAnchor;
+    };
   }, [pathname]);
 
   return (
@@ -89,13 +110,13 @@ const Header: React.FC = () => {
         </g>
       </svg>
       <div className="relative z-10 mx-auto w-full max-w-[1460px] px-3 sm:px-6">
-        <nav className={`flex flex-wrap items-center justify-between ${shouldAnimateCompact ? "transition-none md:transition-[min-height,padding] md:duration-300 md:ease-in-out" : "transition-none"} md:flex-nowrap min-h-[96px] py-3 ${isCompact ? "md:min-h-[68px] md:py-2" : ""}`}>
+        <nav className={`flex flex-wrap items-center justify-between ${shouldAnimateCompact ? "transition-[min-height,padding] duration-300 ease-in-out" : "transition-none"} md:flex-nowrap ${isCompact ? "min-h-[72px] py-1 md:min-h-[68px] md:py-2" : "min-h-[96px] py-3"}`}>
 
 
 <div className="relative isolate flex min-w-0 items-center gap-3 drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)] lg:ml-6">
   <span aria-hidden="true" className="pointer-events-none absolute -inset-x-2 -inset-y-1 z-0 rounded-lg backdrop-blur-[6px]" />
 
-  <div className={`relative z-10 flex-shrink-0 overflow-hidden rounded-full border-4 border-white/50 transition-[height,width,transform] duration-300 hover:scale-110 hover:rotate-3 ${isCompact ? "h-10 w-10 sm:h-14 sm:w-14 md:h-12 md:w-12 lg:h-14 lg:w-14" : "h-10 w-10 sm:h-14 sm:w-14 lg:h-[4.5rem] lg:w-[4.5rem]"}`}>
+  <div className={`relative z-10 flex-shrink-0 overflow-hidden rounded-full border-4 border-white/50 transition-[height,width,transform] duration-300 hover:scale-110 hover:rotate-3 ${isCompact ? "h-8 w-8 sm:h-14 sm:w-14 md:h-12 md:w-12 lg:h-14 lg:w-14" : "h-10 w-10 sm:h-14 sm:w-14 lg:h-[4.5rem] lg:w-[4.5rem]"}`}>
     <img 
       src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQRN3gQ0ep9JbWVXYw4ipX_NzoD8esE7ytbEA&s" 
       alt="Saint Gregory College Logo"
@@ -106,10 +127,10 @@ const Header: React.FC = () => {
 
   <div className="relative z-10 min-w-0 flex flex-col justify-center">
     <h1 className="font-sans antialiased text-[#1a252f] leading-none">
-      <span className={`block whitespace-nowrap font-black uppercase tracking-tighter transition-[font-size] duration-300 ${isCompact ? "text-base sm:text-2xl md:text-xl lg:text-2xl" : "text-base sm:text-2xl lg:text-[1.9rem]"}`}>
+      <span className={`block whitespace-nowrap font-black uppercase tracking-tighter transition-[font-size] duration-300 ${isCompact ? "text-sm sm:text-2xl md:text-xl lg:text-2xl" : "text-base sm:text-2xl lg:text-[1.9rem]"}`}>
         Saint Gregory
       </span>
-      <span className={`block max-w-[130px] font-bold uppercase tracking-[0.05em] text-[#245A81] transition-[font-size] duration-300 sm:max-w-none ${isCompact ? "text-[0.45rem] sm:text-[0.68rem] md:text-[0.6rem] lg:text-xs" : "text-[0.45rem] sm:text-[0.68rem] lg:text-[0.9rem]"}`}>
+      <span className={`block max-w-[130px] font-bold uppercase tracking-[0.05em] text-[#245A81] transition-[font-size] duration-300 sm:max-w-none ${isCompact ? "text-[0.4rem] sm:text-[0.68rem] md:text-[0.6rem] lg:text-xs" : "text-[0.45rem] sm:text-[0.68rem] lg:text-[0.9rem]"}`}>
         College of Science and Technology
       </span>
     </h1>
@@ -157,7 +178,7 @@ const Header: React.FC = () => {
             </Link>
           </div>
 
-          <div className="relative isolate order-3 mt-3 flex w-full items-center justify-center gap-8 border-t border-white/40 pt-3 md:hidden">
+          <div className={`relative isolate order-3 flex w-full items-center justify-center gap-8 border-t border-white/40 md:hidden ${isCompact ? "mt-1 pt-1" : "mt-3 pt-3"}`}>
             <span aria-hidden="true" className="pointer-events-none absolute -inset-x-3 bottom-0 top-0 z-0 backdrop-blur-[4px]" />
             <Link
               href="/Home"
@@ -171,7 +192,7 @@ const Header: React.FC = () => {
                   behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
                 });
               }}
-              className="relative z-10 py-1 text-base font-semibold text-[#183B56] after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:bg-[#ff9c00] after:transition-transform after:duration-300 hover:after:scale-x-100"
+              className={`relative z-10 py-1 font-semibold text-[#183B56] after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:bg-[#ff9c00] after:transition-transform after:duration-300 hover:after:scale-x-100 ${isCompact ? "text-sm" : "text-base"}`}
             >
               Home
             </Link>
@@ -186,20 +207,20 @@ const Header: React.FC = () => {
                   behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
                 });
               }}
-              className="relative z-10 py-1 text-base font-semibold text-[#183B56] after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:bg-[#ff9c00] after:transition-transform after:duration-300 hover:after:scale-x-100"
+              className={`relative z-10 py-1 font-semibold text-[#183B56] after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:bg-[#ff9c00] after:transition-transform after:duration-300 hover:after:scale-x-100 ${isCompact ? "text-sm" : "text-base"}`}
             >
               Programs
             </Link>
             <Link
               href="/About-us"
-              className="relative z-10 py-1 text-base font-semibold text-[#183B56] after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:bg-[#ff9c00] after:transition-transform after:duration-300 hover:after:scale-x-100"
+              className={`relative z-10 py-1 font-semibold text-[#183B56] after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:bg-[#ff9c00] after:transition-transform after:duration-300 hover:after:scale-x-100 ${isCompact ? "text-sm" : "text-base"}`}
             >
               About Us
             </Link>
           </div>
 
 
-          <div className="order-2 ml-2 flex flex-shrink-0 items-center md:order-3 md:ml-0">
+          <div className={`order-2 ml-2 flex flex-shrink-0 items-center md:order-3 md:ml-0 ${isCompact ? "hidden md:flex" : ""}`}>
             <Link 
               href="/portal/log-in" 
               className="inline-flex h-9 min-w-[64px] items-center justify-center rounded-xl border-[2.5px] border-[#183B56] bg-white px-2 text-sm font-bold leading-none text-[#183B56] shadow-none transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#183B56] hover:text-white sm:h-10 sm:min-w-[80px] sm:px-6 sm:text-base"
