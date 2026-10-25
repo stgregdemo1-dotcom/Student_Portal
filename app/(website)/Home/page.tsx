@@ -146,7 +146,7 @@ export default function Home() {
               behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
             });
           }}
-          className="group absolute bottom-0 left-1/2 z-10 hidden -translate-x-1/2 rounded-full px-3 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#ffc629] focus-visible:ring-offset-2 focus-visible:ring-offset-[#173954] sm:block"
+          className="group absolute bottom-0 left-1/2 z-10 hidden -translate-x-1/2 rounded-full px-3 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#ffc629] focus-visible:ring-offset-2 focus-visible:ring-offset-[#173954] md:block"
         >
           <span className="relative block h-12 w-px overflow-hidden bg-white/15">
             <span className="absolute left-0 top-0 block h-4 w-full animate-[scroll-down_1.3s_ease-in-out_infinite] bg-white/45 transition-colors duration-300 group-hover:bg-[#ffc629]/60 motion-reduce:animate-none" />
