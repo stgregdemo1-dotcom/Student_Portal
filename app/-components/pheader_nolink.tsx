@@ -60,13 +60,13 @@ const Header: React.FC = () => {
         <nav
           className="admission-header-nav flex h-full items-center justify-between md:flex-nowrap"
         >
-          <div className="relative isolate flex min-w-0 items-center gap-3 drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)] lg:ml-6">
+          <div className="admission-header-brand relative isolate flex w-max flex-shrink-0 items-center gap-3 drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)] lg:ml-6">
             <span
               aria-hidden="true"
               className="pointer-events-none absolute -inset-x-2 -inset-y-1 z-0 rounded-lg backdrop-blur-[6px]"
             />
             <div
-              className="relative z-10 h-10 w-10 flex-shrink-0 overflow-hidden rounded-full border-4 border-white/50 sm:h-14 sm:w-14 lg:h-[4.5rem] lg:w-[4.5rem]"
+              className="relative z-10 h-[52px] w-[52px] flex-shrink-0 overflow-hidden rounded-full border-4 border-white/50 sm:h-14 sm:w-14 lg:h-[4.5rem] lg:w-[4.5rem]"
             >
               <img
                 src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQRN3gQ0ep9JbWVXYw4ipX_NzoD8esE7ytbEA&s"
@@ -74,15 +74,15 @@ const Header: React.FC = () => {
                 className="h-full w-full rounded-full object-contain"
               />
             </div>
-            <div className="relative z-10 flex min-w-0 flex-col justify-center">
+            <div className="relative z-10 flex flex-shrink-0 flex-col justify-center">
               <h1 className="font-sans leading-none text-[#1a252f] antialiased">
                 <span
-                  className="block whitespace-nowrap text-base font-black uppercase tracking-tighter sm:text-2xl lg:text-[1.9rem]"
+                  className="admission-header-title block whitespace-nowrap text-[1.35rem] font-black uppercase tracking-tighter sm:text-2xl lg:text-[1.9rem]"
                 >
                   Saint Gregory
                 </span>
                 <span
-                  className="block max-w-[130px] text-[0.45rem] font-bold uppercase tracking-[0.05em] text-[#245A81] sm:max-w-none sm:text-[0.68rem] lg:text-[0.9rem]"
+                  className="admission-header-subtitle block max-w-none whitespace-nowrap text-[0.55rem] font-bold uppercase tracking-[0.05em] text-[#245A81] sm:text-[0.68rem] lg:text-[0.9rem]"
                 >
                   College of Science and Technology
                 </span>
