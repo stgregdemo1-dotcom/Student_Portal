@@ -55,6 +55,34 @@ img, video, canvas, svg {
   padding: 0 16px; /* Optimized padding for small mobile displays */
 }
 
+@media (max-width: 767px) {
+  .site-header-nav {
+    transition:
+      min-height 180ms cubic-bezier(0.2, 0.7, 0.2, 1),
+      padding 180ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  .site-header-logo {
+    transition:
+      width 180ms cubic-bezier(0.2, 0.7, 0.2, 1),
+      height 180ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  .site-header-title,
+  .site-header-subtitle {
+    transition: font-size 180ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+}
+
+@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
+  .site-header-nav,
+  .site-header-logo,
+  .site-header-title,
+  .site-header-subtitle {
+    transition-duration: 0.01ms;
+  }
+}
+
 @media (max-width: 768px) {
   .navbar {
     flex-direction: column;
