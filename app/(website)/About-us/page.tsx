@@ -6,7 +6,7 @@ export default function About() {
         <div className="container mx-auto px-4 sm:px-6">
 
           {/* .about-content */}
-          <div className="flex flex-col items-center gap-8 lg:flex-row lg:gap-[50px]">
+          <div className="flex flex-col items-start gap-8 lg:flex-row lg:gap-[50px]">
 
             {/* .about-text */}
             <div className="min-w-0 w-full flex-1">
