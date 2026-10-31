@@ -2,51 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-
-function Reveal({
-  children,
-  direction = "left",
-}: {
-  children: React.ReactNode;
-  direction?: "left" | "right";
-}) {
-  const [isVisible, setIsVisible] = useState(false);
-  const [element, setElement] = useState<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!element) return;
-
-    if (typeof window.IntersectionObserver !== "function") {
-      const frame = window.requestAnimationFrame(() => setIsVisible(true));
-      return () => window.cancelAnimationFrame(frame);
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsVisible(entry.isIntersecting);
-      },
-      { threshold: 0.12 },
-    );
-
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [element]);
-
-  return (
-    <div
-      ref={setElement}
-      className={`transition-[opacity,translate] duration-700 ease-out motion-reduce:duration-300 ${
-        isVisible
-          ? "translate-x-0 opacity-100"
-          : direction === "left"
-            ? "-translate-x-16 opacity-0 motion-reduce:-translate-x-8"
-            : "translate-x-16 opacity-0 motion-reduce:translate-x-8"
-      }`}
-    >
-      {children}
-    </div>
-  );
-}
+import AboutSection from "../../-components/AboutSection";
+import Reveal from "../../-components/Reveal";
 
 const mission =
   "Saint Gregory College of Science and Technology - Cavite academe envisions itself as the center of academic excellence in Hospitality & Tourism Management which is established to the purpose of molding the mind of the Filipino youth dedicated to the service of country, humanity and God. An academe committed to give high quality standard of HRM/Tourism/ICT education with highly competitive skills and knowledge with this commitment. Saint Gregory College of Science and Technology - Cavite aims to develop and produce graduates with timely and best teaching methods that answer the needs of our modern learners. In accordance with this mission, SGCST-Cavite binds itself to the highest standard of dedication, integrity and competency.";
@@ -108,32 +65,39 @@ export default function Home() {
     : "";
 
   return (
-    <div className="overflow-hidden bg-[#faf9f5] text-center">
+    <div className="overflow-hidden bg-[#F8F9FA] text-center text-[#0D2B45]">
       {/* Hero banner: the site's existing global navigation stays in its layout. */}
       <section
         id="Home"
-        className="relative flex min-h-[460px] items-center justify-center bg-cover bg-center px-4 py-12 text-center text-white sm:min-h-[560px] sm:px-10 sm:py-14 lg:min-h-[600px] lg:px-[9%]"
+        className="scroll-mt-24 relative flex min-h-[470px] items-center justify-start overflow-hidden bg-cover bg-[center_38%] px-5 py-10 text-left text-white sm:min-h-[540px] sm:px-10 lg:min-h-[600px] lg:px-[7%]"
         style={{
-          backgroundImage:
-            "linear-gradient(90deg, rgba(5,30,48,.88) 0%, rgba(5,30,48,.67) 48%, rgba(5,30,48,.38) 100%), url('https://scontent.fcrk3-3.fna.fbcdn.net/v/t1.15752-9/829406177_1938597277545802_2860480563625807303_n.jpg?_nc_cat=106&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=9f807c&_nc_ohc=nSa7oE_9IIkQ7kNvwEVNOeY&_nc_oc=AdplMu7yOzav7X0zsp3EcgIUHtBTSFiztGiHsRVqlBdjR2eaLTBBbK2q6dLGBjnIzME&_nc_zt=23&_nc_ht=scontent.fcrk3-3.fna&_nc_ss=7b2a8&oh=03_Q7cD6gH6HKuXVJE-NFdnmn-uN2wEaTrcaxkrc5ZFFqyABvawtg&oe=6AE87494')",
+          backgroundImage: "url('/images/sgcst-hero-background.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center center",
+          backgroundRepeat: "no-repeat",
         }}
       >
         <Reveal direction="left">
-          <div className="relative z-10 mx-auto flex w-full max-w-[1180px] justify-center">
-            <div className="mx-auto w-full max-w-[650px] text-center">
-            <p className="mb-3 text-xs font-bold uppercase tracking-[0.12em] text-[#ffc629] sm:text-sm sm:tracking-[0.22em]">Saint Gregory College of Science and Technology</p>
-            <h1 className="mb-5 text-3xl font-extrabold leading-[1.08] tracking-tight drop-shadow-md sm:text-5xl lg:text-[3.25rem]">
-              Excellence in Science and Technology Education
-            </h1>
-            <p className="mx-auto mb-7 max-w-[620px] text-base leading-7 text-white/95 sm:text-lg">
-              Saint Gregory College of Science and Technology is dedicated to providing world-class education that prepares students for successful careers in science, technology, engineering, and mathematics.
-            </p>
-            <Link
-              href="/admission/registration"
-              className="inline-flex min-h-[56px] min-w-[190px] cursor-pointer items-center justify-center gap-3 rounded-full bg-[#ffc20e] px-9 py-4 text-lg font-extrabold text-[#172f45] shadow-lg transition duration-300 hover:-translate-y-1 hover:bg-[#14853b] hover:text-white hover:shadow-xl focus:outline-none focus-visible:ring-4 focus-visible:ring-[#14853b]/50"
-            >
-              Apply Now!
-            </Link>
+          <div className="relative z-10 mx-auto flex w-full max-w-[1280px] justify-start">
+            <div className="w-full max-w-[610px] text-left">
+              <p className="mb-3 text-xs font-bold uppercase tracking-[0.12em] text-[#ffc629] sm:text-sm sm:tracking-[0.22em]">
+                Saint Gregory College of Science and Technology
+              </p>
+              <h1 className="mb-4 text-3xl font-extrabold leading-[1.08] tracking-tight drop-shadow-md sm:text-4xl lg:text-[2.75rem]">
+                Excellence in Science and Technology Education
+              </h1>
+              <p className="mb-5 max-w-[560px] text-sm leading-6 text-white/95 sm:text-base sm:leading-7">
+                Saint Gregory College of Science and Technology is dedicated to
+                providing world-class education that prepares students for
+                successful careers in science, technology, engineering, and
+                mathematics.
+              </p>
+              <Link
+                href="/admission/registration"
+                className="inline-flex min-h-14 min-w-[190px] cursor-pointer items-center justify-center rounded-full border-2 border-white/80 bg-[#FFC107] px-9 py-4 text-base font-extrabold text-[#082B49] shadow-[0_8px_24px_rgba(0,0,0,0.35)] transition-[transform,background-color,color,box-shadow] duration-300 ease-in-out hover:-translate-y-0.5 hover:bg-[#008A3D] hover:text-white hover:shadow-[0_6px_14px_rgba(0,138,61,0.32)] focus:outline-none focus-visible:ring-4 focus-visible:ring-white/70 motion-reduce:transition-none sm:text-lg"
+              >
+                Apply Now!
+              </Link>
             </div>
           </div>
         </Reveal>
@@ -152,21 +116,46 @@ export default function Home() {
             <span className="absolute left-0 top-0 block h-4 w-full animate-[scroll-down_1.3s_ease-in-out_infinite] bg-white/45 transition-colors duration-300 group-hover:bg-[#ffc629]/60 motion-reduce:animate-none" />
           </span>
         </a>
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-5 bg-[#e9a300] [clip-path:polygon(0_0,18%_100%,42%_90%,66%_65%,82%_70%,100%_0,100%_100%,0_100%)]" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-5 bg-[#FF7900] sm:h-6 [clip-path:polygon(0_0,18%_100%,42%_90%,66%_65%,82%_70%,100%_0,100%_100%,0_100%)]" />
       </section>
 
       {/* Mission & Vision */}
-      <section id="News" className="relative px-4 pb-12 pt-8 sm:px-8 sm:pb-20 sm:pt-12">
+      <section
+        id="News"
+        className="scroll-mt-24 relative isolate overflow-hidden bg-[radial-gradient(ellipse_at_15%_0%,rgba(255,193,7,0.10),transparent_34%),linear-gradient(180deg,#FFFCF5_0%,#FAFBFD_55%,#F7FAFF_100%)] px-4 pb-10 pt-8 sm:px-8 sm:pb-12 sm:pt-10"
+      >
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute left-0 top-12 h-24 w-24 opacity-40 sm:left-4 sm:top-16 sm:h-32 sm:w-32"
+          style={{
+            backgroundImage: "radial-gradient(#E9A300 1.5px, transparent 1.5px)",
+            backgroundSize: "13px 13px",
+            maskImage: "linear-gradient(135deg, black, transparent 78%)",
+          }}
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute right-0 top-12 h-24 w-24 opacity-35 sm:right-4 sm:top-16 sm:h-32 sm:w-32"
+          style={{
+            backgroundImage: "radial-gradient(#E9A300 1.5px, transparent 1.5px)",
+            backgroundSize: "13px 13px",
+            maskImage: "linear-gradient(225deg, black, transparent 78%)",
+          }}
+        />
+        <div aria-hidden="true" className="pointer-events-none absolute -left-20 -top-24 h-52 w-52 rounded-full bg-[#FFC107]/[0.07]" />
         <div className="relative z-10 mx-auto max-w-[1145px] text-center">
           <Reveal direction="left">
-            <div className="mb-8 text-center sm:mb-10">
-              <div className="mx-auto mb-4 h-[5px] w-14 rounded-full bg-[#e9a300]" />
-              <h2 className="text-3xl font-extrabold tracking-tight text-[#173954] sm:text-4xl">Mission &amp; Vision</h2>
-              <div className="mx-auto mt-3 h-[3px] w-16 bg-[#e9a300]" />
+            <div className="mb-5 text-center sm:mb-6">
+              <p className="mb-2 text-xs font-extrabold uppercase tracking-[0.2em] text-[#c88900]">Our Foundation</p>
+              <h2 className="text-3xl font-extrabold tracking-tight text-[#0D2B45] sm:text-4xl">Mission &amp; Vision</h2>
+              <div className="mx-auto mt-4 h-1 w-14 rounded-full bg-[#FFC107]" />
+              <p className="mt-4 text-sm font-medium text-[#526174]">
+                Tap or click either card to read the full statement.
+              </p>
             </div>
           </Reveal>
 
-          <div className="mx-auto grid grid-cols-1 items-stretch gap-6 md:grid-cols-2 md:gap-8">
+          <div className="mx-auto grid grid-cols-1 items-stretch gap-3 md:grid-cols-2 md:gap-4">
             <Reveal direction="left">
             <article
               role="button"
@@ -179,14 +168,22 @@ export default function Home() {
                   setSelectedStatement("Mission");
                 }
               }}
-              className="group relative flex min-h-[280px] h-full w-full cursor-pointer flex-col items-center rounded-xl bg-white px-5 py-6 text-center text-[#173954] shadow-[0_12px_35px_rgba(30,40,30,0.10)] ring-1 ring-black/[0.04] transition-all duration-500 ease-out hover:scale-[1.02] hover:bg-[#e69e03] hover:ring-2 hover:ring-[#e69e03] hover:shadow-xl focus:outline-none focus-visible:ring-4 focus-visible:ring-[#e9a300] motion-reduce:transition-none sm:min-h-[340px] sm:px-6 sm:py-8"
+              className="group relative flex min-h-[170px] h-full w-full cursor-pointer items-start gap-3 overflow-hidden rounded-xl border border-[#F0E6CC] bg-white p-4 text-left text-[#0D2B45] shadow-[0_8px_24px_rgba(13,43,69,0.09)] transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_14px_30px_rgba(13,43,69,0.14)] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#FFC107] motion-reduce:transition-none sm:min-h-[185px] sm:gap-4 sm:p-5"
             >
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-[#14853b]/10 transition-all duration-500 ease-out group-hover:scale-110 group-hover:text-white/20 [&>svg]:h-40 [&>svg]:w-40 sm:[&>svg]:h-48 sm:[&>svg]:w-48">
+              <div aria-hidden="true" className="pointer-events-none absolute -left-1 -top-1 h-16 w-20 rounded-br-[2rem] rounded-tl-xl bg-[#FF7900] [clip-path:polygon(0_0,100%_0,35%_18%,0_72%)]" />
+              <div aria-hidden="true" className="pointer-events-none absolute bottom-0 right-0 h-20 w-24 text-[#FFC107]/20 [&>svg]:h-full [&>svg]:w-full">
                 <MissionIcon />
               </div>
-              <h3 className="relative text-2xl font-extrabold text-[#173954] transition-colors duration-500 ease-out group-hover:text-white sm:text-4xl">Mission</h3>
-              <p className="relative mt-4 min-h-[6rem] max-w-xl line-clamp-4 text-sm leading-6 text-[#243d55] transition-colors duration-500 ease-out group-hover:text-white sm:text-base sm:leading-6">{mission}</p>
-              <span className="relative mt-auto pt-4 text-sm font-bold text-[#14853b] transition-colors duration-500 ease-out group-hover:text-white">Click to view full mission</span>
+              <div className="relative z-10 mt-1 flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#FFF0B8] text-[#0D2B45] sm:h-[68px] sm:w-[68px] [&>svg]:h-8 [&>svg]:w-8">
+                <MissionIcon />
+              </div>
+              <div className="relative z-10 min-w-0 flex-1 py-1">
+                <h3 className="text-xl font-extrabold text-[#0D2B45] sm:text-2xl">Our Mission</h3>
+                <p className="mt-2 line-clamp-3 max-w-xl text-sm leading-5 text-[#526174] sm:text-[0.95rem] sm:leading-6">{mission}</p>
+                <span className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-full bg-[#FFC107] px-4 text-xs font-bold text-[#082B49] shadow-sm transition-[transform,background-color,color,box-shadow] duration-300 ease-in-out group-hover:-translate-y-0.5 group-hover:bg-[#008A3D] group-hover:text-white group-hover:shadow-[0_5px_12px_rgba(0,138,61,0.28)] group-focus-visible:bg-[#008A3D] group-focus-visible:text-white motion-reduce:transition-none">
+                  Read Full Mission <span aria-hidden="true" className="inline-block transition-transform duration-300 ease-in-out group-hover:translate-x-1 motion-reduce:transition-none">→</span>
+                </span>
+              </div>
             </article>
             </Reveal>
             <Reveal direction="right">
@@ -201,16 +198,24 @@ export default function Home() {
                   setSelectedStatement("Vision");
                 }
               }}
-              className="group relative flex min-h-[280px] h-full w-full cursor-pointer flex-col items-center rounded-xl bg-white px-5 py-6 text-center text-[#173954] shadow-[0_12px_35px_rgba(30,40,30,0.10)] ring-1 ring-black/[0.04] transition-all duration-500 ease-out hover:scale-[1.02] hover:bg-[#14853b] hover:ring-2 hover:ring-[#14853b] hover:shadow-xl focus:outline-none focus-visible:ring-4 focus-visible:ring-[#e9a300] motion-reduce:transition-none sm:min-h-[340px] sm:px-6 sm:py-8"
+              className="group relative flex min-h-[190px] h-full w-full cursor-pointer items-start gap-4 overflow-hidden rounded-2xl border border-[#DCE7F2] bg-[linear-gradient(120deg,#F0F6FC_0%,#FFFFFF_72%)] p-5 text-left text-[#0D2B45] shadow-[0_10px_28px_rgba(13,43,69,0.08)] transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_16px_34px_rgba(13,43,69,0.13)] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#183B56]/25 motion-reduce:transition-none sm:min-h-[205px] sm:gap-5 sm:p-6"
             >
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-[#14853b]/10 transition-all duration-500 ease-out group-hover:scale-110 group-hover:text-white/20 [&>svg]:h-40 [&>svg]:w-40 sm:[&>svg]:h-48 sm:[&>svg]:w-48">
+              <div aria-hidden="true" className="pointer-events-none absolute -left-1 -top-1 h-16 w-20 rounded-br-[2rem] rounded-tl-xl bg-[#0D2B45] [clip-path:polygon(0_0,100%_0,35%_18%,0_72%)]" />
+              <div aria-hidden="true" className="pointer-events-none absolute bottom-0 right-0 h-20 w-24 text-[#0D2B45]/10 [&>svg]:h-full [&>svg]:w-full">
                 <VisionIcon />
               </div>
-              <h3 className="relative text-2xl font-extrabold text-[#173954] transition-colors duration-500 ease-out group-hover:text-white sm:text-4xl">Vision</h3>
-              <p className="relative mt-4 min-h-[6rem] max-w-xl line-clamp-4 text-sm leading-6 text-[#243d55] transition-colors duration-500 ease-out group-hover:text-white sm:text-base sm:leading-6">{vision}</p>
-              <span className="relative mt-auto pt-4 text-sm font-bold text-[#14853b] transition-colors duration-500 ease-out group-hover:text-white">Click to view full vision</span>
+              <div className="relative z-10 mt-1 flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#DCEAF7] text-[#0D2B45] sm:h-[68px] sm:w-[68px] [&>svg]:h-8 [&>svg]:w-8">
+                <VisionIcon />
+              </div>
+              <div className="relative z-10 min-w-0 flex-1 py-1">
+                <h3 className="text-xl font-extrabold text-[#0D2B45] sm:text-2xl">Our Vision</h3>
+                <p className="mt-2 line-clamp-3 max-w-xl text-sm leading-5 text-[#526174] sm:text-[0.95rem] sm:leading-6">{vision}</p>
+                <span className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-full bg-[#082B49] px-4 text-xs font-bold text-white shadow-sm transition-[transform,background-color,color,box-shadow] duration-300 ease-in-out group-hover:-translate-y-0.5 group-hover:bg-[#008A3D] group-hover:text-white group-hover:shadow-[0_5px_12px_rgba(0,138,61,0.28)] group-focus-visible:bg-[#008A3D] group-focus-visible:text-white motion-reduce:transition-none">
+                  Read Full Vision <span aria-hidden="true" className="inline-block transition-transform duration-300 ease-in-out group-hover:translate-x-1 motion-reduce:transition-none">→</span>
+                </span>
+              </div>
             </article>
-            </Reveal>
+          </Reveal>
           </div>
         </div>
       </section>
@@ -231,7 +236,7 @@ export default function Home() {
               type="button"
               onClick={() => setSelectedStatement(null)}
               aria-label="Close popup"
-              className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full text-2xl text-[#34495e] transition hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#14853b]"
+              className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full text-2xl text-[#34495e] transition-[transform,background-color,color,box-shadow] duration-300 ease-in-out hover:-translate-y-0.5 hover:bg-[#082B49] hover:text-white hover:shadow-[0_5px_12px_rgba(8,43,73,0.28)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF7900] motion-reduce:transition-none"
             >
               &times;
             </button>
@@ -272,20 +277,35 @@ export default function Home() {
         </div>
       )}
 
-      {/* Programs section added to the homepage, using the existing green and gold theme. */}
-      <section id="Programs" className="relative bg-[#faf9f5] px-4 py-12 sm:px-8 sm:py-20">
-        <div className="pointer-events-none absolute inset-0 opacity-50" style={{ backgroundImage: "linear-gradient(135deg, transparent 0 48%, rgba(235,174,30,.08) 48% 52%, transparent 52%), linear-gradient(45deg, transparent 0 48%, rgba(235,174,30,.06) 48% 52%, transparent 52%)", backgroundSize: "220px 220px" }} />
-        <div className="relative z-10 mx-auto max-w-[1145px] text-center">
+      <section
+        id="Programs"
+        className="relative isolate scroll-mt-24 overflow-hidden bg-[radial-gradient(ellipse_at_8%_46%,rgba(255,193,7,0.08),transparent_28%),radial-gradient(ellipse_at_92%_64%,rgba(71,153,220,0.08),transparent_30%),linear-gradient(180deg,#F7FAFF_0%,#FFFCF5_52%,#FFFCF5_100%)] px-0 pt-8 sm:pt-10"
+      >
+        <div aria-hidden="true" className="pointer-events-none absolute -left-20 top-24 h-52 w-52 rounded-full bg-[#FFC107]/[0.08] sm:h-64 sm:w-64" />
+        <div aria-hidden="true" className="pointer-events-none absolute -right-20 top-44 h-52 w-52 rounded-full bg-[#B9D9FF]/[0.18] sm:h-64 sm:w-64" />
+        <div aria-hidden="true" className="pointer-events-none absolute -bottom-24 left-[38%] hidden h-56 w-56 rotate-45 bg-[#E4F0FF]/60 lg:block" />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute left-5 top-10 h-16 w-16 opacity-50 sm:left-10 sm:top-12 sm:h-20 sm:w-20"
+          style={{ backgroundImage: "radial-gradient(#E9A300 1.5px, transparent 1.5px)", backgroundSize: "14px 14px" }}
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute right-5 top-10 h-16 w-16 opacity-50 sm:right-10 sm:top-12 sm:h-20 sm:w-20"
+          style={{ backgroundImage: "radial-gradient(#E9A300 1.5px, transparent 1.5px)", backgroundSize: "14px 14px" }}
+        />
+        <div className="relative z-10 mx-auto max-w-[1145px] px-4 text-center sm:px-8">
           <Reveal direction="left">
-            <div className="mb-8 text-center sm:mb-10">
-              <p className="mb-2 text-sm font-bold uppercase tracking-[0.18em] text-[#14853b]">Find your path</p>
-              <h2 className="text-3xl font-extrabold tracking-tight text-[#173954] sm:text-4xl">Our Programs</h2>
-              <div className="mx-auto mt-4 h-[3px] w-16 rounded-full bg-[#e9a300]" />
-              <p className="mx-auto mt-4 max-w-2xl leading-7 text-[#34495e]">Explore academic programs designed to build practical skills and prepare students for future careers.</p>
+            <div className="mb-6 text-center sm:mb-7">
+              <p className="mb-2 text-sm font-extrabold uppercase tracking-[0.2em] text-[#c88900]">Our Programs</p>
+              <h2 className="text-3xl font-extrabold tracking-tight text-[#0D2B45] sm:text-4xl lg:text-[2.5rem]">Explore Our Academic Programs</h2>
+              <div className="mx-auto mt-4 h-1 w-14 rounded-full bg-[#FFC107]" />
+              <p className="mx-auto mt-4 max-w-2xl leading-7 text-[#526174]">Discover programs designed to build practical skills and prepare you for future opportunities.</p>
             </div>
           </Reveal>
-          <div className="mx-auto grid items-stretch gap-6 md:grid-cols-2">
-            <Reveal direction="left">
+        </div>
+        <div className="relative z-10 mx-auto grid max-w-[1200px] gap-4 px-4 pb-10 sm:px-6 lg:px-8">
+          <Reveal direction="left">
             <article
               role="button"
               tabIndex={0}
@@ -297,17 +317,28 @@ export default function Home() {
                   setSelectedStatement("Information and Communication Technology");
                 }
               }}
-              className="group relative flex h-full min-h-[220px] w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl p-5 text-center text-white shadow-[0_14px_36px_rgba(16,38,56,0.22)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_20px_48px_rgba(16,38,56,0.32)] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#e9a300] sm:min-h-[270px] sm:p-9"
+              className="group relative grid min-h-[390px] w-full cursor-pointer grid-cols-1 overflow-hidden rounded-2xl bg-[#FFC107] text-left shadow-[0_12px_30px_rgba(16,38,56,0.12)] transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-[0_18px_38px_rgba(16,38,56,0.18)] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#FFC107] motion-reduce:transition-none md:min-h-[250px] md:grid-cols-2 lg:min-h-[270px]"
             >
-              <div className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style={{ backgroundImage: "url('/comlab.png')" }} aria-hidden="true" />
-              <div className="absolute inset-0 bg-[#102638]/60 transition-colors duration-300 group-hover:bg-[#102638]/45" aria-hidden="true" />
-              <h3 className="relative text-xl font-extrabold drop-shadow sm:text-3xl">Information and Communication Technology</h3>
-              <span className="relative mt-4 inline-flex items-center gap-2 text-base font-bold text-white/95">
-                Learn more <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">→</span>
-              </span>
+              <div className="relative min-h-[190px] overflow-hidden md:min-h-full md:[clip-path:polygon(0_0,100%_0,96%_100%,0_100%)]">
+                <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 ease-in-out group-hover:scale-[1.03] motion-reduce:transition-none" style={{ backgroundImage: "url('/comlab.png')" }} aria-hidden="true" />
+              </div>
+              <div className="relative flex flex-col justify-center overflow-hidden bg-[linear-gradient(135deg,#EEF6FF_0%,#F7FBFF_100%)] p-5 sm:p-7 md:-ml-2 md:pl-8 lg:p-8 lg:pl-10">
+                <div aria-hidden="true" className="pointer-events-none absolute -right-6 top-1/2 hidden -translate-y-1/2 text-[#B9D9FF]/60 md:block">
+                  <svg viewBox="0 0 100 80" className="h-28 w-36" fill="none" stroke="currentColor" strokeWidth="4">
+                    <rect x="10" y="8" width="80" height="52" rx="5" /><path d="M37 73h26M50 60v13M22 22h45" />
+                  </svg>
+                </div>
+                <div aria-hidden="true" className="relative mb-3 h-1 w-9 rounded-full bg-[#FFC107]" />
+                <h3 className="relative max-w-[34rem] text-2xl font-extrabold leading-tight text-[#0D2B45] sm:text-3xl">Information and Communication Technology</h3>
+                <p className="relative mt-3 max-w-xl text-sm leading-6 text-[#344B63] sm:text-base">Develop practical skills in computer programming and computer hardware servicing.</p>
+                <span className="relative mt-4 inline-flex min-h-10 w-fit items-center gap-3 rounded-full bg-[#FFC107] px-6 text-sm font-extrabold text-[#082B49] shadow-sm transition-[transform,background-color,color,box-shadow] duration-300 ease-in-out group-hover:-translate-y-0.5 group-hover:bg-[#082B49] group-hover:text-white group-hover:shadow-[0_5px_12px_rgba(8,43,73,0.28)] motion-reduce:transition-none">
+                  Learn More <span aria-hidden="true" className="inline-block transition-transform duration-300 ease-in-out group-hover:translate-x-1 motion-reduce:transition-none">→</span>
+                </span>
+              </div>
             </article>
-            </Reveal>
-            <Reveal direction="right">
+          </Reveal>
+
+          <Reveal direction="right">
             <article
               role="button"
               tabIndex={0}
@@ -319,17 +350,106 @@ export default function Home() {
                   setSelectedStatement("Home Economics");
                 }
               }}
-              className="group relative flex h-full min-h-[220px] w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl p-5 text-center text-white shadow-[0_14px_36px_rgba(16,38,56,0.22)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_20px_48px_rgba(16,38,56,0.32)] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#e9a300] sm:min-h-[270px] sm:p-9"
+              className="group relative grid min-h-[390px] w-full cursor-pointer grid-cols-1 overflow-hidden rounded-2xl bg-[#FFC107] text-left shadow-[0_12px_30px_rgba(16,38,56,0.12)] transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-[0_18px_38px_rgba(16,38,56,0.18)] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#FFC107] motion-reduce:transition-none md:min-h-[250px] md:grid-cols-2 lg:min-h-[270px]"
             >
-              <div className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style={{ backgroundImage: "url('/hm.jpg')" }} aria-hidden="true" />
-              <div className="absolute inset-0 bg-[#102638]/60 transition-colors duration-300 group-hover:bg-[#102638]/45" aria-hidden="true" />
-              <h3 className="relative text-xl font-extrabold drop-shadow sm:text-3xl">Home Economics</h3>
-              <span className="relative mt-4 inline-flex items-center gap-2 text-base font-bold text-white/95">
-                Learn more <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">→</span>
-              </span>
+              <div className="relative order-1 min-h-[190px] overflow-hidden md:order-2 md:min-h-full md:[clip-path:polygon(4%_0,100%_0,100%_100%,0_100%)]">
+                <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 ease-in-out group-hover:scale-[1.03] motion-reduce:transition-none" style={{ backgroundImage: "url('/hm.jpg')" }} aria-hidden="true" />
+              </div>
+              <div className="relative order-2 flex flex-col justify-center overflow-hidden bg-[linear-gradient(135deg,#FFFCF5_0%,#FFF5E3_100%)] p-5 sm:p-7 md:order-1 md:pr-8 lg:p-8 lg:pr-10">
+                <div aria-hidden="true" className="pointer-events-none absolute -left-5 top-1/2 hidden -translate-y-1/2 text-[#FFE0A6]/70 md:block">
+                  <svg viewBox="0 0 100 100" className="h-28 w-28" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M50 10c-17 0-27 12-27 27v25h54V37c0-15-10-27-27-27Zm-27 42H13c-8 0-10 11-2 15l18 8m48-23h10c8 0 10 11 2 15l-18 8M35 86h30" />
+                  </svg>
+                </div>
+                <div aria-hidden="true" className="relative mb-3 h-1 w-9 rounded-full bg-[#FFC107]" />
+                <h3 className="relative max-w-[34rem] text-2xl font-extrabold leading-tight text-[#0D2B45] sm:text-3xl">Home Economics</h3>
+                <p className="relative mt-3 max-w-xl text-sm leading-6 text-[#344B63] sm:text-base">Build practical skills in food preparation, home management, hospitality, and related services.</p>
+                <span className="relative mt-4 inline-flex min-h-10 w-fit items-center gap-3 rounded-full bg-[#FFC107] px-6 text-sm font-extrabold text-[#082B49] shadow-sm transition-[transform,background-color,color,box-shadow] duration-300 ease-in-out group-hover:-translate-y-0.5 group-hover:bg-[#082B49] group-hover:text-white group-hover:shadow-[0_5px_12px_rgba(8,43,73,0.28)] motion-reduce:transition-none">
+                  Learn More <span aria-hidden="true" className="inline-block transition-transform duration-300 ease-in-out group-hover:translate-x-1 motion-reduce:transition-none">→</span>
+                </span>
+              </div>
             </article>
-            </Reveal>
-            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      <AboutSection />
+
+      <section
+        className="relative scroll-mt-24 overflow-hidden bg-[radial-gradient(ellipse_at_50%_0%,rgba(255,193,7,0.18),transparent_62%),radial-gradient(ellipse_at_0%_100%,rgba(255,193,7,0.10),transparent_30%),linear-gradient(180deg,#FFF9E8_0%,#FFFCF5_58%,#FFFCF5_100%)] px-4 py-10 sm:px-8 sm:py-12 lg:py-14"
+        id="Why-Choose"
+      >
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 opacity-30"
+          style={{
+            backgroundImage:
+              "linear-gradient(135deg, transparent 0 48%, rgba(235,174,30,.08) 48% 52%, transparent 52%), linear-gradient(45deg, transparent 0 48%, rgba(235,174,30,.06) 48% 52%, transparent 52%)",
+            backgroundSize: "220px 220px",
+          }}
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 left-0 w-28 opacity-55 sm:w-48"
+          style={{
+            backgroundImage: "radial-gradient(#E9A300 1.4px, transparent 1.4px)",
+            backgroundSize: "13px 13px",
+            maskImage: "linear-gradient(90deg, black, transparent)",
+          }}
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 right-0 w-28 opacity-55 sm:w-48"
+          style={{
+            backgroundImage: "radial-gradient(#E9A300 1.4px, transparent 1.4px)",
+            backgroundSize: "13px 13px",
+            maskImage: "linear-gradient(270deg, black, transparent)",
+          }}
+        />
+        <div className="relative mx-auto max-w-[1200px]">
+          <Reveal>
+          <div className="mx-auto mb-6 max-w-2xl text-center sm:mb-7">
+            <p className="mb-2 text-xs font-extrabold uppercase tracking-[0.2em] text-[#D89B00]">
+              Why Choose SGCST?
+            </p>
+            <h2 className="text-3xl font-extrabold tracking-tight text-[#0D2B45] sm:text-4xl">
+              A Better Future Starts Here
+            </h2>
+            <div className="mx-auto mt-4 h-1 w-14 rounded-full bg-[#FFC107]" />
+          </div>
+          </Reveal>
+          <div className="grid auto-rows-fr gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:gap-4">
+            {[
+              { title: "Quality Education", description: "Build a strong foundation through dedicated teaching and academic support.", icon: "book" },
+              { title: "Practical Learning", description: "Develop hands-on skills through ICT and hospitality learning opportunities.", icon: "computer" },
+              { title: "Student Development", description: "Grow your knowledge, confidence, and readiness for future challenges.", icon: "people" },
+              { title: "Career Opportunities", description: "Prepare for meaningful careers with practical and relevant skills.", icon: "career" },
+            ].map((feature) => (
+              <Reveal key={feature.title}>
+              <article
+                className="group flex h-full min-h-[190px] flex-col items-center rounded-xl border-b-4 border-[#FF7900] bg-white px-4 py-4 text-center shadow-[0_8px_24px_rgba(13,43,69,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_14px_30px_rgba(13,43,69,0.14)] motion-reduce:transition-none"
+              >
+                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#FFF1C2] text-[#0D2B45] transition-colors duration-300 group-hover:bg-[#FFE69A]">
+                  {feature.icon === "book" ? (
+                    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5v-16Z" /><path d="M4 17.5A2.5 2.5 0 0 1 6.5 15H20M8 7h8m-8 4h8" /></svg>
+                  ) : feature.icon === "computer" ? (
+                    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="13" rx="2" /><path d="M8 21h8m-4-4v4M7 8h10m-10 4h6" /></svg>
+                  ) : feature.icon === "people" ? (
+                    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="8" r="3" /><path d="M3.5 20v-1.5A5.5 5.5 0 0 1 9 13h0a5.5 5.5 0 0 1 5.5 5.5V20M16 5.3a3 3 0 0 1 0 5.8M17 13.2a5 5 0 0 1 3.5 4.8v1" /></svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20h16M6 17V9m4 8V5m4 12v-6m4 6V3" /><path d="m4 7 6-4 5 3 5-4" /></svg>
+                  )}
+                </div>
+                <h3 className="flex min-h-11 items-center justify-center text-base font-extrabold text-[#0D2B45] sm:text-lg">
+                  {feature.title}
+                </h3>
+                <p className="mt-2 max-w-[280px] flex-1 text-sm leading-6 text-[#526174]">
+                  {feature.description}
+                </p>
+              </article>
+              </Reveal>
+            ))}
+          </div>
         </div>
       </section>
 
