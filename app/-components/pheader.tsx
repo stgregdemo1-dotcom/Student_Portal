@@ -7,9 +7,12 @@ import { usePathname } from 'next/navigation';
 const Header: React.FC = () => {
   const pathname = usePathname();
   const isHomePage = pathname === "/Home";
+  const isAdmissionPage = pathname.startsWith("/admission/");
+  const usesCompactHeader = isHomePage || isAdmissionPage;
   const [compactState, setCompactState] = useState({ pathname, isCompact: false });
+  const [activeSection, setActiveSection] = useState("Home");
   const shouldAnimateCompact = compactState.pathname === pathname;
-  const isCompact = isHomePage && shouldAnimateCompact && compactState.isCompact;
+  const isCompact = usesCompactHeader && shouldAnimateCompact && compactState.isCompact;
   const compactRef = useRef(false);
 
   useLayoutEffect(() => {
@@ -17,7 +20,7 @@ const Header: React.FC = () => {
   }, [pathname]);
 
   useEffect(() => {
-    if (pathname !== "/Home") return;
+    if (!usesCompactHeader) return;
 
     const body = document.body;
     const previousOverflowAnchor = body.style.overflowAnchor;
@@ -47,11 +50,75 @@ const Header: React.FC = () => {
       window.removeEventListener("scroll", updateHeaderSize);
       body.style.overflowAnchor = previousOverflowAnchor;
     };
+  }, [pathname, usesCompactHeader]);
+
+  useEffect(() => {
+    if (pathname !== "/Home") return;
+
+    const sectionIds = ["Home", "Programs", "About-us"];
+    const sections = sectionIds
+      .map((id) => document.getElementById(id))
+      .filter((section): section is HTMLElement => section !== null);
+    if (sections.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visibleSections = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+        const sectionId = visibleSections[0]?.target.id;
+        if (sectionId) {
+          setActiveSection(
+            sectionId === "About-us" ? "About Us" : sectionId,
+          );
+        }
+      },
+      { rootMargin: "-88px 0px -65% 0px", threshold: [0, 0.1, 0.3] },
+    );
+
+    sections.forEach((section) => observer.observe(section));
+    return () => observer.disconnect();
   }, [pathname]);
+
+  const displayedActiveSection =
+    pathname === "/About-us" ? "About Us" : pathname === "/Home" ? activeSection : "";
+
+  const navLinkClass =
+    "relative py-2 text-lg font-semibold text-[#183B56] transition-colors duration-200 hover:text-[#FF7900] after:absolute after:bottom-0 after:left-0 after:h-[3px] after:w-full after:origin-left after:scale-x-0 after:bg-[#FF7900] after:transition-transform after:duration-200 hover:after:scale-x-100";
+
+  const mobileNavLinkClass =
+    "relative z-10 py-1 text-base font-semibold text-[#183B56] transition-colors duration-200 hover:text-[#FF7900] after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:bg-[#FF7900] after:transition-transform after:duration-200 hover:after:scale-x-100";
+
+  const brandContent = (
+    <>
+      <span aria-hidden="true" className="pointer-events-none absolute -inset-x-2 -inset-y-1 z-0 rounded-lg backdrop-blur-[6px]" />
+
+      <div className={`site-header-logo relative z-10 flex-shrink-0 overflow-hidden rounded-full border-4 border-white/50 md:transition-[height,width,transform] md:duration-300 ${isAdmissionPage ? "" : "hover:scale-110 hover:rotate-3"} ${isCompact ? "h-8 w-8 sm:h-14 sm:w-14 md:h-12 md:w-12 lg:h-14 lg:w-14" : "h-10 w-10 sm:h-14 sm:w-14 lg:h-[4.5rem] lg:w-[4.5rem]"}`}>
+        <img
+          src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQRN3gQ0ep9JbWVXYw4ipX_NzoD8esE7ytbEA&s"
+          alt="Saint Gregory College Logo"
+          className="w-full h-full rounded-full object-contain"
+        />
+      </div>
+
+      <div className="relative z-10 flex min-w-0 flex-col justify-center">
+        <h1 className="font-sans leading-none text-[#1a252f] antialiased">
+          <span className={`site-header-title block whitespace-nowrap font-black uppercase tracking-tighter md:transition-[font-size] md:duration-300 ${isCompact ? "text-sm sm:text-2xl md:text-xl lg:text-2xl" : "text-base sm:text-2xl lg:text-[1.9rem]"}`}>
+            Saint Gregory
+          </span>
+          <span className={`site-header-subtitle block max-w-[130px] font-bold uppercase tracking-[0.05em] text-[#245A81] md:transition-[font-size] md:duration-300 sm:max-w-none ${isCompact ? "text-[0.4rem] sm:text-[0.68rem] md:text-[0.6rem] lg:text-xs" : "text-[0.45rem] sm:text-[0.68rem] lg:text-[0.9rem]"}`}>
+            College of Science and Technology
+          </span>
+        </h1>
+      </div>
+    </>
+  );
+  const brandClassName =
+    "relative isolate flex min-w-0 items-center gap-3 lg:ml-6";
 
   return (
     <header
-      className={`${isHomePage ? "sticky top-0" : "relative"} z-20 w-full overflow-hidden`}
+      className={`${usesCompactHeader ? "sticky top-0" : "relative"} z-20 w-full overflow-hidden`}
       style={{ backgroundImage: "linear-gradient(105deg, #FF6500 0%, #FF9100 22%, #FFD000 46%, #FFF078 68%, #FFF9E9 100%)" }}
     >
       <svg
@@ -102,35 +169,30 @@ const Header: React.FC = () => {
         </g>
       </svg>
       <div className="relative z-10 mx-auto w-full max-w-[1460px] px-3 sm:px-6">
-        <nav className={`site-header-nav flex flex-wrap items-center justify-between ${shouldAnimateCompact ? "md:transition-[min-height,padding] md:duration-300 md:ease-in-out" : "transition-none"} md:flex-nowrap ${isCompact ? "min-h-[72px] py-1 md:min-h-[68px] md:py-2" : "min-h-[96px] py-3"}`}>
+        <nav className={`site-header-nav relative flex flex-wrap items-center justify-between ${shouldAnimateCompact ? "transition-[min-height,padding] duration-300 ease-in-out" : "transition-none"} md:flex-nowrap ${isCompact ? "min-h-[72px] py-1 md:min-h-[68px] md:py-2" : "min-h-[96px] py-3"}`}>
+{isAdmissionPage ? (
+  <div className={brandClassName}>{brandContent}</div>
+) : (
+  <Link
+    href="/Home"
+    aria-label="Saint Gregory College home"
+    onClick={(event) => {
+      if (!isHomePage) return;
+      event.preventDefault();
+      window.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
+      });
+    }}
+    className={`${brandClassName} rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0D2B45] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FFD000]`}
+  >
+    {brandContent}
+  </Link>
+)}
 
 
-<div className="relative isolate flex min-w-0 items-center gap-3 drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)] lg:ml-6">
-  <span aria-hidden="true" className="pointer-events-none absolute -inset-x-2 -inset-y-1 z-0 rounded-lg backdrop-blur-[6px]" />
-
-  <div className={`site-header-logo relative z-10 flex-shrink-0 overflow-hidden rounded-full border-4 border-white/50 md:transition-[height,width,transform] md:duration-300 hover:scale-110 hover:rotate-3 ${isCompact ? "h-8 w-8 sm:h-14 sm:w-14 md:h-12 md:w-12 lg:h-14 lg:w-14" : "h-10 w-10 sm:h-14 sm:w-14 lg:h-[4.5rem] lg:w-[4.5rem]"}`}>
-    <img 
-      src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQRN3gQ0ep9JbWVXYw4ipX_NzoD8esE7ytbEA&s" 
-      alt="Saint Gregory College Logo"
-      className="w-full h-full object-contain rounded-full"
-    />
-  </div>
-
-
-  <div className="relative z-10 min-w-0 flex flex-col justify-center">
-    <h1 className="font-sans antialiased text-[#1a252f] leading-none">
-      <span className={`site-header-title block whitespace-nowrap font-black uppercase tracking-tighter md:transition-[font-size] md:duration-300 ${isCompact ? "text-sm sm:text-2xl md:text-xl lg:text-2xl" : "text-base sm:text-2xl lg:text-[1.9rem]"}`}>
-        Saint Gregory
-      </span>
-      <span className={`site-header-subtitle block max-w-[130px] font-bold uppercase tracking-[0.05em] text-[#245A81] md:transition-[font-size] md:duration-300 sm:max-w-none ${isCompact ? "text-[0.4rem] sm:text-[0.68rem] md:text-[0.6rem] lg:text-xs" : "text-[0.45rem] sm:text-[0.68rem] lg:text-[0.9rem]"}`}>
-        College of Science and Technology
-      </span>
-    </h1>
-  </div>
-</div>
-
-
-          <div className="order-2 hidden items-center gap-8 md:flex">
+          {!isAdmissionPage && <div className="order-2 hidden items-center gap-5 md:absolute md:left-[calc(50%+16px)] md:flex md:-translate-x-1/2 lg:gap-8">
             <Link
               href="/Home"
               onClick={(event) => {
@@ -143,7 +205,8 @@ const Header: React.FC = () => {
                   behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
                 });
               }}
-              className="relative py-2 text-lg font-semibold text-[#183B56] transition-colors duration-300 hover:text-[#b94d00] after:absolute after:bottom-0 after:left-0 after:h-[3px] after:w-full after:origin-left after:scale-x-0 after:bg-[#ff9c00] after:transition-transform after:duration-300 hover:after:scale-x-100"
+              aria-current={displayedActiveSection === "Home" ? "page" : undefined}
+              className={navLinkClass}
             >
               Home
             </Link>
@@ -158,19 +221,30 @@ const Header: React.FC = () => {
                   behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
                 });
               }}
-              className="relative py-2 text-lg font-semibold text-[#183B56] transition-colors duration-300 hover:text-[#b94d00] after:absolute after:bottom-0 after:left-0 after:h-[3px] after:w-full after:origin-left after:scale-x-0 after:bg-[#ff9c00] after:transition-transform after:duration-300 hover:after:scale-x-100"
+              aria-current={displayedActiveSection === "Programs" ? "location" : undefined}
+              className={navLinkClass}
             >
               Programs
             </Link>
             <Link
-              href="/About-us"
-              className="relative py-2 text-lg font-semibold text-[#183B56] transition-colors duration-300 hover:text-[#b94d00] after:absolute after:bottom-0 after:left-0 after:h-[3px] after:w-full after:origin-left after:scale-x-0 after:bg-[#ff9c00] after:transition-transform after:duration-300 hover:after:scale-x-100"
+              href="/Home#About-us"
+              onClick={(event) => {
+                const aboutSection = document.getElementById("About-us");
+                if (!isHomePage || !aboutSection) return;
+
+                event.preventDefault();
+                aboutSection.scrollIntoView({
+                  behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+                });
+              }}
+              aria-current={displayedActiveSection === "About Us" ? "location" : undefined}
+              className={navLinkClass}
             >
               About Us
             </Link>
-          </div>
+          </div>}
 
-          <div className={`relative isolate order-3 flex w-full items-center justify-center gap-8 border-t border-white/40 md:hidden ${isCompact ? "mt-1 pt-1" : "mt-3 pt-3"}`}>
+          {!isAdmissionPage && <div className={`relative isolate order-3 flex w-full items-center justify-center gap-8 border-t border-white/40 md:hidden ${isCompact ? "mt-1 pt-1" : "mt-3 pt-3"}`}>
             <span aria-hidden="true" className="pointer-events-none absolute -inset-x-3 bottom-0 top-0 z-0 md:backdrop-blur-[4px]" />
             <Link
               href="/Home"
@@ -184,7 +258,8 @@ const Header: React.FC = () => {
                   behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
                 });
               }}
-              className={`relative z-10 py-1 font-semibold text-[#183B56] after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:bg-[#ff9c00] after:transition-transform after:duration-300 hover:after:scale-x-100 ${isCompact ? "text-sm" : "text-base"}`}
+              aria-current={displayedActiveSection === "Home" ? "page" : undefined}
+              className={mobileNavLinkClass}
             >
               Home
             </Link>
@@ -199,27 +274,41 @@ const Header: React.FC = () => {
                   behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
                 });
               }}
-              className={`relative z-10 py-1 font-semibold text-[#183B56] after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:bg-[#ff9c00] after:transition-transform after:duration-300 hover:after:scale-x-100 ${isCompact ? "text-sm" : "text-base"}`}
+              aria-current={displayedActiveSection === "Programs" ? "location" : undefined}
+              className={mobileNavLinkClass}
             >
               Programs
             </Link>
             <Link
-              href="/About-us"
-              className={`relative z-10 py-1 font-semibold text-[#183B56] after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:bg-[#ff9c00] after:transition-transform after:duration-300 hover:after:scale-x-100 ${isCompact ? "text-sm" : "text-base"}`}
+              href="/Home#About-us"
+              onClick={(event) => {
+                const aboutSection = document.getElementById("About-us");
+                if (!isHomePage || !aboutSection) return;
+
+                event.preventDefault();
+                aboutSection.scrollIntoView({
+                  behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+                });
+              }}
+              aria-current={displayedActiveSection === "About Us" ? "location" : undefined}
+              className={mobileNavLinkClass}
             >
               About Us
             </Link>
-          </div>
+          </div>}
 
 
-          <div className={`order-2 ml-2 flex flex-shrink-0 items-center md:order-3 md:ml-0 ${isCompact ? "hidden md:flex" : ""}`}>
+          {!isAdmissionPage && <div className="order-2 ml-2 flex flex-shrink-0 items-center md:order-3 md:ml-auto">
             <Link 
               href="/portal/log-in" 
-              className="inline-flex h-9 min-w-[64px] items-center justify-center rounded-xl border-[2.5px] border-[#183B56] bg-white px-2 text-sm font-bold leading-none text-[#183B56] shadow-none transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#183B56] hover:text-white sm:h-10 sm:min-w-[80px] sm:px-6 sm:text-base"
+              className="inline-flex h-9 min-w-[64px] items-center justify-center gap-1.5 rounded-lg bg-[#082B49] px-3 text-sm font-bold leading-none text-white shadow-sm transition-[transform,background-color,box-shadow,color] duration-300 ease-in-out hover:-translate-y-0.5 hover:bg-white hover:text-[#082B49] hover:shadow-[0_5px_12px_rgba(8,43,73,0.2)] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#082B49]/25 motion-reduce:transition-none sm:h-10 sm:min-w-[96px] sm:px-5 sm:text-base"
             >
+              <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10 17l5-5-5-5M15 12H3M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6" />
+              </svg>
               Login
             </Link>
-          </div>
+          </div>}
         </nav>
       </div>
     </header>
