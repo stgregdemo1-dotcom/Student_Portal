@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { startNavigationLoading } from "../../-components/startNavigationLoading";
 
 function AccessControlForm() {
   const router = useRouter();
@@ -50,6 +51,7 @@ function AccessControlForm() {
 
         document.cookie = `enrollment_control_number=${confirmedId}; path=/; max-age=3600; SameSite=Strict`;
 
+        startNavigationLoading("/admission/enrollment");
         router.push("/admission/enrollment");
       } else {
         setErrorMsg(data.message || "Verification failed. Access denied.");
@@ -118,7 +120,7 @@ function AccessControlForm() {
 
 export default function Page() {
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(ellipse_at_8%_46%,rgba(255,193,7,0.10),transparent_25%),radial-gradient(ellipse_at_92%_64%,rgba(71,153,220,0.10),transparent_27%),linear-gradient(135deg,#F7FAFF_0%,#FFFCF5_48%,#F5F9FF_100%)] px-4">
       <Suspense
         fallback={
           <div className="w-full max-w-sm bg-white p-8 rounded-lg shadow-lg text-center animate-pulse text-gray-400">
