@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { startNavigationLoading } from "../../-components/startNavigationLoading";
 
 interface InputFieldProps {
   label: string;
@@ -145,6 +146,7 @@ export default function EnrollmentForm() {
 
       if (response.ok && result.success) {
         localStorage.removeItem("enrollment_control_number");
+        startNavigationLoading("/portal/log-in");
         router.push("/portal/log-in");
       } else {
         setErrorMsg(result.message || "Enrollment processing failed.");
@@ -159,7 +161,7 @@ export default function EnrollmentForm() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(ellipse_at_8%_46%,rgba(255,193,7,0.10),transparent_25%),radial-gradient(ellipse_at_92%_64%,rgba(71,153,220,0.10),transparent_27%),linear-gradient(135deg,#F7FAFF_0%,#FFFCF5_48%,#F5F9FF_100%)]">
         <div className="text-center space-y-3">
           <div className="w-8 h-8 border-4 border-[#166534] border-t-transparent rounded-full animate-spin mx-auto"></div>
           <p className="text-sm font-semibold text-slate-500">Retrieving Enrollment Access State...</p>
@@ -170,14 +172,17 @@ export default function EnrollmentForm() {
 
   if (!controlNumber || !studentData || studentData.status !== "Approved") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-4">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[radial-gradient(ellipse_at_8%_46%,rgba(255,193,7,0.10),transparent_25%),radial-gradient(ellipse_at_92%_64%,rgba(71,153,220,0.10),transparent_27%),linear-gradient(135deg,#F7FAFF_0%,#FFFCF5_48%,#F5F9FF_100%)] p-4">
         <div className="w-full max-w-md bg-white p-8 rounded-3xl shadow-xl text-center space-y-6">
           <h1 className="text-2xl font-black text-red-600">Enrollment Locked</h1>
           <p className="text-sm text-slate-500 leading-relaxed">
             No valid or approved application access authorization was found in your browser session.
           </p>
           <button
-            onClick={() => router.push("/admission/verify")}
+            onClick={() => {
+              startNavigationLoading("/admission/verify");
+              router.push("/admission/verify");
+            }}
             className="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-sm font-bold tracking-wider transition-colors"
           >
             Go to Verification Page
@@ -194,7 +199,7 @@ export default function EnrollmentForm() {
     : "ST-XXXX-XXXXX";
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-[#1E293B] p-6 md:p-12">
+    <div className="min-h-screen bg-[radial-gradient(ellipse_at_8%_46%,rgba(255,193,7,0.10),transparent_25%),radial-gradient(ellipse_at_92%_64%,rgba(71,153,220,0.10),transparent_27%),linear-gradient(135deg,#F7FAFF_0%,#FFFCF5_48%,#F5F9FF_100%)] p-6 font-sans text-[#1E293B] md:p-12">
       <div className="max-w-4xl mx-auto">
         <div className="mb-10 flex justify-between items-end">
           <div>
