@@ -140,12 +140,10 @@ export async function GET(request: NextRequest) {
 
         const p = sub.grade_1 !== undefined && sub.grade_1 !== "" ? Number(sub.grade_1) : NaN;
         const m = sub.grade_2 !== undefined && sub.grade_2 !== "" ? Number(sub.grade_2) : NaN;
-        const pf = sub.grade_3 !== undefined && sub.grade_3 !== "" ? Number(sub.grade_3) : NaN;
-        const f = sub.grade_4 !== undefined && sub.grade_4 !== "" ? Number(sub.grade_4) : NaN;
 
         let calcRemarks = sub.remarks || "Pending";
-        if (!isNaN(p) && !isNaN(m) && !isNaN(pf) && !isNaN(f)) {
-          const avg = Math.round((p + m + pf + f) / 4);
+        if (!isNaN(p) && !isNaN(m)) {
+          const avg = Math.round((p + m) / 2);
           if (!sub.remarks) {
             calcRemarks = avg >= 75 ? "Passed" : "Failed";
           }
@@ -270,14 +268,12 @@ export async function GET(request: NextRequest) {
     const formattedSubjects = targetClass.subjects.map((sub: any) => {
       const p = sub.grade_1 !== undefined && sub.grade_1 !== "" ? Number(sub.grade_1) : NaN;
       const m = sub.grade_2 !== undefined && sub.grade_2 !== "" ? Number(sub.grade_2) : NaN;
-      const pf = sub.grade_3 !== undefined && sub.grade_3 !== "" ? Number(sub.grade_3) : NaN;
-      const f = sub.grade_4 !== undefined && sub.grade_4 !== "" ? Number(sub.grade_4) : NaN;
 
       let calculatedFinal = "—";
       let calculatedRemarks = sub.remarks || "Pending";
 
-      if (!isNaN(p) && !isNaN(m) && !isNaN(pf) && !isNaN(f)) {
-        const avg = Math.round((p + m + pf + f) / 4);
+      if (!isNaN(p) && !isNaN(m)) {
+        const avg = Math.round((p + m) / 2);
         calculatedFinal = String(avg);
         if (!sub.remarks) {
           calculatedRemarks = avg >= 75 ? "Passed" : "Failed";
@@ -304,10 +300,8 @@ export async function GET(request: NextRequest) {
       return {
         course: masterDetails?.subject_name || sub.subject_id || "Unknown Subject",
         Teacher: teacherFullName,
-        prelim: sub.grade_1 || "—",
-        midterm: sub.grade_2 || "—",
-        prefinal: sub.grade_3 || "—",
-        finals: sub.grade_4 || "—",
+        grade_1: sub.grade_1 || "—",
+        grade_2: sub.grade_2 || "—",
         grade: calculatedFinal,
         remarks: calculatedRemarks,
         status: subjectStatus

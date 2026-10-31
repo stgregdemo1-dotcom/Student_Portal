@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 
 interface StudentRecord {
   _id: string;
@@ -14,7 +15,22 @@ interface StudentRecord {
 
 type SortableKeys = "student_id" | "studentName" | "track" | "status";
 
-export default function StudentListPage() {
+function StudentListContent() {
+  const searchParams = useSearchParams();
+
+  // Dynamically set the initial status filter based on the URL query parameter
+  const [statusFilter, setStatusFilter] = useState<string>(() => {
+    const statusParam = searchParams.get("status");
+    if (statusParam) {
+      const lower = statusParam.toLowerCase();
+      if (lower === "enrolled") return "Enrolled";
+      if (lower === "graduated") return "Graduated";
+      if (lower === "archived" || lower === "archive") return "Archived";
+      if (lower === "pending") return "Pending";
+    }
+    return "All";
+  });
+
   const [students, setStudents] = useState<StudentRecord[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [sortKey, setSortKey] = useState<SortableKeys>("student_id");
@@ -45,6 +61,11 @@ export default function StudentListPage() {
   useEffect(() => {
     fetchStudents();
   }, []);
+
+  const handleStatusFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setStatusFilter(e.target.value);
+    setCurrentPage(1);
+  };
 
   const handleSort = (key: SortableKeys) => {
     if (sortKey === key) {
@@ -82,7 +103,15 @@ export default function StudentListPage() {
     }
   };
 
-  const sortedStudents = [...students].sort((a, b) => {
+  const filteredStudents = students.filter((record) => {
+    if (statusFilter !== "All") {
+      const currentStatus = (record.status || "Pending").toLowerCase();
+      if (!currentStatus.includes(statusFilter.toLowerCase())) return false;
+    }
+    return true;
+  });
+
+  const sortedStudents = [...filteredStudents].sort((a, b) => {
     let valueA = "";
     let valueB = "";
 
@@ -134,17 +163,33 @@ export default function StudentListPage() {
       <div className="bg-white rounded-xl shadow overflow-hidden border border-gray-100 flex flex-col justify-between min-h-[500px]">
         <div>
           {/* Table Header Section */}
-          <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+          <div className="p-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div>
               <h3 className="text-lg font-semibold text-gray-800">Student List</h3>
               <p className="text-xs text-gray-500">Comprehensive registry of all students across all statuses.</p>
             </div>
-            <button
-              onClick={fetchStudents}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-            >
-              Refresh
-            </button>
+            
+            {/* Filter and Refresh Controls */}
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+              <select
+                value={statusFilter}
+                onChange={handleStatusFilterChange}
+                className="px-3 py-2 bg-gray-50 border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+              >
+                <option value="All">All Statuses</option>
+                <option value="Enrolled">Enrolled</option>
+                <option value="Graduated">Graduated</option>
+                <option value="Archived">Archived</option>
+                <option value="Pending">Pending</option>
+              </select>
+
+              <button
+                onClick={fetchStudents}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium whitespace-nowrap"
+              >
+                Refresh
+              </button>
+            </div>
           </div>
 
           {/* Records Table View */}
@@ -191,7 +236,7 @@ export default function StudentListPage() {
                 ) : paginatedStudents.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-12 text-center text-gray-400 italic">
-                      No student records found in the database.
+                      No student records found matching your selection.
                     </td>
                   </tr>
                 ) : (
@@ -342,5 +387,14 @@ export default function StudentListPage() {
         )}
       </div>
     </div>
+  );
+}
+
+// Wrapped with Suspense to safely use useSearchParams in Next.js App Router
+export default function StudentListPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-center text-gray-500">Loading student list...</div>}>
+      <StudentListContent />
+    </Suspense>
   );
 }

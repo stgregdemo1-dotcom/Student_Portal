@@ -114,10 +114,8 @@ export default function GradesPage() {
             <tr>
               <th className="px-6 py-3">Subjects</th>
               <th className="px-6 py-3">Teacher</th>
-              <th className="px-4 py-3 text-center">Prelim</th>
-              <th className="px-4 py-3 text-center">Midterm</th>
-              <th className="px-4 py-3 text-center">Pre-Final</th>
-              <th className="px-4 py-3 text-center">Final</th>
+              <th className="px-4 py-3 text-center">1st</th>
+              <th className="px-4 py-3 text-center">2nd</th>
               <th className="px-4 py-3 text-center text-indigo-700 bg-indigo-50/50">Average</th>
               <th className="px-6 py-3 text-center">Remarks</th>
               <th className="px-6 py-3 text-center">Status</th>
@@ -129,10 +127,8 @@ export default function GradesPage() {
                 <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-6 py-4 font-medium text-gray-900">{g.course}</td>
                   <td className="px-6 py-4 text-gray-600">{g.Teacher}</td>
-                  <td className="px-4 py-4 text-center font-mono font-medium text-gray-700">{g.prelim}</td>
-                  <td className="px-4 py-4 text-center font-mono font-medium text-gray-700">{g.midterm}</td>
-                  <td className="px-4 py-4 text-center font-mono font-medium text-gray-700">{g.prefinal}</td>
-                  <td className="px-4 py-4 text-center font-mono font-medium text-gray-700">{g.finals}</td>
+                  <td className="px-4 py-4 text-center font-mono font-medium text-gray-700">{g.grade_1}</td>
+                  <td className="px-4 py-4 text-center font-mono font-medium text-gray-700">{g.grade_2}</td>
                   <td className="px-4 py-4 text-center bg-indigo-50/20 font-black text-indigo-600">
                     <span className={`px-2 py-0.5 rounded ${g.grade === "—" ? "text-gray-400" : ""}`}>
                       {g.grade}
@@ -158,7 +154,7 @@ export default function GradesPage() {
               ))
             ) : (
               <tr>
-                <td colSpan={9} className="px-6 py-8 text-center text-sm text-gray-400 italic">
+                <td colSpan={7} className="px-6 py-8 text-center text-sm text-gray-400 italic">
                   No registered subjects found for the selected matrix criteria.
                 </td>
               </tr>

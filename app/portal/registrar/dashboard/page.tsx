@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface StatusCount {
   status: string;
@@ -8,6 +10,7 @@ interface StatusCount {
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [studentCount, setStudentCount] = useState<number>(0);
   const [admissionCount, setAdmissionCount] = useState<number>(0);
   const [pendingStudentCount, setPendingStudentCount] = useState<number>(0);
@@ -112,6 +115,7 @@ export default function DashboardPage() {
       bg: "bg-blue-100",
       trend: "",
       up: true,
+      href: "/portal/registrar/manage-students",
       svg: (
         <path
           strokeLinecap="round"
@@ -127,6 +131,7 @@ export default function DashboardPage() {
       bg: "bg-amber-100",
       trend: "Action needed",
       up: false,
+      href: "/portal/registrar/admission",
       svg: (
         <path
           strokeLinecap="round"
@@ -142,6 +147,7 @@ export default function DashboardPage() {
       bg: "bg-rose-100",
       trend: "Review needed",
       up: false,
+      href: "/portal/registrar/enrollment",
       svg: (
         <path
           strokeLinecap="round"
@@ -190,9 +196,10 @@ export default function DashboardPage() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {stats.map((stat) => (
-          <div
+          <Link
             key={stat.label}
-            className="group rounded-2xl bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
+            href={stat.href}
+            className="group block rounded-2xl bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md cursor-pointer"
           >
             <div className="flex items-start justify-between">
               <div>
@@ -231,7 +238,7 @@ export default function DashboardPage() {
               )}
               {stat.trend}
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 
@@ -242,15 +249,25 @@ export default function DashboardPage() {
           <h3 className="mb-4 text-lg font-bold text-slate-800">
             Admission Status
           </h3>
-          <StatusPieChart data={admissionStatusData} />
+          <StatusPieChart 
+            data={admissionStatusData} 
+            onSliceClick={(status) => {
+              router.push(`/portal/registrar/admission?status=${encodeURIComponent(status)}`);
+            }}
+          />
         </div>
 
-        {/* Student Collection Status Pie Chart */}
+        {/* Student Collection Status Pie Chart - NOW CLICKABLE */}
         <div className="rounded-2xl bg-white p-6 shadow-sm">
           <h3 className="mb-4 text-lg font-bold text-slate-800">
             Student Status
           </h3>
-          <StatusPieChart data={studentStatusData} />
+          <StatusPieChart 
+            data={studentStatusData} 
+            onSliceClick={(status) => {
+              router.push(`/portal/registrar/student-list?status=${encodeURIComponent(status)}`);
+            }}
+          />
         </div>
 
         {/* Failed Remarks Breakdown Pie Chart */}
@@ -312,7 +329,13 @@ export default function DashboardPage() {
 }
 
 {/* Status Pie Chart Component with Center Total Display */}
-function StatusPieChart({ data }: { data: StatusCount[] }) {
+function StatusPieChart({ 
+  data, 
+  onSliceClick 
+}: { 
+  data: StatusCount[]; 
+  onSliceClick?: (status: string) => void;
+}) {
   const total = data.reduce((sum, item) => sum + item.count, 0);
 
   const COLOR_PALETTE: Record<string, { fill: string; bg: string }> = {
@@ -364,7 +387,10 @@ function StatusPieChart({ data }: { data: StatusCount[] }) {
                 key={item.status}
                 d={pathData}
                 fill={color.fill}
-                className="transition-all duration-300 hover:opacity-85"
+                onClick={() => onSliceClick && onSliceClick(item.status)}
+                className={`transition-all duration-300 hover:opacity-85 ${
+                  onSliceClick ? "cursor-pointer" : ""
+                }`}
               >
                 <title>{`${item.status}: ${item.count} (${((item.count / total) * 100).toFixed(1)}%)`}</title>
               </path>
@@ -373,7 +399,6 @@ function StatusPieChart({ data }: { data: StatusCount[] }) {
         </svg>
         {/* Center Total Overlay Badge */}
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          
           <span className="text-lg font-extrabold text-slate-800">{total}</span>
         </div>
       </div>
@@ -384,7 +409,13 @@ function StatusPieChart({ data }: { data: StatusCount[] }) {
           const color = COLOR_PALETTE[item.status] || DEFAULT_COLOR;
 
           return (
-            <div key={item.status} className="flex items-center justify-between text-xs">
+            <div 
+              key={item.status} 
+              onClick={() => onSliceClick && onSliceClick(item.status)}
+              className={`flex items-center justify-between text-xs ${
+                onSliceClick ? "cursor-pointer hover:bg-slate-50 p-1 rounded transition-colors" : ""
+              }`}
+            >
               <div className="flex items-center gap-2">
                 <span className={`size-2.5 rounded-full ${color.bg}`} />
                 <span className="font-semibold text-slate-700">{item.status}</span>

@@ -100,11 +100,9 @@ const GradingSheet = () => {
           const initialGradesMap: { [key: string]: (number | string)[] } = {};
           sortedStudents.forEach((std: any) => {
             initialGradesMap[std.student_id] = [
-              std.grades[0] || 0,
-              std.grades[1] || 0,
-              std.grades[2] || 0,
-              std.grades[3] || 0,
-              std.remarks || ""
+              std.grades[0] || 0, // 1st
+              std.grades[1] || 0, // 2nd
+              std.remarks || ""   // Remarks
             ];
           });
           setGrades(initialGradesMap);
@@ -119,7 +117,7 @@ const GradingSheet = () => {
   const updateGradeState = (studentId: string, colIndex: number, val: number | string) => {
     if (activeClass?.status === "Evaluating") return;
     setGrades(prev => {
-      const studentGrades = prev[studentId] || [0, 0, 0, 0, ""];
+      const studentGrades = prev[studentId] || [0, 0, ""];
       const newGrades = [...studentGrades];
       newGrades[colIndex] = val;
       return { ...prev, [studentId]: newGrades };
@@ -161,9 +159,7 @@ const GradingSheet = () => {
         acc[studentId] = [
           studentGrades[0] || 0,
           studentGrades[1] || 0,
-          studentGrades[2] || 0,
-          studentGrades[3] || 0,
-          (studentGrades[4] as string) || ""
+          (studentGrades[2] as string) || ""
         ];
         return acc;
       }, {} as { [key: string]: (number | string)[] });
@@ -216,7 +212,7 @@ const GradingSheet = () => {
 
   const allStudentsHaveRemarks = rosterList.length > 0 && rosterList.every(student => {
     const studentGradesMap = grades[student.student_id];
-    const remark = studentGradesMap ? (studentGradesMap[4] as string) : "";
+    const remark = studentGradesMap ? (studentGradesMap[2] as string) : "";
     return remark && remark.trim() !== "";
   });
 
@@ -327,20 +323,25 @@ const GradingSheet = () => {
                   <thead>
                     <tr className="bg-[#FFFDE7] text-[#856404] uppercase text-xs font-black border-b border-[#FFD700]">
                       <th className="px-6 py-5">Student ID</th>
-                      <th className="px-6 py-5 text-center">Prelim</th>
-                      <th className="px-6 py-5 text-center">Midterm</th>
-                      <th className="px-6 py-5 text-center">Pre-Final</th>
-                      <th className="px-6 py-5 text-center">Final</th>
+                      <th className="px-6 py-5 text-center">1st</th>
+                      <th className="px-6 py-5 text-center">2nd</th>
+                      <th className="px-6 py-5 text-center">Average</th>
                       <th className="px-6 py-5 text-center">Remarks</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {rosterList.map((student, sIndex) => {
                       const currentStudentId = student.student_id;
-                      const currentGradesMap = grades[currentStudentId] || [0, 0, 0, 0, ""];
+                      const currentGradesMap = grades[currentStudentId] || [0, 0, ""];
 
-                      const numericGrades = currentGradesMap.slice(0, 4) as number[];
-                      const currentRemarks = (currentGradesMap[4] as string) || "";
+                      const numericGrades = currentGradesMap.slice(0, 2) as number[];
+                      const currentRemarks = (currentGradesMap[2] as string) || "";
+
+                      // Calculate Average
+                      const g1 = Number(numericGrades[0]) || 0;
+                      const g2 = Number(numericGrades[1]) || 0;
+                      const validCount = [numericGrades[0], numericGrades[1]].filter(g => g !== 0 && g !== "" && g != null).length;
+                      const averageVal = validCount > 0 ? ((g1 + g2) / validCount).toFixed(2) : "-";
 
                       return (
                         <tr key={sIndex} className="hover:bg-[#FFFDE7]/50 transition-colors">
@@ -370,11 +371,23 @@ const GradingSheet = () => {
                             </td>
                           ))}
 
+                          {/* Average Column */}
+                          <td className="px-6 py-4 text-center">
+                            <span className={`inline-block min-w-[50px] py-1 px-2 rounded-md font-black ${
+                              Number(averageVal) >= 85 ? "text-[#155724] bg-[#d4edda]" :
+                              Number(averageVal) >= 75 ? "text-[#856404] bg-[#fff3cd]" :
+                              averageVal !== "-" ? "text-[#721c24] bg-[#f8d7da]" : "text-gray-400 bg-gray-100"
+                            }`}>
+                              {averageVal}
+                            </span>
+                          </td>
+
+                          {/* Remarks Column */}
                           <td className="px-6 py-4 text-center">
                             {isEditing && !isEvaluating ? (
                               <select
                                 value={currentRemarks}
-                                onChange={(e) => updateGradeState(currentStudentId, 4, e.target.value)}
+                                onChange={(e) => updateGradeState(currentStudentId, 2, e.target.value)}
                                 className="w-32 bg-white border-2 border-[#FFD700] text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-[#28a745] p-2 outline-none font-bold cursor-pointer"
                               >
                                 <option value="">Select Option</option>

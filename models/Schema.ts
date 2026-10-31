@@ -153,8 +153,6 @@ const StudentSectionSchema = new mongoose.Schema(
             teacher_id: { type: String },
             grade_1:    { type: String },
             grade_2:    { type: String },
-            grade_3:    { type: String },
-            grade_4:    { type: String },
             remarks:    { type: String },
             status:     { type: String },
           }

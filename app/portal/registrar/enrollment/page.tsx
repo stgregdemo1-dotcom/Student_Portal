@@ -20,6 +20,7 @@ export default function EnrollmentPage() {
   const [sortKey, setSortKey] = useState<SortableKeys>("student_id");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [searchQuery, setSearchQuery] = useState<string>(""); 
   const itemsPerPage = 20; 
 
   const fetchEnrollments = async () => {
@@ -60,7 +61,13 @@ export default function EnrollmentPage() {
     setCurrentPage(1); 
   };
 
-  const sortedEnrollments = [...enrollments].sort((a, b) => {
+  // Filter enrollments based on search query (First name or Last name)
+  const filteredEnrollments = enrollments.filter((record) => {
+    const fullName = `${record.first_name || ""} ${record.last_name || ""}`.trim().toLowerCase();
+    return fullName.includes(searchQuery.toLowerCase());
+  });
+
+  const sortedEnrollments = [...filteredEnrollments].sort((a, b) => {
     let valueA = "";
     let valueB = "";
 
@@ -110,12 +117,30 @@ export default function EnrollmentPage() {
       <div className="bg-white rounded-xl shadow overflow-hidden border border-gray-100 flex flex-col justify-between min-h-[500px]">
         
         <div>
-          {/* Table Header Section */}
-          <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-            <h3 className="text-lg font-semibold text-gray-800">Enrollment Requests</h3>
+          {/* Table Header Section with Title + Search on Left, Refresh on Right */}
+          <div className="p-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
+            
+            {/* Left side: Title and Search Input */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
+              <h3 className="text-lg font-semibold text-gray-800 whitespace-nowrap">Enrollment Requests</h3>
+              
+              {/* 🔍 Search Input Field */}
+              <input 
+                type="text"
+                placeholder="Search student name..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1); 
+                }}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64"
+              />
+            </div>
+
+            {/* Right side: Refresh Button */}
             <button 
               onClick={fetchEnrollments}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium animate-none"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium whitespace-nowrap w-full sm:w-auto"
             >
               Refresh
             </button>
@@ -165,7 +190,7 @@ export default function EnrollmentPage() {
                 ) : paginatedEnrollments.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-12 text-center text-gray-400 italic">
-                      No pending enrollment records found.
+                      {searchQuery ? "No matching students found." : "No pending enrollment records found."}
                     </td>
                   </tr>
                 ) : (

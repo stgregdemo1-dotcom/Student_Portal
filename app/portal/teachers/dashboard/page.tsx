@@ -29,7 +29,7 @@ export default function Dashboard() {
           const data = await res.json();
           setEnrolledStudents(data.totalEnrolledStudents || 0);
           setClassCount(data.totalClasses || 0);
-          setUpcomingEvents(data.upcomingEvents || 0);
+          setUpcomingEvents(data.upcomingEvents || 0); 
           setSubjects(data.subjects || []);
         }
       } catch (err) {
@@ -66,15 +66,8 @@ export default function Dashboard() {
               const failed = subject.failedCount || 0;
               const ungraded = Math.max(0, total - (passed + failed));
 
-              // Calculate percentages for SVG Donut chart slices
               const passedPct = total > 0 ? (passed / total) * 100 : 0;
               const failedPct = total > 0 ? (failed / total) * 100 : 0;
-              const ungradedPct = total > 0 ? (ungraded / total) * 100 : 0;
-
-              // SVG conic gradient simulation or stroke-dasharray parameters
-              const passedStroke = passedPct;
-              const failedStroke = failedPct;
-              const ungradedStroke = ungradedPct;
 
               return (
                 <div key={subject.subject_id || index} className="p-5 rounded-lg border border-gray-200 shadow-sm hover:border-green-500 transition-colors">
@@ -107,7 +100,6 @@ export default function Dashboard() {
                         {/* Donut Chart Visual */}
                         <div className="relative w-24 h-24 flex items-center justify-center">
                           <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                            {/* Background Circle */}
                             <path
                               className="text-gray-200"
                               strokeWidth="4"
@@ -115,22 +107,20 @@ export default function Dashboard() {
                               fill="none"
                               d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                             />
-                            {/* Passed Slice */}
                             {passed > 0 && (
                               <path
                                 className="text-green-500"
-                                strokeDasharray={`${passedStroke}, 100`}
+                                strokeDasharray={`${passedPct}, 100`}
                                 strokeWidth="4"
                                 stroke="currentColor"
                                 fill="none"
                                 d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                               />
                             )}
-                            {/* Failed Slice */}
                             {failed > 0 && (
                               <path
                                 className="text-red-500"
-                                strokeDasharray={`${failedStroke}, 100`}
+                                strokeDasharray={`${failedPct}, 100`}
                                 strokeDashoffset={`-${passedPct}`}
                                 strokeWidth="4"
                                 stroke="currentColor"

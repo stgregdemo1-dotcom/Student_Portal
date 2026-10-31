@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 
 interface AdmissionRequest {
   _id: string;
@@ -14,11 +15,30 @@ interface AdmissionRequest {
 
 type SortableKeys = "applicant_id" | "studentName" | "track" | "status";
 
-export default function EnrollmentPage() {
+function EnrollmentContent() {
+  const searchParams = useSearchParams();
+
+  // Dynamically set the default status filter based on the URL query parameter
+  const [statusFilter, setStatusFilter] = useState<string>(() => {
+    const statusParam = searchParams.get("status");
+    if (statusParam) {
+      const lowerStatus = statusParam.toLowerCase();
+      if (lowerStatus === "approved" || lowerStatus === "approve") {
+        return "Approved";
+      }
+      if (lowerStatus === "pending") {
+        return "Pending";
+      }
+      if (lowerStatus === "rejected") {
+        return "Rejected";
+      }
+    }
+    return "All"; // Default fallback if no status parameter is in the URL
+  });
+
   const [admissions, setAdmissions] = useState<AdmissionRequest[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState<string>("All");
   const [sortKey, setSortKey] = useState<SortableKeys>("applicant_id");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -321,5 +341,14 @@ export default function EnrollmentPage() {
 
       </div>
     </div>
+  );
+}
+
+// Wrapped in a Suspense boundary as required by Next.js App Router for components using useSearchParams
+export default function EnrollmentPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-center text-gray-500">Loading enrollment page...</div>}>
+      <EnrollmentContent />
+    </Suspense>
   );
 }
