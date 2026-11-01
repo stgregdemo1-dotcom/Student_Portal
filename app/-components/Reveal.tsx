@@ -1,55 +1,48 @@
 "use client";
 
-import React, { ReactNode } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 
-interface RevealProps {
-  children: ReactNode;
-  width?: "fit-content" | "100%";
-  direction?: "up" | "down" | "left" | "right" | "none";
-  delay?: number;
-  duration?: number;
-  className?: string;
-}
-
-export const Reveal = ({
+export default function Reveal({
   children,
-  width = "100%",
-  direction = "up",
-  delay = 0.2,
-  duration = 0.5,
+  direction = "left",
   className = "",
-}: RevealProps) => {
-  // Determine hidden state offset based on direction
-  const getVariants = () => {
-    switch (direction) {
-      case "up":
-        return { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } };
-      case "down":
-        return { hidden: { opacity: 0, y: -30 }, visible: { opacity: 1, y: 0 } };
-      case "left":
-        return { hidden: { opacity: 0, x: 30 }, visible: { opacity: 1, x: 0 } };
-      case "right":
-        return { hidden: { opacity: 0, x: -30 }, visible: { opacity: 1, x: 0 } };
-      case "none":
-      default:
-        return { hidden: { opacity: 0, scale: 0.95 }, visible: { opacity: 1, scale: 1 } };
+}: {
+  children: React.ReactNode;
+  direction?: "left" | "right";
+  className?: string;
+}) {
+  const [isVisible, setIsVisible] = useState(false);
+  const [element, setElement] = useState<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!element) return;
+
+    if (typeof window.IntersectionObserver !== "function") {
+      const frame = window.requestAnimationFrame(() => setIsVisible(true));
+      return () => window.cancelAnimationFrame(frame);
     }
-  };
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsVisible(entry.isIntersecting),
+      { threshold: 0.12 },
+    );
+
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [element]);
 
   return (
-    <div style={{ width }} className={className}>
-      <motion.div
-        variants={getVariants()}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: "-50px" }}
-        transition={{ duration, delay, ease: "easeOut" }}
-      >
-        {children}
-      </motion.div>
+    <div
+      ref={setElement}
+      className={`${className} transition-[opacity,translate] duration-700 ease-out motion-reduce:duration-300 ${
+        isVisible
+          ? "translate-x-0 opacity-100"
+          : direction === "left"
+            ? "-translate-x-16 opacity-0 motion-reduce:-translate-x-8"
+            : "translate-x-16 opacity-0 motion-reduce:translate-x-8"
+      }`}
+    >
+      {children}
     </div>
   );
-};
-
-export default Reveal;
+}
