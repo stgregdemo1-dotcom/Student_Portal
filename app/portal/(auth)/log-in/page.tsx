@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { startNavigationLoading } from "../../../-components/startNavigationLoading";
 
 export default function Portal() {
   const [showPassword, setShowPassword] = useState(false);
@@ -10,6 +11,20 @@ export default function Portal() {
   const [errorMessage, setErrorMessage] = useState("");
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
+
+  const shakeForm = () => {
+    const form = formRef.current;
+    if (!form) return;
+
+    form.classList.remove("login-form-shake");
+    void form.offsetWidth;
+    form.classList.add("login-form-shake");
+  };
+
+  const showLoginError = (message: string) => {
+    setErrorMessage(message);
+    shakeForm();
+  };
 
   useEffect(() => {
     document.cookie = "audit_user=; path=/; max-age=0; SameSite=Strict";
@@ -29,7 +44,10 @@ export default function Portal() {
     const username = (form.elements.namedItem("username") as HTMLInputElement).value.trim();
     const password = (form.elements.namedItem("password") as HTMLInputElement).value.trim();
 
-    if (!username || !password) return;
+    if (!username || !password) {
+      showLoginError("Please enter your login ID and password.");
+      return;
+    }
 
     const expectedUserType = isStaff ? "staff" : "student";
 
@@ -47,7 +65,7 @@ export default function Portal() {
       const data = await response.json();
 
       if (!response.ok) {
-        setErrorMessage(data.message || "Something went wrong.");
+        showLoginError(data.message || "Something went wrong.");
         return;
       }
 
@@ -55,38 +73,72 @@ export default function Portal() {
       document.cookie = `username=${encodeURIComponent(username)}; path=/; max-age=28800; SameSite=Strict`;
       if (isStaff) {
         if (username.toUpperCase().startsWith("ADM")) {
+          startNavigationLoading("/portal/admin/dashboard");
           router.push("/portal/admin/dashboard");
         } else if (username.toUpperCase().startsWith("TCH")) {
+          startNavigationLoading("/portal/teachers/dashboard");
           router.push("/portal/teachers/dashboard");
         } else if (username.toUpperCase().startsWith("REG")) {
+          startNavigationLoading("/portal/registrar/dashboard");
           router.push("/portal/registrar/dashboard");
         } else {
-          setErrorMessage("Invalid Employee ID format. Use ADM-XXXX for Admin or TCH-XXXX for Teacher or REG-XXXX for Registar.");
+          showLoginError("Invalid Employee ID format. Use ADM-XXXX for Admin or TCH-XXXX for Teacher or REG-XXXX for Registar.");
         }
       } else {
+        startNavigationLoading("/portal/students/dashboard");
         router.push("/portal/students/dashboard");
       }
 
     } catch (err) {
-      setErrorMessage("Cannot connect to the server. Please check your network connection.");
+      showLoginError("Cannot connect to the server. Please check your network connection.");
     }
   };
 
   return (
-    <div
-      className={`min-h-screen w-full flex justify-center items-center p-5 transition-all duration-500 ${isStaff
-          ? "bg-[linear-gradient(135deg,#182848_0%,#4b6cb7_100%)]"
-          : "bg-[linear-gradient(135deg,#f80c0c_0%,#b9da02_100%)]"
-        }`}
-    >
-      <div className="relative w-full max-w-[450px] bg-white/95 backdrop-blur-[10px] rounded-[30px] shadow-[0_15px_35px_rgba(0,0,0,0.2)] p-10 text-center">
+    <div className="relative isolate flex min-h-screen w-full items-center justify-center overflow-hidden p-5">
+      <div
+        aria-hidden="true"
+        className={`pointer-events-none absolute inset-0 overflow-hidden bg-[radial-gradient(ellipse_at_68%_42%,#28599B_0%,#17427F_46%,#062755_100%)] transition-opacity duration-700 ease-in-out motion-reduce:transition-none ${isStaff ? "opacity-100" : "opacity-0"}`}
+      >
+        <div className="absolute -left-40 -top-48 h-[440px] w-[440px] rounded-full bg-[#0A3674]/75" />
+        <div className="absolute -left-36 -top-44 h-[270px] w-[270px] rounded-full bg-[radial-gradient(circle_at_35%_35%,#FFD466_0%,#FFC107_72%,#FFB300_100%)]" />
+        <div className="absolute -left-[230px] -top-[230px] h-[460px] w-[460px] rounded-full border-[3px] border-[#FFC107]/90" />
+        <div className="absolute -bottom-[330px] -left-[220px] h-[570px] w-[570px] rounded-full bg-[#2D5FA1]/35" />
+        <div className="absolute -bottom-[380px] -left-[190px] h-[550px] w-[550px] rounded-full border-[3px] border-[#FFC107]/75" />
+        <div className="absolute -bottom-[310px] -right-[180px] h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle_at_70%_35%,#FFD15C_0%,#FFC107_58%,#FFB300_100%)]" />
+        <div className="absolute -bottom-[370px] -right-[245px] h-[570px] w-[570px] rounded-full border-[3px] border-[#FFC107]/85" />
+        <div className="absolute left-[8%] top-[5%] h-32 w-24 opacity-95" style={{ backgroundImage: "radial-gradient(circle, #FFC107 2.5px, transparent 3px)", backgroundSize: "28px 28px" }} />
+        <div className="absolute bottom-[30%] right-[1%] h-32 w-24 opacity-95" style={{ backgroundImage: "radial-gradient(circle, #FFC107 2.5px, transparent 3px)", backgroundSize: "28px 28px" }} />
+      </div>
+      <div
+        aria-hidden="true"
+        className={`pointer-events-none absolute inset-0 overflow-hidden bg-[radial-gradient(ellipse_at_68%_42%,#FFEAA0_0%,#FFC107_55%,#E9A900_100%)] transition-opacity duration-700 ease-in-out motion-reduce:transition-none ${isStaff ? "opacity-0" : "opacity-100"}`}
+      >
+        <div className="absolute -left-40 -top-48 h-[440px] w-[440px] rounded-full bg-[#FFD466]/80" />
+        <div className="absolute -left-36 -top-44 h-[270px] w-[270px] rounded-full bg-[radial-gradient(circle_at_35%_35%,#28599B_0%,#17427F_72%,#062755_100%)]" />
+        <div className="absolute -left-[230px] -top-[230px] h-[460px] w-[460px] rounded-full border-[3px] border-[#0A3674]/90" />
+        <div className="absolute -bottom-[330px] -left-[220px] h-[570px] w-[570px] rounded-full bg-[#17427F]/25" />
+        <div className="absolute -bottom-[380px] -left-[190px] h-[550px] w-[550px] rounded-full border-[3px] border-[#0A3674]/60" />
+        <div className="absolute -bottom-[310px] -right-[180px] h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle_at_70%_35%,#28599B_0%,#17427F_58%,#062755_100%)]" />
+        <div className="absolute -bottom-[370px] -right-[245px] h-[570px] w-[570px] rounded-full border-[3px] border-[#0A3674]/75" />
+        <div className="absolute left-[8%] top-[5%] h-32 w-24 opacity-95" style={{ backgroundImage: "radial-gradient(circle, #0A3674 2.5px, transparent 3px)", backgroundSize: "28px 28px" }} />
+        <div className="absolute bottom-[30%] right-[1%] h-32 w-24 opacity-95" style={{ backgroundImage: "radial-gradient(circle, #0A3674 2.5px, transparent 3px)", backgroundSize: "28px 28px" }} />
+      </div>
+      <div className="relative z-10 w-full max-w-[450px] rounded-[30px] bg-[#FFFCF5] p-10 text-center shadow-[0_15px_35px_rgba(0,0,0,0.2)]">
 
         <Link
           href="/Home"
-          className="absolute top-5 left-5 flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-200/50 transition-all z-50 text-gray-600"
-          aria-label="Back to home"
+          className={`absolute left-5 top-5 z-50 inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#082B49]/20 bg-white text-[#082B49] shadow-sm transition-[transform,background-color,color,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#082B49] focus-visible:ring-offset-2 ${
+            isStaff
+              ? "hover:bg-[#17427F] hover:text-white"
+              : "hover:bg-[#FFC107]"
+          }`}
+          aria-label="Home"
         >
-          <span className="text-2xl font-bold">←</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m3 10 9-7 9 7" />
+            <path d="M5 9v11h14V9M9 20v-6h6v6" />
+          </svg>
         </Link>
 
         {/* Header */}
@@ -103,11 +155,11 @@ export default function Portal() {
         </div>
 
         {/* Toggle Switch */}
-        <div className="flex justify-center items-center mb-6 bg-gray-100 p-1 rounded-2xl w-fit mx-auto">
+        <div className="flex justify-center items-center mb-6 w-fit mx-auto rounded-2xl bg-gray-100 p-1">
           <button
             type="button"
             onClick={() => setIsStaff(false)}
-            className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${!isStaff ? "bg-white text-[#6a11cb] shadow-sm" : "text-gray-500"
+            className={`cursor-pointer rounded-xl px-6 py-2 text-sm font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#183B56] focus-visible:ring-offset-2 focus-visible:ring-offset-gray-100 ${!isStaff ? "bg-white text-[#6a11cb] shadow-sm hover:bg-white" : "text-gray-500 hover:bg-white/70 hover:text-[#6a11cb]"
               }`}
           >
             Student
@@ -115,7 +167,7 @@ export default function Portal() {
           <button
             type="button"
             onClick={() => setIsStaff(true)}
-            className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${isStaff ? "bg-white text-[#2575fc] shadow-sm" : "text-gray-500"
+            className={`cursor-pointer rounded-xl px-6 py-2 text-sm font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#183B56] focus-visible:ring-offset-2 focus-visible:ring-offset-gray-100 ${isStaff ? "bg-white text-[#2575fc] shadow-sm hover:bg-white" : "text-gray-500 hover:bg-white/70 hover:text-[#2575fc]"
               }`}
           >
             Faculty
@@ -130,14 +182,19 @@ export default function Portal() {
         )}
 
         {/* Login Form */}
-        <form className="text-left" onSubmit={handleLogin} ref={formRef}>
+        <form
+          className="text-left"
+          onSubmit={handleLogin}
+          onInvalidCapture={shakeForm}
+          ref={formRef}
+        >
 
           <div className="mb-5">
             <label className="block mb-2 text-[#444] font-semibold text-sm" htmlFor="username">
               {isStaff ? "Employee ID" : "Student Number"}
             </label>
             <input
-              className="w-full p-3.5 border-2 border-gray-200 rounded-xl text-base transition-all focus:border-[#2575fc] focus:outline-none focus:ring-4 focus:ring-[#2575fc]/10"
+              className="w-full rounded-xl border-2 border-gray-200 bg-white p-3.5 text-base transition-all focus:border-[#2575fc] focus:outline-none focus:ring-4 focus:ring-[#2575fc]/10"
               type="text"
               id="username"
               name="username"
@@ -151,7 +208,7 @@ export default function Portal() {
               Password
             </label>
             <input
-              className="w-full p-3.5 border-2 border-gray-200 rounded-xl text-base transition-all focus:border-[#2575fc] focus:outline-none focus:ring-4 focus:ring-[#2575fc]/10"
+              className="w-full rounded-xl border-2 border-gray-200 bg-white p-3.5 text-base transition-all focus:border-[#2575fc] focus:outline-none focus:ring-4 focus:ring-[#2575fc]/10"
               type={showPassword ? "text" : "password"}
               id="password"
               name="password"
@@ -197,17 +254,15 @@ export default function Portal() {
             {isStaff ? "Staff Login" : "Student Login"}
           </button>
         </form>
-
-        {/* Dynamic Reset Password Helper Text vs Link */}
-        <div className="mt-6">
+        <div className="mt-6 flex h-8 items-center justify-center">
           {isStaff ? (
-            <span className="text-[#666] text-xs font-medium">
+            <p className="text-center text-xs leading-4 font-medium text-[#666]">
               Need to reset your password? Ask the Admin to send the link
-            </span>
+            </p>
           ) : (
             <Link
               href="/portal/forgot-password"
-              className="text-[#2575fc] text-sm hover:underline"
+              className="text-sm text-[#2575fc] hover:underline"
             >
               Forgot Password?
             </Link>
