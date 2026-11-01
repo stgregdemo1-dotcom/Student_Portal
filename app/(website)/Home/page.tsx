@@ -71,7 +71,7 @@ export default function Home() {
         id="Home"
         className="scroll-mt-24 relative flex min-h-[470px] items-center justify-start overflow-hidden bg-cover bg-[center_38%] px-5 py-10 text-left text-white sm:min-h-[540px] sm:px-10 lg:min-h-[600px] lg:px-[7%]"
         style={{
-          backgroundImage: "url('/images/sgcst-hero-background.png')",
+          backgroundImage: "url('/sgcst-hero-background.png')",
           backgroundSize: "cover",
           backgroundPosition: "center center",
           backgroundRepeat: "no-repeat",
@@ -425,7 +425,7 @@ export default function Home() {
               { title: "Student Development", description: "Grow your knowledge, confidence, and readiness for future challenges.", icon: "people" },
               { title: "Career Opportunities", description: "Prepare for meaningful careers with practical and relevant skills.", icon: "career" },
             ].map((feature) => (
-              <Reveal key={feature.title}>
+              <Reveal key={feature.title} className="h-full">
               <article
                 className="group flex h-full min-h-[190px] flex-col items-center rounded-xl border-b-4 border-[#FF7900] bg-white px-4 py-4 text-center shadow-[0_8px_24px_rgba(13,43,69,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_14px_30px_rgba(13,43,69,0.14)] motion-reduce:transition-none"
               >
