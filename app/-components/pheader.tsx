@@ -16,7 +16,38 @@ const Header: React.FC = () => {
   const compactRef = useRef(false);
 
   useLayoutEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    const frameId = window.requestAnimationFrame(() => {
+      const navigationEntry = performance.getEntriesByType(
+        "navigation",
+      )[0] as PerformanceNavigationTiming | undefined;
+      const isHomePageReload =
+        pathname === "/Home" &&
+        navigationEntry?.type === "reload";
+
+      if (isHomePageReload && window.location.hash) {
+        window.history.replaceState(
+          null,
+          "",
+          `${window.location.pathname}${window.location.search}`,
+        );
+      }
+
+      const sectionId =
+        pathname === "/Home" && !isHomePageReload
+          ? window.location.hash.slice(1)
+          : "";
+      const section = sectionId
+        ? document.getElementById(sectionId)
+        : null;
+
+      if (section) {
+        section.scrollIntoView({ behavior: "instant" });
+      } else {
+        window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      }
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
   }, [pathname]);
 
   useEffect(() => {
@@ -88,6 +119,39 @@ const Header: React.FC = () => {
 
   const mobileNavLinkClass =
     "relative z-10 py-1 text-base font-semibold text-[#183B56] transition-colors duration-200 hover:text-[#FF7900] after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:bg-[#FF7900] after:transition-transform after:duration-200 hover:after:scale-x-100";
+
+  const navigateHomeSection = (
+    event: React.MouseEvent<HTMLAnchorElement>,
+    sectionId: string,
+  ) => {
+    if (!isHomePage) return;
+
+    const section = document.getElementById(sectionId);
+    if (!section) return;
+
+    event.preventDefault();
+    const destination =
+      sectionId === "Home" ? "/Home" : `/Home#${sectionId}`;
+    if (`${window.location.pathname}${window.location.hash}` !== destination) {
+      window.history.pushState(null, "", destination);
+    }
+
+    if (sectionId === "Home") {
+      window.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "instant"
+          : "smooth",
+      });
+    } else {
+      section.scrollIntoView({
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth",
+      });
+    }
+  };
 
   const brandContent = (
     <>
@@ -176,15 +240,7 @@ const Header: React.FC = () => {
   <Link
     href="/Home"
     aria-label="Saint Gregory College home"
-    onClick={(event) => {
-      if (!isHomePage) return;
-      event.preventDefault();
-      window.scrollTo({
-        top: 0,
-        left: 0,
-        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
-      });
-    }}
+    onClick={(event) => navigateHomeSection(event, "Home")}
     className={`${brandClassName} rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0D2B45] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FFD000]`}
   >
     {brandContent}
@@ -195,16 +251,7 @@ const Header: React.FC = () => {
           {!isAdmissionPage && <div className="order-2 hidden items-center gap-5 md:absolute md:left-[calc(50%+16px)] md:flex md:-translate-x-1/2 lg:gap-8">
             <Link
               href="/Home"
-              onClick={(event) => {
-                if (!isHomePage) return;
-
-                event.preventDefault();
-                window.scrollTo({
-                  top: 0,
-                  left: 0,
-                  behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
-                });
-              }}
+              onClick={(event) => navigateHomeSection(event, "Home")}
               aria-current={displayedActiveSection === "Home" ? "page" : undefined}
               className={navLinkClass}
             >
@@ -212,15 +259,7 @@ const Header: React.FC = () => {
             </Link>
             <Link
               href="/Home#Programs"
-              onClick={(event) => {
-                const programsSection = document.getElementById("Programs");
-                if (!programsSection) return;
-
-                event.preventDefault();
-                programsSection.scrollIntoView({
-                  behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-                });
-              }}
+              onClick={(event) => navigateHomeSection(event, "Programs")}
               aria-current={displayedActiveSection === "Programs" ? "location" : undefined}
               className={navLinkClass}
             >
@@ -228,15 +267,7 @@ const Header: React.FC = () => {
             </Link>
             <Link
               href="/Home#About-us"
-              onClick={(event) => {
-                const aboutSection = document.getElementById("About-us");
-                if (!isHomePage || !aboutSection) return;
-
-                event.preventDefault();
-                aboutSection.scrollIntoView({
-                  behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-                });
-              }}
+              onClick={(event) => navigateHomeSection(event, "About-us")}
               aria-current={displayedActiveSection === "About Us" ? "location" : undefined}
               className={navLinkClass}
             >
@@ -248,16 +279,7 @@ const Header: React.FC = () => {
             <span aria-hidden="true" className="pointer-events-none absolute -inset-x-3 bottom-0 top-0 z-0 md:backdrop-blur-[4px]" />
             <Link
               href="/Home"
-              onClick={(event) => {
-                if (!isHomePage) return;
-
-                event.preventDefault();
-                window.scrollTo({
-                  top: 0,
-                  left: 0,
-                  behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
-                });
-              }}
+              onClick={(event) => navigateHomeSection(event, "Home")}
               aria-current={displayedActiveSection === "Home" ? "page" : undefined}
               className={mobileNavLinkClass}
             >
@@ -265,15 +287,7 @@ const Header: React.FC = () => {
             </Link>
             <Link
               href="/Home#Programs"
-              onClick={(event) => {
-                const programsSection = document.getElementById("Programs");
-                if (!programsSection) return;
-
-                event.preventDefault();
-                programsSection.scrollIntoView({
-                  behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-                });
-              }}
+              onClick={(event) => navigateHomeSection(event, "Programs")}
               aria-current={displayedActiveSection === "Programs" ? "location" : undefined}
               className={mobileNavLinkClass}
             >
@@ -281,15 +295,7 @@ const Header: React.FC = () => {
             </Link>
             <Link
               href="/Home#About-us"
-              onClick={(event) => {
-                const aboutSection = document.getElementById("About-us");
-                if (!isHomePage || !aboutSection) return;
-
-                event.preventDefault();
-                aboutSection.scrollIntoView({
-                  behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-                });
-              }}
+              onClick={(event) => navigateHomeSection(event, "About-us")}
               aria-current={displayedActiveSection === "About Us" ? "location" : undefined}
               className={mobileNavLinkClass}
             >
