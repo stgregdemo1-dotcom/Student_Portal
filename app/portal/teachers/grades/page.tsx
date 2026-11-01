@@ -337,10 +337,10 @@ const GradingSheet = () => {
                       const numericGrades = currentGradesMap.slice(0, 2) as number[];
                       const currentRemarks = (currentGradesMap[2] as string) || "";
 
-                      // Calculate Average
+                      // Calculate Average safely
                       const g1 = Number(numericGrades[0]) || 0;
                       const g2 = Number(numericGrades[1]) || 0;
-                      const validCount = [numericGrades[0], numericGrades[1]].filter(g => g !== 0 && g !== "" && g != null).length;
+                      const validCount = numericGrades.filter(g => typeof g === 'number' && g > 0).length;
                       const averageVal = validCount > 0 ? ((g1 + g2) / validCount).toFixed(2) : "-";
 
                       return (
