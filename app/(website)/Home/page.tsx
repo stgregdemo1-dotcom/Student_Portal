@@ -418,16 +418,16 @@ export default function Home() {
             <div className="mx-auto mt-4 h-1 w-14 rounded-full bg-[#FFC107]" />
           </div>
           </Reveal>
-          <div className="grid auto-rows-fr gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:gap-4">
+          <div className="grid items-stretch gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:gap-4">
             {[
               { title: "Quality Education", description: "Build a strong foundation through dedicated teaching and academic support.", icon: "book" },
               { title: "Practical Learning", description: "Develop hands-on skills through ICT and hospitality learning opportunities.", icon: "computer" },
               { title: "Student Development", description: "Grow your knowledge, confidence, and readiness for future challenges.", icon: "people" },
               { title: "Career Opportunities", description: "Prepare for meaningful careers with practical and relevant skills.", icon: "career" },
             ].map((feature) => (
-              <Reveal key={feature.title} className="h-full">
+              <Reveal key={feature.title} className="flex h-full flex-col">
               <article
-                className="group flex h-full min-h-[190px] flex-col items-center rounded-xl border-b-4 border-[#FF7900] bg-white px-4 py-4 text-center shadow-[0_8px_24px_rgba(13,43,69,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_14px_30px_rgba(13,43,69,0.14)] motion-reduce:transition-none"
+                className="group flex h-[280px] flex-1 flex-col items-center rounded-xl border-b-4 border-[#FF7900] bg-white px-4 py-4 text-center shadow-[0_8px_24px_rgba(13,43,69,0.08)] transition-[translate,box-shadow] duration-300 ease-in-out hover:-translate-y-1 hover:shadow-[0_14px_30px_rgba(13,43,69,0.14)] motion-reduce:transition-none sm:h-[260px] lg:h-[250px]"
               >
                 <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#FFF1C2] text-[#0D2B45] transition-colors duration-300 group-hover:bg-[#FFE69A]">
                   {feature.icon === "book" ? (
