@@ -8,8 +8,6 @@ interface SubjectRecord {
   teacher_id?: string;
   grade_1?: string;
   grade_2?: string;
-  grade_3?: string;
-  grade_4?: string;
   remarks?: string;
   status?: string;
   sched_code?: string;
@@ -180,10 +178,8 @@ function AdminStudentDetailsContent() {
                   <thead className="bg-gray-50 text-gray-500 text-left text-xs uppercase tracking-wider">
                     <tr>
                       <th className="px-6 py-2.5">Subject ID</th>
-                      <th className="px-6 py-2.5 text-center">Prelim</th>
-                      <th className="px-6 py-2.5 text-center">Midterm</th>
-                      <th className="px-6 py-2.5 text-center">Pre-Final</th>
-                      <th className="px-6 py-2.5 text-center">Finals</th>
+                      <th className="px-6 py-2.5 text-center">1st</th>
+                      <th className="px-6 py-2.5 text-center">2nd</th>
                       <th className="px-6 py-2.5">Remarks</th>
                       <th className="px-6 py-2.5">Status</th>
                     </tr>
@@ -191,7 +187,7 @@ function AdminStudentDetailsContent() {
                   <tbody className="divide-y divide-gray-100 text-gray-700 bg-white">
                     {!currentClass.subjects || currentClass.subjects.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="px-6 py-4 text-center text-gray-400 italic">
+                        <td colSpan={5} className="px-6 py-4 text-center text-gray-400 italic">
                           No subjects assigned within this dynamic structural section document framework.
                         </td>
                       </tr>
@@ -201,8 +197,6 @@ function AdminStudentDetailsContent() {
                           <td className="px-6 py-3 font-medium text-gray-900">{sub.subject_id}</td>
                           <td className="px-6 py-3 text-center text-gray-600">{sub.grade_1 || "—"}</td>
                           <td className="px-6 py-3 text-center text-gray-600">{sub.grade_2 || "—"}</td>
-                          <td className="px-6 py-3 text-center text-gray-600">{sub.grade_3 || "—"}</td>
-                          <td className="px-6 py-3 text-center text-gray-600">{sub.grade_4 || "—"}</td>
                           <td className="px-6 py-3">
                             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${sub.remarks === "Passed" ? "bg-green-50 text-green-700" :
                               sub.remarks === "Failed" ? "bg-red-50 text-red-700" : "bg-gray-100 text-gray-600"
@@ -212,10 +206,10 @@ function AdminStudentDetailsContent() {
                           </td>
                           <td className="px-6 py-3">
                             <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${sub.status === "Completed" ? "bg-green-100 text-green-800" :
-                                sub.status === "Active" ? "bg-blue-100 text-blue-800" :
-                                  sub.status === "Evaluating" ? "bg-amber-100 text-amber-800" :
-                                    sub.status === "Rejected" ? "bg-red-100 text-red-800" :
-                                      "bg-gray-100 text-gray-600"
+                              sub.status === "Active" ? "bg-blue-100 text-blue-800" :
+                                sub.status === "Evaluating" ? "bg-amber-100 text-amber-800" :
+                                  sub.status === "Rejected" ? "bg-red-100 text-red-800" :
+                                    "bg-gray-100 text-gray-600"
                               }`}>
                               {sub.status || "—"}
                             </span>

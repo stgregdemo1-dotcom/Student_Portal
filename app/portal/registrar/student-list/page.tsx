@@ -10,7 +10,13 @@ interface StudentRecord {
   last_name?: string;
   track?: string;
   status?: string;
-  [key: string]: any; // Allows displaying all other dynamic student details upon expansion
+  [key: string]: any;
+}
+
+interface CredentialRecord {
+  username?: string;
+  student_id?: string;
+  user_type?: string;
 }
 
 type SortableKeys = "student_id" | "studentName" | "track" | "status";
@@ -18,7 +24,6 @@ type SortableKeys = "student_id" | "studentName" | "track" | "status";
 function StudentListContent() {
   const searchParams = useSearchParams();
 
-  // Dynamically set the initial status filter based on the URL query parameter
   const [statusFilter, setStatusFilter] = useState<string>(() => {
     const statusParam = searchParams.get("status");
     if (statusParam) {
@@ -32,6 +37,7 @@ function StudentListContent() {
   });
 
   const [students, setStudents] = useState<StudentRecord[]>([]);
+  const [credentialsMap, setCredentialsMap] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [sortKey, setSortKey] = useState<SortableKeys>("student_id");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
@@ -40,26 +46,43 @@ function StudentListContent() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const itemsPerPage = 20;
 
-  const fetchStudents = async () => {
+  const fetchData = async () => {
     setIsLoading(true);
     try {
-      // Fetch all students from the student collection regardless of status
-      const res = await fetch("/api/portal/registrar?table=students");
-      if (res.ok) {
-        const jsonResponse = await res.json();
+      const [studentsRes, credsRes] = await Promise.all([
+        fetch("/api/portal/registrar?table=students"),
+        fetch("/api/portal/registrar?table=credentials"),
+      ]);
+
+      if (studentsRes.ok) {
+        const jsonResponse = await studentsRes.json();
         const rawData = Array.isArray(jsonResponse) ? jsonResponse : jsonResponse.data || [];
         setStudents(rawData);
-        setCurrentPage(1);
       }
+
+      if (credsRes.ok) {
+        const credsJson = await credsRes.json();
+        const credsList: CredentialRecord[] = Array.isArray(credsJson) ? credsJson : credsJson.data || [];
+        const map: Record<string, string> = {};
+        credsList.forEach((c) => {
+          const key = c.student_id || c.username;
+          if (key) {
+            map[key] = c.user_type || "student";
+          }
+        });
+        setCredentialsMap(map);
+      }
+
+      setCurrentPage(1);
     } catch (err) {
-      console.error("Error loading student records:", err);
+      console.error("Error loading student and credential records:", err);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchStudents();
+    fetchData();
   }, []);
 
   const handleStatusFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -77,6 +100,32 @@ function StudentListContent() {
     setCurrentPage(1);
   };
 
+  const handleCredentialTypeUpdate = async (studentId: string, newUserType: "student" | "archive") => {
+    try {
+      setActionLoading(studentId);
+      const res = await fetch("/api/portal/registrar?table=credentials", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ student_id: studentId, user_type: newUserType }),
+      });
+
+      const result = await res.json();
+      if (res.ok && result.success) {
+        setCredentialsMap((prev) => ({
+          ...prev,
+          [studentId]: newUserType,
+        }));
+      } else {
+        alert(result.message || "Failed to update credential user type.");
+      }
+    } catch (error) {
+      console.error("Error updating credential user type:", error);
+      alert("An error occurred while updating credential user type.");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const handleStatusUpdate = async (studentId: string, newStatus: "Graduated" | "Archived") => {
     try {
       setActionLoading(studentId);
@@ -88,7 +137,6 @@ function StudentListContent() {
 
       const result = await res.json();
       if (res.ok && result.success) {
-        // Update local state smoothly without re-fetching
         setStudents((prev) =>
           prev.map((s) => (s.student_id === studentId || s._id === studentId ? { ...s, status: newStatus } : s))
         );
@@ -184,7 +232,7 @@ function StudentListContent() {
               </select>
 
               <button
-                onClick={fetchStudents}
+                onClick={fetchData}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium whitespace-nowrap"
               >
                 Refresh
@@ -244,6 +292,8 @@ function StudentListContent() {
                     const studentId = record.student_id || record._id;
                     const isExpanded = expandedStudentId === studentId;
                     const formattedName = `${record.last_name || ""}, ${record.first_name || ""}`.trim();
+                    const credentialType = credentialsMap[studentId] || "student";
+                    const isArchived = credentialType === "archive";
 
                     return (
                       <React.Fragment key={record._id}>
@@ -279,11 +329,13 @@ function StudentListContent() {
                           <tr>
                             <td colSpan={5} className="p-6 bg-slate-50 border-b border-gray-200">
                               <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-inner space-y-4">
-                                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 border-b pb-2">
-                                  Full Student Profile Details: <span className="font-mono text-blue-600">{studentId}</span>
+                                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 border-b pb-2 flex justify-between items-center">
+                                  <span>Full Student Profile Details: <span className="font-mono text-blue-600">{studentId}</span></span>
+                                  <span className="text-[11px] font-semibold text-gray-500">
+                                    Credential Type: <span className="text-indigo-600 uppercase">{credentialType}</span>
+                                  </span>
                                 </h4>
 
-                                {/* Grid displaying all available fields from the student record */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
                                   {Object.entries(record).map(([key, val]) => {
                                     if (key === "__v" || key === "_id") return null;
@@ -302,11 +354,12 @@ function StudentListContent() {
                                   })}
                                 </div>
 
-                                {/* Action Buttons for Status Update */}
+                                {/* Action Buttons for Status Update, Archive, and Unarchive */}
                                 <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
                                   <span className="text-xs text-gray-500 mr-auto">
                                     Change Status Actions:
                                   </span>
+
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
@@ -317,15 +370,27 @@ function StudentListContent() {
                                   >
                                     {actionLoading === studentId ? "Updating..." : "Graduated"}
                                   </button>
+
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      handleStatusUpdate(studentId, "Archived");
+                                      handleCredentialTypeUpdate(studentId, "archive");
                                     }}
-                                    disabled={actionLoading === studentId}
-                                    className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors disabled:opacity-50"
+                                    disabled={actionLoading === studentId || isArchived}
+                                    className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                                   >
                                     {actionLoading === studentId ? "Updating..." : "Archive"}
+                                  </button>
+
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleCredentialTypeUpdate(studentId, "student");
+                                    }}
+                                    disabled={actionLoading === studentId || !isArchived}
+                                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                  >
+                                    {actionLoading === studentId ? "Updating..." : "Unarchive"}
                                   </button>
                                 </div>
                               </div>
@@ -390,7 +455,6 @@ function StudentListContent() {
   );
 }
 
-// Wrapped with Suspense to safely use useSearchParams in Next.js App Router
 export default function StudentListPage() {
   return (
     <Suspense fallback={<div className="p-6 text-center text-gray-500">Loading student list...</div>}>

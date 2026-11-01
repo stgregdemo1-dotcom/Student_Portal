@@ -8,6 +8,7 @@ const UserSchema = new mongoose.Schema(
   {
     username: { type: String, required: true },
     password: { type: String, required: true },
+    user_type: { type: String }, // Included to check archival/locking status
   },
   { collection: "credentials" } // Hard-binds to your collection name
 );
@@ -31,13 +32,28 @@ export async function POST(request: Request) {
   try {
     await connectDB();
     
-    // UPDATED: Destructure user_type (which is 'student' or 'staff') passed from the frontend form
     const { username, password, user_type } = await request.json();
 
-    // Query MongoDB for a document matching BOTH credentials fields
-    const user = await User.findOne({ username, password });
+    // Query MongoDB by username first
+    const user = await User.findOne({ username });
 
     if (!user) {
+      return NextResponse.json(
+        { message: "Invalid username or password." },
+        { status: 401 }
+      );
+    }
+
+    // --- CHECK USER_TYPE FIRST BEFORE ANYTHING ELSE ---
+    if (user.user_type === "archive") {
+      return NextResponse.json(
+        { message: "Access denied. This account has been archived and is currently locked." },
+        { status: 403 }
+      );
+    }
+
+    // Verify password next
+    if (user.password !== password) {
       return NextResponse.json(
         { message: "Invalid username or password." },
         { status: 401 }
@@ -56,9 +72,7 @@ export async function POST(request: Request) {
       detectedUserType = "registrar";
     }
 
-    // --- NEW VALIDATION CRITERIA CRITICAL CHECK ---
-    // If frontend says 'student', but the ID prefix translates to 'admin' or 'teacher'
-    // OR if frontend says 'staff', but the ID translates to a 'student'
+    // --- ROLE VALIDATION CRITERIA CHECK ---
     const isStaffRole = 
       detectedUserType === "admin" || 
       detectedUserType === "teacher" || 

@@ -6,12 +6,10 @@ interface MappedSubject {
   subject_id: string;
   sched_code: string;
   teacher_id: string;
-  grade_1: string;
-  grade_2: string;
-  grade_3: string;
-  grade_4: string;
+  grade_1: string; // Represents "1st"
+  grade_2: string; // Represents "2nd"
   remarks: string;
-  status: string; // Added status field to support subject-level evaluation states
+  status: string;
 }
 
 interface MappedStudentRow {
@@ -63,17 +61,15 @@ export default function GradesManagementPage() {
     fetchStudentSections();
   }, []);
 
-  const computeFinalGradeAndRemarks = (g1: string, g2: string, g3: string, g4: string) => {
-    const p = g1 ? Number(g1) : NaN;
-    const m = g2 ? Number(g2) : NaN;
-    const pf = g3 ? Number(g3) : NaN;
-    const f = g4 ? Number(g4) : NaN;
+  const computeFinalGradeAndRemarks = (g1: string, g2: string) => {
+    const t1 = g1 ? Number(g1) : NaN;
+    const t2 = g2 ? Number(g2) : NaN;
 
-    if (isNaN(p) || isNaN(m) || isNaN(pf) || isNaN(f)) {
+    if (isNaN(t1) || isNaN(t2)) {
       return { finalAvg: "—" };
     }
 
-    const avg = Math.round((p + m + pf + f) / 4);
+    const avg = Math.round((t1 + t2) / 2);
     return { finalAvg: String(avg) };
   };
 
@@ -83,7 +79,7 @@ export default function GradesManagementPage() {
     setIsEditModalOpen(true);
   };
 
-  const handleGradeInputChange = (termField: "grade_1" | "grade_2" | "grade_3" | "grade_4", value: string) => {
+  const handleGradeInputChange = (termField: "grade_1" | "grade_2", value: string) => {
     if (!selectedRecord) return;
 
     const updatedSubjects = selectedRecord.subjects.map((sub) => {
@@ -215,10 +211,8 @@ export default function GradesManagementPage() {
                   <th className="p-4">Student Name & ID</th>
                   <th className="p-4">Section / School Year</th>
                   <th className="p-4">Subject ID</th>
-                  <th className="p-4 text-center">Prelim (G1)</th>
-                  <th className="p-4 text-center">Midterm (G2)</th>
-                  <th className="p-4 text-center">Pre-Finals (G3)</th>
-                  <th className="p-4 text-center">Finals (G4)</th>
+                  <th className="p-4 text-center">1st</th>
+                  <th className="p-4 text-center">2nd</th>
                   <th className="p-4 text-center text-indigo-600 font-extrabold bg-indigo-50/30">Average</th>
                   <th className="p-4 text-center">Remarks</th>
                   <th className="p-4 text-right">Actions</th>
@@ -243,7 +237,7 @@ export default function GradesManagementPage() {
 
                     return displayedSubjects.map((subject, sIdx) => {
                       const calculations = computeFinalGradeAndRemarks(
-                        subject.grade_1, subject.grade_2, subject.grade_3, subject.grade_4
+                        subject.grade_1, subject.grade_2
                       );
 
                       return (
@@ -277,12 +271,6 @@ export default function GradesManagementPage() {
                           <td className="p-4 text-center font-medium text-gray-800">
                             {subject.grade_2 || "—"}
                           </td>
-                          <td className="p-4 text-center font-medium text-gray-800">
-                            {subject.grade_3 || "—"}
-                          </td>
-                          <td className="p-4 text-center font-medium text-gray-800">
-                            {subject.grade_4 || "—"}
-                          </td>
                           <td className="p-4 text-center font-black text-indigo-700 bg-indigo-50/20">
                             {calculations.finalAvg}
                           </td>
@@ -312,7 +300,7 @@ export default function GradesManagementPage() {
                   })
                 ) : (
                   <tr>
-                    <td colSpan={10} className="text-center p-8 text-gray-400 text-xs italic">
+                    <td colSpan={8} className="text-center p-8 text-gray-400 text-xs italic">
                       No matching historical section records found.
                     </td>
                   </tr>
@@ -338,7 +326,7 @@ export default function GradesManagementPage() {
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Prelim (G1)</label>
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">1st</label>
                   <input
                     type="text"
                     value={getEditingSubject()?.grade_1 ?? ""}
@@ -348,7 +336,7 @@ export default function GradesManagementPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Midterm (G2)</label>
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">2nd</label>
                   <input
                     type="text"
                     value={getEditingSubject()?.grade_2 ?? ""}
@@ -357,35 +345,15 @@ export default function GradesManagementPage() {
                     placeholder="0-100"
                   />
                 </div>
-                <div>
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Pre-Finals (G3)</label>
-                  <input
-                    type="text"
-                    value={getEditingSubject()?.grade_3 ?? ""}
-                    onChange={(e) => handleGradeInputChange("grade_3", e.target.value)}
-                    className="w-full font-semibold text-gray-800 text-sm border border-gray-200 rounded px-2 py-1.5 bg-gray-50/50 outline-none focus:border-indigo-400"
-                    placeholder="0-100"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Finals (G4)</label>
-                  <input
-                    type="text"
-                    value={getEditingSubject()?.grade_4 ?? ""}
-                    onChange={(e) => handleGradeInputChange("grade_4", e.target.value)}
-                    className="w-full font-semibold text-gray-800 text-sm border border-gray-200 rounded px-2 py-1.5 bg-gray-50/50 outline-none focus:border-indigo-400"
-                    placeholder="0-100"
-                  />
-                </div>
               </div>
 
               {(() => {
                 const sub = getEditingSubject();
-                const calc = sub ? computeFinalGradeAndRemarks(sub.grade_1, sub.grade_2, sub.grade_3, sub.grade_4) : { finalAvg: "—" };
+                const calc = sub ? computeFinalGradeAndRemarks(sub.grade_1, sub.grade_2) : { finalAvg: "—" };
                 return (
                   <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 grid grid-cols-2 gap-4 items-center">
                     <div className="text-center">
-                      <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Computed Gen Average</p>
+                      <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Computed Average</p>
                       <p className="text-lg font-black text-indigo-700">{calc.finalAvg}</p>
                     </div>
                     <div className="flex flex-col text-left">

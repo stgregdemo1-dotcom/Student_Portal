@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import mongoose from "mongoose";
-import { Audit, Student, Admission, StudentSection, Subject, Config } from "@/models/Schema";
+import { Audit, Student, Admission, StudentSection, Subject, Config, Credentials } from "@/models/Schema";
 
 const connectDB = async () => {
   if (mongoose.connection.readyState >= 1) return;
@@ -14,6 +14,7 @@ const ALLOWED_TABLES: Record<string, { model: mongoose.Model<any>; idKey: string
   student_section: { model: StudentSection, idKey: "student_id" },
   subjects: { model: Subject, idKey: "subject_code" },
   configuration: { model: Config, idKey: "key" },
+  credentials: { model: Credentials, idKey: "username" },
 };
 
 const EXCLUDED_FIELDS: Record<string, string> = {
@@ -119,6 +120,12 @@ export async function GET(request: NextRequest) {
     const { model: TargetModel, idKey } = ALLOWED_TABLES[tableName];
     const queryConditions = buildQueryConditions(searchParams);
 
+    // Handle Credentials Table GET Request
+    if (tableName === "credentials") {
+      const credentialsList = await TargetModel.find({}).lean();
+      return NextResponse.json({ success: true, data: credentialsList }, { status: 200 });
+    }
+
     // Handle Status Breakdown Request for admissions and students
     if (getStatusBreakdown && (tableName === "admissions_applications" || tableName === "students")) {
       const breakdown = await TargetModel.aggregate([
@@ -142,7 +149,6 @@ export async function GET(request: NextRequest) {
 
     // Handle Failed Remarks Breakdown in student_section filtered by configuration current_year
     if (tableName === "student_section" && getFailedRemarksBreakdown) {
-      // 1. Get current_year from configuration collection (fallback to Manila year if config missing)
       const currentYearManila = new Intl.DateTimeFormat("en-US", {
         timeZone: "Asia/Manila",
         year: "numeric",
@@ -154,7 +160,6 @@ export async function GET(request: NextRequest) {
 
       const targetYear = (configDoc as any)?.current_year || (configDoc as any)?.value || currentYearManila;
 
-      // 2. Aggregate students in student_section matching current year and check for "Failed" remarks or status/grades
       const studentRecords = await TargetModel.aggregate([
         { $unwind: "$class" },
         { $match: { "class.year": String(targetYear) } },
@@ -560,6 +565,96 @@ export async function PUT(request: NextRequest) {
       }
 
       return NextResponse.json({ success: true, message: `Student status updated to ${status}`, data: updatedDocument }, { status: 200 });
+    }
+
+    if (tableName === "student_section") {
+      const { student_id, year, semester, subjects, subject_status } = body;
+
+      if (!student_id || !year || !semester) {
+        return NextResponse.json(
+          { message: "Missing required parameters: student_id, year, and semester must be specified." },
+          { status: 400 }
+        );
+      }
+
+      let updatePayload: any = {};
+      let auditDescription = "";
+
+      if (subjects) {
+        updatePayload = { "class.$.subjects": subjects };
+        auditDescription = `Updated grade matrices for student ID: ${student_id} (SY: ${year}, Semester: ${semester}).`;
+      } else if (subject_status) {
+        updatePayload = { "class.$.subjects.$[].status": subject_status };
+        auditDescription = `Updated all subject statuses to '${subject_status}' for student ID: ${student_id} (SY: ${year}, Semester: ${semester}).`;
+      } else {
+        return NextResponse.json(
+          { message: "Missing required update properties (subjects or subject_status)." },
+          { status: 400 }
+        );
+      }
+
+      const updatedDocument = await TargetModel.findOneAndUpdate(
+        { student_id, "class.year": year, "class.semester": semester },
+        { $set: updatePayload },
+        { new: true, runValidators: true }
+      ).lean();
+
+      if (!updatedDocument) {
+        return NextResponse.json(
+          { message: `No student section record found for student ID ${student_id}, year ${year}, semester ${semester}` },
+          { status: 404 }
+        );
+      }
+
+      try {
+        const cookieStore = await cookies();
+        const auditUser = cookieStore.get("audit_user")?.value || "Unknown System Staff";
+        await createAuditLog(auditUser, auditDescription);
+      } catch (auditErr) {
+        console.error("Audit log creation error:", auditErr);
+      }
+
+      return NextResponse.json({ success: true, message: "Record updated successfully", data: updatedDocument }, { status: 200 });
+    }
+
+    if (tableName === "credentials") {
+      const { student_id, user_type } = body;
+
+      if (!student_id || !user_type) {
+        return NextResponse.json(
+          { message: "Missing required parameters: student_id and user_type must be specified." },
+          { status: 400 }
+        );
+      }
+
+      const updatedCredential = await TargetModel.findOneAndUpdate(
+        { $or: [{ student_id }, { username: student_id }] },
+        { $set: { user_type } },
+        { new: true, runValidators: true }
+      ).lean();
+
+      if (!updatedCredential) {
+        return NextResponse.json(
+          { message: `No credential record found for student ID / username: ${student_id}` },
+          { status: 404 }
+        );
+      }
+
+      try {
+        const cookieStore = await cookies();
+        const auditUser = cookieStore.get("audit_user")?.value || "Unknown System Staff";
+        await createAuditLog(
+          auditUser,
+          `Updated credential user_type for student ID: ${student_id} to '${user_type}'.`
+        );
+      } catch (auditErr) {
+        console.error("Audit log creation error:", auditErr);
+      }
+
+      return NextResponse.json(
+        { success: true, message: `Credential user_type updated to ${user_type}`, data: updatedCredential },
+        { status: 200 }
+      );
     }
 
     return NextResponse.json({ message: `No update logic defined for table: ${tableName}` }, { status: 400 });
