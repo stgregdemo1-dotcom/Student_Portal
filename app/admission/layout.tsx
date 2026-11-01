@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Footer from '../-components/Pfooter';
 import Header from '../-components/pheader';
 import NavigationLoader from "../-components/NavigationLoader";
@@ -17,7 +18,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen flex flex-col bg-gray-50">
-        <NavigationLoader />
+        <Suspense fallback={null}>
+          <NavigationLoader />
+        </Suspense>
         <Header />
         <div className="flex flex-1 flex-col">
           <main className="flex-grow">
