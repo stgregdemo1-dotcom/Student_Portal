@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import React from "react";
 
 interface InputFieldProps {
@@ -221,7 +221,7 @@ function ImagePreview({ file }: { file: File }) {
   );
 }
 
-export default function AdmissionForm() {
+function AdmissionFormContent() {
   const [status, setStatus] = React.useState<{
     type: "success" | "error" | "";
     message: string;
@@ -331,8 +331,8 @@ export default function AdmissionForm() {
       [slot]: addToExisting
         ? [...current[slot], ...validFiles]
         : validFiles.length > 0
-          ? validFiles
-          : current[slot],
+        ? validFiles
+        : current[slot],
     }));
     setFileErrors((current) => ({ ...current, [slot]: errors.join(" ") }));
     const slotIndex = documentUploads.findIndex((upload) => upload.id === slot);
@@ -727,8 +727,8 @@ export default function AdmissionForm() {
                         ? `${upload.maxFiles} images selected`
                         : "Replace image"
                       : selectedFiles[upload.id].length > 0
-                        ? "Add another image"
-                        : "Choose image"}
+                      ? "Add another image"
+                      : "Choose image"}
                   </label>
                   {fileErrors[upload.id] && (
                     <p className="mt-2 text-xs font-medium text-red-600" role="alert">
@@ -792,5 +792,13 @@ export default function AdmissionForm() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function AdmissionForm() {
+  return (
+    <Suspense fallback={<div className="text-center p-20 font-bold text-[#856404]">Loading Admission Portal...</div>}>
+      <AdmissionFormContent />
+    </Suspense>
   );
 }
