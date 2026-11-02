@@ -131,26 +131,30 @@ export async function POST(request: NextRequest) {
 
     const fileKeys = ["profilePic", "reportCard", "birthCert"];
     const processedAttachments = [];
-    const maxFileSize = 2 * 1024 * 1024; // 2MB limit per file
+    const maxFileSize = 5 * 1024 * 1024; // 🚀 Updated to 5MB to match frontend limit
 
     for (const key of fileKeys) {
-      const file = formData.get(key) as File | null;
-      if (file && file.size > 0 && file.name !== "undefined") {
-        if (file.size > maxFileSize) {
-          return NextResponse.json(
-            { message: `File "${file.name}" exceeds the max allowed limit of 2MB.` },
-            { status: 400 }
-          );
+      // 🚀 Use getAll() to properly capture all files per slot (e.g. multiple Report Cards)
+      const files = formData.getAll(key) as File[];
+
+      for (const file of files) {
+        if (file && file.size > 0 && file.name !== "undefined") {
+          if (file.size > maxFileSize) {
+            return NextResponse.json(
+              { message: `File "${file.name}" exceeds the max allowed limit of 5MB.` },
+              { status: 400 }
+            );
+          }
+
+          const bytes = await file.arrayBuffer();
+          const buffer = Buffer.from(bytes);
+
+          processedAttachments.push({
+            filename: `${key}_${file.name}`,
+            contentType: file.type,
+            data: buffer,
+          });
         }
-
-        const bytes = await file.arrayBuffer();
-        const buffer = Buffer.from(bytes);
-
-        processedAttachments.push({
-          filename: `${key}_${file.name}`,
-          contentType: file.type,
-          data: buffer,
-        });
       }
     }
 

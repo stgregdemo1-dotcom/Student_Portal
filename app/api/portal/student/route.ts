@@ -294,7 +294,6 @@ export async function GET(request: NextRequest) {
         if (!teacherFullName) teacherFullName = masterDetails.teacher_id;
       }
 
-      // Strictly display "Completed" or "Pending"
       const subjectStatus = sub.status && sub.status.toLowerCase() === "completed" ? "Completed" : "Pending";
 
       return {
@@ -318,5 +317,40 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error("Grades Aggregation Route Error:", error);
     return NextResponse.json({ success: false, message: "Internal Server Error" }, { status: 500 });
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    await connectDB();
+
+    const cookieStore = await cookies();
+    const usernameCookie = cookieStore.get("username");
+
+    if (!usernameCookie || !usernameCookie.value) {
+      return NextResponse.json({ success: false, message: "Unauthorized. Session cookie missing." }, { status: 401 });
+    }
+
+    const studentId = usernameCookie.value;
+
+    const studentProfile = await Student.findOne({ student_id: studentId });
+    const studentRecord = await StudentSection.findOne({ student_id: studentId });
+
+    if (!studentProfile || !studentRecord) {
+      return NextResponse.json({ success: false, message: "Student record or profile not found." }, { status: 404 });
+    }
+
+    // Update student status to reflect pending 2nd semester enrollment
+    studentProfile.status = "Pending - 2nd Sem";
+    await studentProfile.save();
+
+    return NextResponse.json({ 
+      success: true, 
+      message: "Successfully submitted enrollment for 2nd Semester!" 
+    }, { status: 200 });
+
+  } catch (error: any) {
+    console.error("Enrollment Route Error:", error);
+    return NextResponse.json({ success: false, message: "Internal Server Error during enrollment." }, { status: 500 });
   }
 }

@@ -10,7 +10,10 @@ interface InputFieldProps {
   inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
   placeholder?: string;
   max?: string;
+  maxLength?: number;
+  error?: string;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
   onInvalid?: (e: React.InvalidEvent<HTMLInputElement>) => void;
 }
 
@@ -19,10 +22,12 @@ interface SelectFieldProps {
   name: string;
   options: string[];
   value?: string;
+  error?: string;
   onChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  onBlur?: (e: React.FocusEvent<HTMLSelectElement>) => void;
 }
 
-type DocumentSlot = "profile" | "reportCard" | "birthCertificate";
+type DocumentSlot = "profilePic" | "reportCard" | "birthCert";
 
 interface DocumentUpload {
   id: DocumentSlot;
@@ -41,7 +46,7 @@ const labelClassName = "ml-0.5 text-xs font-semibold text-[#334155]";
 
 const documentUploads: DocumentUpload[] = [
   {
-    id: "profile",
+    id: "profilePic",
     title: "Profile Picture",
     description: "A recent photo of the applicant",
     accept: "image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp",
@@ -59,7 +64,7 @@ const documentUploads: DocumentUpload[] = [
     icon: "report",
   },
   {
-    id: "birthCertificate",
+    id: "birthCert",
     title: "Birth Certificate",
     description: "Applicant's birth certificate",
     accept: "image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp",
@@ -70,9 +75,9 @@ const documentUploads: DocumentUpload[] = [
 ];
 
 const acceptedExtensions: Record<DocumentSlot, string[]> = {
-  profile: [".jpg", ".jpeg", ".png", ".webp"],
+  profilePic: [".jpg", ".jpeg", ".png", ".webp"],
   reportCard: [".jpg", ".jpeg", ".png", ".webp"],
-  birthCertificate: [".jpg", ".jpeg", ".png", ".webp"],
+  birthCert: [".jpg", ".jpeg", ".png", ".webp"],
 };
 
 const InputField: React.FC<InputFieldProps> = ({
@@ -82,7 +87,10 @@ const InputField: React.FC<InputFieldProps> = ({
   inputMode,
   placeholder,
   max,
+  maxLength,
+  error,
   onChange,
+  onBlur,
   onInvalid,
 }) => (
   <div className="flex min-w-0 flex-col gap-2">
@@ -96,11 +104,18 @@ const InputField: React.FC<InputFieldProps> = ({
       name={name}
       placeholder={placeholder}
       max={max}
+      maxLength={maxLength}
       onChange={onChange}
+      onBlur={onBlur}
       onInvalid={onInvalid}
-      className={fieldClassName}
+      className={`${fieldClassName} ${error ? "border-red-500 focus:border-red-500 focus:ring-red-500/15" : ""}`}
       required={label.includes("*")}
     />
+    {error && (
+      <p className="text-xs font-medium text-red-600 mt-0.5" role="alert">
+        {error}
+      </p>
+    )}
   </div>
 );
 
@@ -109,7 +124,9 @@ const SelectField: React.FC<SelectFieldProps> = ({
   name,
   options,
   value,
+  error,
   onChange,
+  onBlur,
 }) => (
   <div className="flex min-w-0 flex-col gap-2">
     <label htmlFor={name} className={labelClassName}>
@@ -120,7 +137,8 @@ const SelectField: React.FC<SelectFieldProps> = ({
       name={name}
       value={value}
       onChange={onChange}
-      className={fieldClassName}
+      onBlur={onBlur}
+      className={`${fieldClassName} ${error ? "border-red-500 focus:border-red-500 focus:ring-red-500/15" : ""}`}
     >
       {options.map((opt) => (
         <option key={opt} value={opt}>
@@ -128,6 +146,11 @@ const SelectField: React.FC<SelectFieldProps> = ({
         </option>
       ))}
     </select>
+    {error && (
+      <p className="text-xs font-medium text-red-600 mt-0.5" role="alert">
+        {error}
+      </p>
+    )}
   </div>
 );
 
@@ -230,19 +253,22 @@ function AdmissionFormContent() {
   const [enrollmentType, setEnrollmentType] = useState<string>("New Student");
   const [gradeLevel, setGradeLevel] = useState<string>("Grade 11");
   const [maxDobDate, setMaxDobDate] = useState<string | undefined>(undefined);
+  const [lrnError, setLrnError] = useState<string>("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  
   const [selectedFiles, setSelectedFiles] = useState<
     Record<DocumentSlot, File[]>
   >({
-    profile: [],
+    profilePic: [],
     reportCard: [],
-    birthCertificate: [],
+    birthCert: [],
   });
   const [fileErrors, setFileErrors] = useState<
     Record<DocumentSlot, string>
   >({
-    profile: "",
+    profilePic: "",
     reportCard: "",
-    birthCertificate: "",
+    birthCert: "",
   });
   const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -289,6 +315,39 @@ function AdmissionFormContent() {
       input.setCustomValidity("You must be at least 15 years old to apply.");
     } else {
       input.setCustomValidity("");
+    }
+  };
+
+  const handleLrnBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const value = e.target.value.trim();
+    if (value && value.length !== 12) {
+      setLrnError("LRN must be exactly 12 digits.");
+    } else {
+      setLrnError("");
+    }
+  };
+
+  const handleFieldBlur = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    const trimmed = value.trim();
+    let errorMsg = "";
+
+    const isRequiredField = e.target.hasAttribute("required");
+    if (isRequiredField && !trimmed) {
+      errorMsg = "This field is required.";
+    }
+
+    if (name === "email" && trimmed) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(trimmed)) {
+        errorMsg = "Please enter a valid email address format.";
+      }
+    }
+
+    setFieldErrors((prev) => ({ ...prev, [name]: errorMsg }));
+
+    if (name === "lrn") {
+      handleLrnBlur(e as React.FocusEvent<HTMLInputElement>);
     }
   };
 
@@ -358,11 +417,49 @@ function AdmissionFormContent() {
     e.preventDefault();
     setStatus({ type: "", message: "" });
 
+    const formElements = e.currentTarget.elements;
+    let hasValidationErrors = false;
+    const newFieldErrors: Record<string, string> = {};
+
+    for (let i = 0; i < formElements.length; i++) {
+      const el = formElements[i] as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+      if (el.name && el.hasAttribute("required") && !el.value.trim()) {
+        newFieldErrors[el.name] = "This field is required.";
+        hasValidationErrors = true;
+      }
+    }
+
+    const emailInput = (formElements.namedItem("email") as HTMLInputElement)?.value.trim() || "";
+    if (emailInput) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(emailInput)) {
+        newFieldErrors["email"] = "Please enter a valid email address format.";
+        hasValidationErrors = true;
+      }
+    }
+
+    const lrnInput = (formElements.namedItem("lrn") as HTMLInputElement)?.value || "";
+    if (lrnInput && lrnInput.length !== 12) {
+      setLrnError("LRN must be exactly 12 digits.");
+      hasValidationErrors = true;
+    }
+
+    if (hasValidationErrors) {
+      setFieldErrors(newFieldErrors);
+      setStatus({
+        type: "error",
+        message: "Please correct the highlighted errors before submitting.",
+      });
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
     if (selectedFileCount === 0) {
       setStatus({
         type: "error",
         message: "Please upload at least one required document.",
       });
+      window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
 
@@ -371,6 +468,7 @@ function AdmissionFormContent() {
         type: "error",
         message: "Please resolve the document upload errors before submitting.",
       });
+      window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
 
@@ -392,13 +490,21 @@ function AdmissionFormContent() {
           message: "Applicants must be at least 15 years old.",
         });
         setIsSubmitting(false);
+        window.scrollTo({ top: 0, behavior: "smooth" });
         return;
       }
     }
 
+    // Clean up generic/duplicate file fields
     formData.delete("files");
+    formData.delete("profile");
+    formData.delete("birthCertificate");
+
+    // Append selected files matching the backend route.ts keys: "profilePic", "reportCard", "birthCert"
     documentUploads.forEach(({ id }) => {
-      selectedFiles[id].forEach((file) => formData.append("files", file));
+      selectedFiles[id].forEach((file) => {
+        formData.append(id, file);
+      });
     });
 
     try {
@@ -414,33 +520,40 @@ function AdmissionFormContent() {
           type: "success",
           message: "Application submitted successfully!",
         });
+
+        window.scrollTo({ top: 0, behavior: "smooth" });
+
         (e.target as HTMLFormElement).reset();
         fileInputRefs.current.forEach((input) => {
           if (input) input.value = "";
         });
         setSelectedFiles({
-          profile: [],
+          profilePic: [],
           reportCard: [],
-          birthCertificate: [],
+          birthCert: [],
         });
         setFileErrors({
-          profile: "",
+          profilePic: "",
           reportCard: "",
-          birthCertificate: "",
+          birthCert: "",
         });
+        setFieldErrors({});
         setEnrollmentType("New Student");
         setGradeLevel("Grade 11");
+        setLrnError("");
       } else {
         setStatus({
           type: "error",
           message: data.message || "Failed to submit application.",
         });
+        window.scrollTo({ top: 0, behavior: "smooth" });
       }
     } catch {
       setStatus({
         type: "error",
         message: "Network connection error. Try again.",
       });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setIsSubmitting(false);
     }
@@ -507,35 +620,58 @@ function AdmissionFormContent() {
               subtitle="Provide your basic personal details."
             />
             <div className="grid grid-cols-1 gap-x-5 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
-              <InputField label="First Name *" name="firstName" placeholder="Juan" />
+              <InputField
+                label="First Name *"
+                name="firstName"
+                placeholder="Juan"
+                error={fieldErrors.firstName}
+                onBlur={handleFieldBlur}
+                onChange={() => setFieldErrors(prev => ({ ...prev, firstName: "" }))}
+              />
               <InputField
                 label="Middle Name"
                 name="middleName"
                 placeholder="Protacio"
+                error={fieldErrors.middleName}
+                onBlur={handleFieldBlur}
               />
               <InputField
                 label="Last Name *"
                 name="lastName"
                 placeholder="Dela Cruz"
+                error={fieldErrors.lastName}
+                onBlur={handleFieldBlur}
+                onChange={() => setFieldErrors(prev => ({ ...prev, lastName: "" }))}
               />
               <InputField
                 label="Email Address *"
                 name="email"
                 type="email"
                 placeholder="juan@example.com"
+                error={fieldErrors.email}
+                onBlur={handleFieldBlur}
+                onChange={() => setFieldErrors(prev => ({ ...prev, email: "" }))}
               />
               <InputField
                 label="Phone Number *"
                 name="phone"
                 type="tel"
                 placeholder="+63 9xx xxx xxxx"
+                error={fieldErrors.phone}
+                onBlur={handleFieldBlur}
+                onChange={() => setFieldErrors(prev => ({ ...prev, phone: "" }))}
               />
               <InputField
                 label="Date of Birth *"
                 name="dob"
                 type="date"
                 max={maxDobDate}
-                onChange={handleDobValidation}
+                error={fieldErrors.dob}
+                onBlur={handleFieldBlur}
+                onChange={(e) => {
+                  handleDobValidation(e);
+                  setFieldErrors(prev => ({ ...prev, dob: "" }));
+                }}
                 onInvalid={(e) =>
                   e.currentTarget.setCustomValidity(
                     "You must be at least 15 years old to apply."
@@ -546,11 +682,17 @@ function AdmissionFormContent() {
                 label="Gender *"
                 name="gender"
                 options={["Male", "Female", "Other"]}
+                error={fieldErrors.gender}
+                onBlur={handleFieldBlur}
+                onChange={() => setFieldErrors(prev => ({ ...prev, gender: "" }))}
               />
               <InputField
                 label="Nationality *"
                 name="nationality"
                 placeholder="Filipino"
+                error={fieldErrors.nationality}
+                onBlur={handleFieldBlur}
+                onChange={() => setFieldErrors(prev => ({ ...prev, nationality: "" }))}
               />
             </div>
           </section>
@@ -569,12 +711,17 @@ function AdmissionFormContent() {
                   "Information and Communication Technology",
                   "Hotel and Restaurant Management",
                 ]}
+                error={fieldErrors.track}
+                onBlur={handleFieldBlur}
+                onChange={() => setFieldErrors(prev => ({ ...prev, track: "" }))}
               />
               <SelectField
                 label="Enrollment Type *"
                 name="enrollmentType"
                 options={["New Student", "Transferee"]}
                 value={enrollmentType}
+                error={fieldErrors.enrollmentType}
+                onBlur={handleFieldBlur}
                 onChange={handleEnrollmentTypeChange}
               />
               <SelectField
@@ -582,24 +729,36 @@ function AdmissionFormContent() {
                 name="gradeLevel"
                 options={gradeLevelOptions}
                 value={gradeLevel}
+                error={fieldErrors.gradeLevel}
+                onBlur={handleFieldBlur}
                 onChange={(e) => setGradeLevel(e.target.value)}
               />
-              <InputField
-                label="LRN"
-                name="lrn"
-                placeholder="12-digit LRN"
-                inputMode="numeric"
-                onChange={(e) => {
-                  e.currentTarget.value = e.currentTarget.value.replace(
-                    /\D/g,
-                    ""
-                  );
-                }}
-              />
+              <div className="flex flex-col gap-2">
+                <InputField
+                  label="LRN"
+                  name="lrn"
+                  placeholder="12-digit LRN"
+                  inputMode="numeric"
+                  maxLength={12}
+                  onChange={(e) => {
+                    e.currentTarget.value = e.currentTarget.value.replace(/\D/g, "").slice(0, 12);
+                    if (lrnError) setLrnError("");
+                  }}
+                  onBlur={handleLrnBlur}
+                />
+                {lrnError && (
+                  <p className="text-xs font-medium text-red-600 mt-1" role="alert">
+                    {lrnError}
+                  </p>
+                )}
+              </div>
               <InputField
                 label="Last School Attended *"
                 name="lastSchool"
                 placeholder="School Name"
+                error={fieldErrors.lastSchool}
+                onBlur={handleFieldBlur}
+                onChange={() => setFieldErrors(prev => ({ ...prev, lastSchool: "" }))}
               />
             </div>
           </section>
@@ -615,26 +774,41 @@ function AdmissionFormContent() {
                 label="Street Address *"
                 name="street"
                 placeholder="Unit/House No, Street"
+                error={fieldErrors.street}
+                onBlur={handleFieldBlur}
+                onChange={() => setFieldErrors(prev => ({ ...prev, street: "" }))}
               />
               <InputField
                 label="City / Municipality *"
                 name="city"
                 placeholder="Manila"
+                error={fieldErrors.city}
+                onBlur={handleFieldBlur}
+                onChange={() => setFieldErrors(prev => ({ ...prev, city: "" }))}
               />
               <InputField
                 label="State / Province *"
                 name="province"
                 placeholder="Metro Manila"
+                error={fieldErrors.province}
+                onBlur={handleFieldBlur}
+                onChange={() => setFieldErrors(prev => ({ ...prev, province: "" }))}
               />
               <InputField
                 label="Zip / Postal Code *"
                 name="zip"
                 placeholder="1000"
+                error={fieldErrors.zip}
+                onBlur={handleFieldBlur}
+                onChange={() => setFieldErrors(prev => ({ ...prev, zip: "" }))}
               />
               <InputField
                 label="Country *"
                 name="country"
                 placeholder="Philippines"
+                error={fieldErrors.country}
+                onBlur={handleFieldBlur}
+                onChange={() => setFieldErrors(prev => ({ ...prev, country: "" }))}
               />
             </div>
           </section>
@@ -653,10 +827,25 @@ function AdmissionFormContent() {
                 id="personalStatement"
                 name="personalStatement"
                 rows={5}
-                className="w-full resize-y rounded-lg border border-[#DCE4ED] bg-white p-3.5 text-sm leading-6 text-[#183B56] outline-none transition placeholder:text-slate-400 focus:border-[#183B56] focus:ring-2 focus:ring-[#183B56]/15"
+                className={`w-full resize-y rounded-lg border bg-white p-3.5 text-sm leading-6 text-[#183B56] outline-none transition placeholder:text-slate-400 focus:border-[#183B56] focus:ring-2 focus:ring-[#183B56]/15 ${
+                  fieldErrors.personalStatement ? "border-red-500 focus:border-red-500" : "border-[#DCE4ED]"
+                }`}
                 placeholder="Why do you want to join SGCST?"
                 required
+                onBlur={(e) => {
+                  if (!e.target.value.trim()) {
+                    setFieldErrors(prev => ({ ...prev, personalStatement: "This field is required." }));
+                  } else {
+                    setFieldErrors(prev => ({ ...prev, personalStatement: "" }));
+                  }
+                }}
+                onChange={() => setFieldErrors(prev => ({ ...prev, personalStatement: "" }))}
               />
+              {fieldErrors.personalStatement && (
+                <p className="text-xs font-medium text-red-600 mt-0.5" role="alert">
+                  {fieldErrors.personalStatement}
+                </p>
+              )}
             </div>
           </section>
 
@@ -697,7 +886,7 @@ function AdmissionFormContent() {
                       fileInputRefs.current[index] = element;
                     }}
                     type="file"
-                    name="files"
+                    name={upload.id}
                     accept={upload.accept}
                     multiple={upload.maxFiles > 1}
                     disabled={
