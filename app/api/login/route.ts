@@ -9,6 +9,7 @@ const UserSchema = new mongoose.Schema(
     username: { type: String, required: true },
     password: { type: String, required: true },
     user_type: { type: String }, // Included to check archival/locking status
+    privacyNoticeAcknowledged: { type: Boolean },
   },
   { collection: "credentials" } // Hard-binds to your collection name
 );
@@ -32,7 +33,7 @@ export async function POST(request: Request) {
   try {
     await connectDB();
     
-    const { username, password, user_type } = await request.json();
+    const { username, password, user_type, privacyAcknowledged } = await request.json();
 
     // Query MongoDB by username first
     const user = await User.findOne({ username });
@@ -90,6 +91,29 @@ export async function POST(request: Request) {
         { message: `Access denied. Student accounts cannot log in through the Faculty portal.` },
         { status: 403 }
       );
+    }
+
+    if (
+      detectedUserType === "student" &&
+      user.privacyNoticeAcknowledged === false &&
+      privacyAcknowledged !== true
+    ) {
+      return NextResponse.json(
+        {
+          message: "Please review and acknowledge the Data Privacy Policy to continue.",
+          requiresPrivacyAcknowledgment: true,
+        },
+        { status: 428 }
+      );
+    }
+
+    if (
+      detectedUserType === "student" &&
+      privacyAcknowledged === true &&
+      user.privacyNoticeAcknowledged !== true
+    ) {
+      user.privacyNoticeAcknowledged = true;
+      await user.save();
     }
  
     const logEntry = new Audit({
