@@ -97,10 +97,15 @@ export default function Footer() {
               <li className="flex items-start gap-3 leading-6">
                 <ContactIcon type="location" />
 
-                <span>
+                <a
+                  className="hover:text-[#FFC107]"
+                  href="https://www.google.com/maps/place/Saint+Gregory+College+Of+Science+And+Technology/@14.4718242,120.8877842,71m/data=!3m1!1e3!4m6!3m5!1s0x339632b105cb1b21:0x35cc36eb41c79a67!8m2!3d14.471981!4d120.88776!16s%2Fg%2F11bxg0t3xv?entry=ttu&g_ep=EgoyMDI2MTAyOC4wIKXMDSoASAFQAw%3D%3D"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   2nd/3rd Floor Saint Michael Bldg., Alejandro St.
                   Manila-Cavite Blvd. Sta. Cruz, Cavite City
-                </span>
+                </a>
               </li>
             </ul>
           </address>
