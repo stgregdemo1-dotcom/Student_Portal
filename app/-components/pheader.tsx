@@ -16,38 +16,36 @@ const Header: React.FC = () => {
   const compactRef = useRef(false);
 
   useLayoutEffect(() => {
-    const frameId = window.requestAnimationFrame(() => {
-      const navigationEntry = performance.getEntriesByType(
-        "navigation",
-      )[0] as PerformanceNavigationTiming | undefined;
-      const isHomePageReload =
-        pathname === "/Home" &&
-        navigationEntry?.type === "reload";
+    const navigationEntry = performance.getEntriesByType(
+      "navigation",
+    )[0] as PerformanceNavigationTiming | undefined;
+    const isHomePageReload =
+      pathname === "/Home" && navigationEntry?.type === "reload";
 
-      if (isHomePageReload && window.location.hash) {
+    if (isHomePageReload) {
+      window.history.scrollRestoration = "manual";
+      if (window.location.hash) {
         window.history.replaceState(
           null,
           "",
           `${window.location.pathname}${window.location.search}`,
         );
       }
+    }
 
-      const sectionId =
-        pathname === "/Home" && !isHomePageReload
-          ? window.location.hash.slice(1)
-          : "";
-      const section = sectionId
-        ? document.getElementById(sectionId)
-        : null;
+    const sectionId =
+      pathname === "/Home" && !isHomePageReload
+        ? window.location.hash.slice(1)
+        : "";
+    const section = sectionId
+      ? document.getElementById(sectionId)
+      : null;
 
-      if (section) {
-        section.scrollIntoView({ behavior: "instant" });
-      } else {
-        window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-      }
-    });
-
-    return () => window.cancelAnimationFrame(frameId);
+    if (section) {
+      section.scrollIntoView({ behavior: "instant" });
+    } else {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }
   }, [pathname]);
 
   useEffect(() => {
@@ -307,7 +305,7 @@ const Header: React.FC = () => {
           {!isAdmissionPage && <div className="order-2 ml-2 flex flex-shrink-0 items-center md:order-3 md:ml-auto">
             <Link 
               href="/portal/log-in" 
-              className="inline-flex h-9 min-w-[64px] items-center justify-center gap-1.5 rounded-lg bg-[#082B49] px-3 text-sm font-bold leading-none text-white shadow-sm transition-[transform,background-color,box-shadow,color] duration-300 ease-in-out hover:-translate-y-0.5 hover:bg-white hover:text-[#082B49] hover:shadow-[0_5px_12px_rgba(8,43,73,0.2)] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#082B49]/25 motion-reduce:transition-none sm:h-10 sm:min-w-[96px] sm:px-5 sm:text-base"
+              className="inline-flex h-9 min-w-[64px] items-center justify-center gap-1.5 rounded-lg bg-[#082B49] px-3 text-sm font-bold leading-none text-white shadow-sm transition-colors duration-150 ease-out hover:bg-white hover:text-[#082B49] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#082B49]/25 motion-reduce:transition-none sm:h-10 sm:min-w-[96px] sm:px-5 sm:text-base"
             >
               <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M10 17l5-5-5-5M15 12H3M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6" />
