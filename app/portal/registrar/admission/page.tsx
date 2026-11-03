@@ -38,6 +38,7 @@ function EnrollmentContent() {
 
   const [admissions, setAdmissions] = useState<AdmissionRequest[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [sortKey, setSortKey] = useState<SortableKeys>("applicant_id");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
@@ -46,15 +47,30 @@ function EnrollmentContent() {
 
   const fetchAdmissions = async () => {
     setIsLoading(true);
+    setLoadError(null);
     try {
-      const res = await fetch("/api/admission?table=admissions_applications");
-      if (res.ok) {
-        const jsonResponse = await res.json();
-        setAdmissions(jsonResponse.data || []);
-        setCurrentPage(1);
+      const res = await fetch("/api/admission?table=admissions_applications", {
+        cache: "no-store",
+      });
+      const jsonResponse = await res.json();
+
+      if (!res.ok) {
+        throw new Error(jsonResponse.message || "Failed to load admission records.");
       }
+
+      if (!Array.isArray(jsonResponse.data)) {
+        throw new Error("The admission service returned an invalid response.");
+      }
+
+      setAdmissions(jsonResponse.data);
+      setCurrentPage(1);
     } catch (err) {
       console.error("Error loading admission requests:", err);
+      setLoadError(
+        err instanceof Error
+          ? err.message
+          : "Unable to load admission records. Please try again.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -246,6 +262,12 @@ function EnrollmentContent() {
                   <tr>
                     <td colSpan={5} className="px-6 py-8 text-center text-gray-400 animate-pulse">
                       Loading registration requests...
+                    </td>
+                  </tr>
+                ) : loadError ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-8 text-center text-red-600">
+                      {loadError}
                     </td>
                   </tr>
                 ) : paginatedAdmissions.length === 0 ? (
