@@ -9,6 +9,8 @@ import StudentDataPrivacyNotice from "../../../-components/StudentDataPrivacyNot
 export default function Portal() {
   const [showPassword, setShowPassword] = useState(false);
   const [isStaff, setIsStaff] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [isPrivacyNoticeOpen, setIsPrivacyNoticeOpen] = useState(false);
   const [hasAcknowledgedPrivacyNotice, setHasAcknowledgedPrivacyNotice] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -31,6 +33,7 @@ export default function Portal() {
 
   const handleStaffModeChange = (staff: boolean) => {
     setIsStaff(staff);
+    setPassword("");
     setErrorMessage("");
   };
 
@@ -43,22 +46,16 @@ export default function Portal() {
 
   useEffect(() => {
     document.cookie = "audit_user=; path=/; max-age=0; SameSite=Strict";
-
-    if (formRef.current) {
-      (formRef.current.elements.namedItem("username") as HTMLInputElement).value = "";
-      (formRef.current.elements.namedItem("password") as HTMLInputElement).value = "";
-    }
   }, [isStaff]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage("");
 
-    const form = e.target as HTMLFormElement;
-    const username = (form.elements.namedItem("username") as HTMLInputElement).value.trim();
-    const password = (form.elements.namedItem("password") as HTMLInputElement).value.trim();
+    const loginUsername = username.trim();
+    const loginPassword = password.trim();
 
-    if (!username || !password) {
+    if (!loginUsername || !loginPassword) {
       showLoginError("Please enter your login ID and password.");
       return;
     }
@@ -70,8 +67,8 @@ export default function Portal() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          username,
-          password,
+          username: loginUsername,
+          password: loginPassword,
           user_type: expectedUserType
         }),
       });
@@ -83,16 +80,16 @@ export default function Portal() {
         return;
       }
 
-      document.cookie = `audit_user=${encodeURIComponent(username)}; path=/; max-age=28800; SameSite=Strict`;
-      document.cookie = `username=${encodeURIComponent(username)}; path=/; max-age=28800; SameSite=Strict`;
+      document.cookie = `audit_user=${encodeURIComponent(loginUsername)}; path=/; max-age=28800; SameSite=Strict`;
+      document.cookie = `username=${encodeURIComponent(loginUsername)}; path=/; max-age=28800; SameSite=Strict`;
       if (isStaff) {
-        if (username.toUpperCase().startsWith("ADM")) {
+        if (loginUsername.toUpperCase().startsWith("ADM")) {
           startNavigationLoading("/portal/admin/dashboard");
           router.push("/portal/admin/dashboard");
-        } else if (username.toUpperCase().startsWith("TCH")) {
+        } else if (loginUsername.toUpperCase().startsWith("TCH")) {
           startNavigationLoading("/portal/teachers/dashboard");
           router.push("/portal/teachers/dashboard");
-        } else if (username.toUpperCase().startsWith("REG")) {
+        } else if (loginUsername.toUpperCase().startsWith("REG")) {
           startNavigationLoading("/portal/registrar/dashboard");
           router.push("/portal/registrar/dashboard");
         } else {
@@ -195,6 +192,7 @@ export default function Portal() {
         {/* Login Form */}
         <form
           className="text-left"
+          autoComplete="off"
           onSubmit={handleLogin}
           onInvalidCapture={shakeForm}
           ref={formRef}
@@ -219,6 +217,9 @@ export default function Portal() {
               type="text"
               id="username"
               name="username"
+              autoComplete="username"
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
               placeholder={isStaff ? "Enter your Employee ID" : "Enter your Student Number"}
               required
             />
@@ -233,6 +234,9 @@ export default function Portal() {
               type={showPassword ? "text" : "password"}
               id="password"
               name="password"
+              autoComplete="new-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
               placeholder="Enter your password"
               required
             />
@@ -273,8 +277,9 @@ export default function Portal() {
               </label>
               <button
                 type="button"
-                className="ml-1 text-sm text-[#2575fc] hover:underline"
+                className="ml-1 cursor-pointer text-sm text-[#2575fc] underline decoration-[#2575fc]/50 underline-offset-2 hover:decoration-[#2575fc] focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2575fc]"
                 onClick={() => setIsPrivacyNoticeOpen(true)}
+                aria-haspopup="dialog"
               >
                 Data Privacy Policy
               </button>
