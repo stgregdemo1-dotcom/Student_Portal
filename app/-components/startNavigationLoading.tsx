@@ -1,13 +1,12 @@
 "use client";
 
 /**
- * Triggers the global navigation loading spinner programmatically.
- * @param message Optional custom loading message to display.
+ * Shows the global navigation loader while navigating to the destination.
  */
-export const startNavigationLoading = (message?: string) => {
+export const startNavigationLoading = (destinationHref?: string) => {
   if (typeof window !== "undefined") {
-    const event = new CustomEvent("trigger-nav-loading", { 
-      detail: { message } 
+    const event = new CustomEvent("sgcst:navigation-start", {
+      detail: destinationHref,
     });
     window.dispatchEvent(event);
   }
