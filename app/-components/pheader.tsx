@@ -231,7 +231,7 @@ const Header: React.FC = () => {
         </g>
       </svg>
       <div className="relative z-10 mx-auto w-full max-w-[1460px] px-3 sm:px-6">
-        <nav className={`site-header-nav relative flex flex-wrap items-center justify-between ${shouldAnimateCompact ? "transition-[min-height,padding] duration-300 ease-in-out" : "transition-none"} md:flex-nowrap ${isCompact ? "min-h-[72px] py-1 md:min-h-[68px] md:py-2" : "min-h-[96px] py-3"}`}>
+        <nav className={`site-header-nav relative flex flex-wrap items-center justify-between ${shouldAnimateCompact ? "transition-[min-height,padding] duration-300 ease-in-out" : "transition-none"} md:flex-nowrap ${isAdmissionPage ? "min-h-[84px] py-2 md:min-h-[96px] md:py-3" : isCompact ? "min-h-[72px] py-1 md:min-h-[68px] md:py-2" : "min-h-[96px] py-3"}`}>
 {isAdmissionPage ? (
   <div className={brandClassName}>{brandContent}</div>
 ) : (
