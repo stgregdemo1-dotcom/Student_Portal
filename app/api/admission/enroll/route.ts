@@ -79,6 +79,7 @@ export async function POST(request: NextRequest) {
       first_name: studentProfile.first_name,
       middle_name: studentProfile.middle_name,
       last_name: studentProfile.last_name,
+      suffix: studentProfile.suffix,
       email_address: studentProfile.email_address,
       contact_number: studentProfile.contact_number,
       date_of_birth: studentProfile.date_of_birth,
