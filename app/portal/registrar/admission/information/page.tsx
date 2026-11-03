@@ -15,6 +15,7 @@ interface ApplicantData {
   firstName: string;
   middleName?: string;
   lastName: string;
+  suffix?: string;
   email: string;
   phone: string;
   dob: string;
@@ -198,7 +199,7 @@ function ApplicantDetailsContent() {
         {/* Banner Display Header Block */}
         <div className="bg-gradient-to-r from-purple-600 to-indigo-700 text-white p-6 rounded-xl shadow-sm">
           <h1 className="text-3xl font-bold">
-            {applicant.firstName} {applicant.middleName ? `${applicant.middleName} ` : ""}{applicant.lastName}
+            {applicant.firstName} {applicant.middleName ? `${applicant.middleName} ` : ""}{applicant.lastName}{applicant.suffix ? `, ${applicant.suffix}` : ""}
           </h1>
           <p className="mt-1 font-light">{applicant.track || "No Track Selected"}</p>
           <p className="text-xs mt-2 opacity-80">System Admission ID: {applicant.applicant_id}</p>
@@ -213,6 +214,7 @@ function ApplicantDetailsContent() {
                 <Field label="First Name" value={applicant.firstName} />
                 <Field label="Middle Name" value={applicant.middleName || ""} />
                 <Field label="Last Name" value={applicant.lastName} />
+                <Field label="Suffix" value={applicant.suffix || ""} />
                 <Field label="Email Address" value={applicant.email} />
                 <Field label="Phone Number" value={applicant.phone} />
                 <Field label="Date of Birth" value={applicant.dob} />
