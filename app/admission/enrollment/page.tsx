@@ -35,6 +35,9 @@ const isAdmissionApplication = (value: unknown): value is AdmissionApplication =
 interface InputFieldProps {
   label: string;
   type?: string;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
+  maxLength?: number;
+  pattern?: string;
   placeholder?: string;
   readOnly?: boolean;
   value?: string;
@@ -45,6 +48,9 @@ interface InputFieldProps {
 const InputField: React.FC<InputFieldProps> = ({
   label,
   type = "text",
+  inputMode,
+  maxLength,
+  pattern,
   placeholder,
   readOnly,
   value,
@@ -56,6 +62,9 @@ const InputField: React.FC<InputFieldProps> = ({
     </label>
     <input
       type={type}
+      inputMode={inputMode}
+      maxLength={maxLength}
+      pattern={pattern}
       placeholder={placeholder}
       readOnly={readOnly}
       value={value || ""}
@@ -175,6 +184,11 @@ export default function EnrollmentForm() {
 
     if (!contactPerson || !relationship || !contactNumber) {
       setErrorMsg("Please fill in all mandatory emergency contact fields.");
+      return;
+    }
+
+    if (!/^\d{11}$/.test(contactNumber)) {
+      setErrorMsg("Emergency contact number must contain exactly 11 digits.");
       return;
     }
 
@@ -318,9 +332,14 @@ export default function EnrollmentForm() {
               />
               <InputField
                 label="Contact Number *"
-                placeholder="+63 9xx xxx xxxx"
+                inputMode="numeric"
+                maxLength={11}
+                pattern="[0-9]{11}"
+                placeholder="09XXXXXXXXX"
                 value={contactNumber}
-                onChange={(e) => setContactNumber(e.target.value)}
+                onChange={(e) =>
+                  setContactNumber(e.target.value.replace(/\D/g, "").slice(0, 11))
+                }
                 disabled={submitting}
               />
             </div>
