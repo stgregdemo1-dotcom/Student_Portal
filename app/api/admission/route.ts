@@ -141,6 +141,7 @@ export async function POST(request: NextRequest) {
     const firstNameVal = fields.firstName?.trim();
     const middleNameVal = fields.middleName?.trim();
     const lastNameVal = fields.lastName?.trim();
+    const suffixVal = fields.suffix?.trim();
     const dobVal = fields.dob;
 
     if (firstNameVal && lastNameVal && dobVal) {
@@ -155,6 +156,12 @@ export async function POST(request: NextRequest) {
         query.middleName = new RegExp(`^${middleNameVal}$`, "i");
       } else {
         query.middleName = { $in: [null, "", undefined] };
+      }
+
+      if (suffixVal) {
+        query.suffix = new RegExp(`^${suffixVal}$`, "i");
+      } else {
+        query.suffix = { $in: [null, "", undefined] };
       }
 
       const existingApplication = await Admission.findOne(query);
@@ -291,6 +298,7 @@ export async function POST(request: NextRequest) {
       firstName: fields.firstName,
       middleName: fields.middleName,
       lastName: fields.lastName,
+      suffix: suffixVal || undefined,
       email: fields.email,
       phone: fields.phone,
       dob: fields.dob,
@@ -315,7 +323,7 @@ export async function POST(request: NextRequest) {
     await application.save();
 
     const currentOperator = getAuditUser(request);
-    const applicantFullName = `${fields.firstName || ""} ${fields.lastName || ""}`.trim();
+    const applicantFullName = `${fields.firstName || ""} ${fields.lastName || ""}${suffixVal ? `, ${suffixVal}` : ""}`.trim();
     const activityDescription = `Submitted new admission application for applicant: ${applicantFullName} (ID: ${fields.applicant_id})`;
 
     await createAuditLog(currentOperator, activityDescription);
