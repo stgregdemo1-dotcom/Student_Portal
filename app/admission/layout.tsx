@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import Footer from '../-components/Pfooter';
 import Header from '../-components/pheader';
-import NavigationLoader from '../-components/NavigationLoader'; // Adjust path if needed
+import NavigationLoader from "../-components/NavigationLoader";
 import "./globals.css";
 
 export const metadata: Metadata = {
