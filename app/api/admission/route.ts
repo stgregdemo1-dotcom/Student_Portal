@@ -3,6 +3,8 @@ import { createHash } from "node:crypto";
 import mongoose from "mongoose";
 import { Admission, Audit } from "@/models/Schema";
 
+export const dynamic = "force-dynamic";
+
 const admissionDocumentUploads = [
   {
     fieldName: "profilePic",
