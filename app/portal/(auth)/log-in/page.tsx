@@ -26,6 +26,11 @@ export default function Portal() {
     shakeForm();
   };
 
+  const handleStaffModeChange = (staff: boolean) => {
+    setIsStaff(staff);
+    setErrorMessage("");
+  };
+
   useEffect(() => {
     document.cookie = "audit_user=; path=/; max-age=0; SameSite=Strict";
 
@@ -33,7 +38,6 @@ export default function Portal() {
       (formRef.current.elements.namedItem("username") as HTMLInputElement).value = "";
       (formRef.current.elements.namedItem("password") as HTMLInputElement).value = "";
     }
-    setErrorMessage("");
   }, [isStaff]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -112,7 +116,11 @@ export default function Portal() {
       </div>
       <div
         aria-hidden="true"
-        className={`pointer-events-none absolute inset-0 overflow-hidden bg-[radial-gradient(ellipse_at_68%_42%,#FFEAA0_0%,#FFC107_55%,#E9A900_100%)] transition-opacity duration-700 ease-in-out motion-reduce:transition-none ${isStaff ? "opacity-0" : "opacity-100"}`}
+        className={`pointer-events-none absolute inset-0 overflow-hidden transition-opacity duration-700 ease-in-out motion-reduce:transition-none ${isStaff ? "opacity-0" : "opacity-100"}`}
+        style={{
+          backgroundImage:
+            "linear-gradient(105deg, #FF6500 0%, #FF9100 22%, #FFD000 46%, #FFF078 68%, #FFF9E9 100%)",
+        }}
       >
         <div className="absolute -left-40 -top-48 h-[440px] w-[440px] rounded-full bg-[#FFD466]/80" />
         <div className="absolute -left-36 -top-44 h-[270px] w-[270px] rounded-full bg-[radial-gradient(circle_at_35%_35%,#28599B_0%,#17427F_72%,#062755_100%)]" />
@@ -158,7 +166,7 @@ export default function Portal() {
         <div className="flex justify-center items-center mb-6 w-fit mx-auto rounded-2xl bg-gray-100 p-1">
           <button
             type="button"
-            onClick={() => setIsStaff(false)}
+            onClick={() => handleStaffModeChange(false)}
             className={`cursor-pointer rounded-xl px-6 py-2 text-sm font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#183B56] focus-visible:ring-offset-2 focus-visible:ring-offset-gray-100 ${!isStaff ? "bg-white text-[#6a11cb] shadow-sm hover:bg-white" : "text-gray-500 hover:bg-white/70 hover:text-[#6a11cb]"
               }`}
           >
@@ -166,20 +174,13 @@ export default function Portal() {
           </button>
           <button
             type="button"
-            onClick={() => setIsStaff(true)}
+            onClick={() => handleStaffModeChange(true)}
             className={`cursor-pointer rounded-xl px-6 py-2 text-sm font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#183B56] focus-visible:ring-offset-2 focus-visible:ring-offset-gray-100 ${isStaff ? "bg-white text-[#2575fc] shadow-sm hover:bg-white" : "text-gray-500 hover:bg-white/70 hover:text-[#2575fc]"
               }`}
           >
             Faculty
           </button>
         </div>
-
-        {/* Error Notification Alert Block */}
-        {errorMessage && (
-          <div className="mb-4 p-3.5 bg-red-50 text-red-600 rounded-xl text-sm font-medium border border-red-200 text-left">
-            {errorMessage}
-          </div>
-        )}
 
         {/* Login Form */}
         <form
@@ -188,6 +189,16 @@ export default function Portal() {
           onInvalidCapture={shakeForm}
           ref={formRef}
         >
+          {errorMessage && (
+            <div
+              role="alert"
+              aria-live="assertive"
+              aria-atomic="true"
+              className="login-error-notification mb-4 rounded-xl border border-red-200 bg-red-50 p-3.5 text-left text-sm font-medium text-red-600"
+            >
+              {errorMessage}
+            </div>
+          )}
 
           <div className="mb-5">
             <label className="block mb-2 text-[#444] font-semibold text-sm" htmlFor="username">
@@ -246,10 +257,11 @@ export default function Portal() {
 
           <button
             type="submit"
-            className={`w-full p-4 text-white font-bold text-lg rounded-xl shadow-lg transition-all hover:-translate-y-0.5 active:translate-y-0 ${isStaff
-                ? "bg-[linear-gradient(to_right,#182848,#4b6cb7)] shadow-blue-900/20"
-                : "bg-[linear-gradient(to_right,#6a11cb,#2575fc)] shadow-blue-500/30"
-              }`}
+            className={`w-full cursor-pointer rounded-xl p-4 text-lg font-bold shadow-lg transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:brightness-110 hover:shadow-xl active:translate-y-0 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 motion-reduce:transition-none ${
+              isStaff
+                ? "bg-[#FFC728] text-[#0D2B45] shadow-[#D89B00]/30 hover:bg-[#FF9100] focus-visible:ring-[#D89B00]"
+                : "bg-[linear-gradient(to_right,#17427F,#28599B)] text-white shadow-blue-900/30 hover:bg-[linear-gradient(to_right,#28599B,#3E78C5)] focus-visible:ring-[#28599B]"
+            }`}
           >
             {isStaff ? "Staff Login" : "Student Login"}
           </button>
