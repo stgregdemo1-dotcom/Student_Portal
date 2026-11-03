@@ -249,9 +249,24 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (processedAttachments.length === 0) {
+    const hasProfilePicture = processedAttachments.some(
+      (attachment) => attachment.documentType === "profile",
+    );
+    if (!hasProfilePicture) {
       return NextResponse.json(
-        { message: "Please upload at least one required document." },
+        { message: "Please upload a profile picture with a white background." },
+        { status: 400 },
+      );
+    }
+
+    const hasSupportingDocument = processedAttachments.some(
+      (attachment) =>
+        attachment.documentType === "reportCard" ||
+        attachment.documentType === "birthCertificate",
+    );
+    if (!hasSupportingDocument) {
+      return NextResponse.json(
+        { message: "Please upload either a report card or a birth certificate." },
         { status: 400 },
       );
     }
