@@ -30,6 +30,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: "Missing required fields." }, { status: 400 });
     }
 
+    if (
+      typeof studentProfile.emergency_contact_number !== "string" ||
+      !/^\d{11}$/.test(studentProfile.emergency_contact_number)
+    ) {
+      return NextResponse.json(
+        { success: false, message: "Emergency contact number must contain exactly 11 digits." },
+        { status: 400 }
+      );
+    }
+
     const missingField = REQUIRED_PROFILE_FIELDS.find((field) => !studentProfile[field]);
     if (missingField) {
       return NextResponse.json(
