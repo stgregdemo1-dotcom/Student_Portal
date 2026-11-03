@@ -4,6 +4,34 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { startNavigationLoading } from "../../-components/startNavigationLoading";
 
+interface AdmissionApplication {
+  applicant_id: string;
+  status: string;
+  firstName?: string;
+  middleName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  dob?: string;
+  gender?: string;
+  nationality?: string;
+  track?: string;
+  gradeLevel?: string;
+  lastSchool?: string;
+  street?: string;
+  city?: string;
+  province?: string;
+  zip?: string;
+}
+
+const isAdmissionApplication = (value: unknown): value is AdmissionApplication =>
+  typeof value === "object" &&
+  value !== null &&
+  "applicant_id" in value &&
+  typeof value.applicant_id === "string" &&
+  "status" in value &&
+  typeof value.status === "string";
+
 interface InputFieldProps {
   label: string;
   type?: string;
@@ -42,7 +70,7 @@ export default function EnrollmentForm() {
   const router = useRouter();
 
   const [controlNumber, setControlNumber] = useState<string | null>(null);
-  const [studentData, setStudentData] = useState<any>(null);
+  const [studentData, setStudentData] = useState<AdmissionApplication | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [agree, setAgree] = useState(false);
@@ -56,6 +84,25 @@ export default function EnrollmentForm() {
 
   useEffect(() => {
     const cachedNumber = localStorage.getItem("enrollment_control_number");
+    const cachedApplication = sessionStorage.getItem("enrollment_application");
+
+    if (cachedApplication) {
+      try {
+        const application: unknown = JSON.parse(cachedApplication);
+        if (
+          isAdmissionApplication(application) &&
+          (!cachedNumber || application.applicant_id === cachedNumber)
+        ) {
+          setControlNumber(application.applicant_id);
+          setStudentData(application);
+          setLoading(false);
+          return;
+        }
+      } catch (err) {
+        console.error("Failed to restore verified enrollment details:", err);
+      }
+    }
+
     if (!cachedNumber) {
       setLoading(false);
       return;
@@ -68,11 +115,11 @@ export default function EnrollmentForm() {
         if (res.ok) {
           const jsonResponse = await res.json();
 
-          const applicationDetails = jsonResponse.data;
-          setStudentData(applicationDetails);
-
-          const detailsArray = Object.entries(applicationDetails);
-          console.log("Application Data Array Structure:", detailsArray);
+          if (isAdmissionApplication(jsonResponse.data)) {
+            setStudentData(jsonResponse.data);
+          } else {
+            setErrorMsg("Unable to load the approved application details.");
+          }
         }
       } catch (err) {
         console.error("Failed to recover enrollment session:", err);
@@ -86,6 +133,11 @@ export default function EnrollmentForm() {
 
   const handleEnrollmentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!studentData) {
+      setErrorMsg("Unable to load the approved application details.");
+      return;
+    }
 
     const formattedStudentId = studentData.applicant_id && typeof studentData.applicant_id === "string"
       ? studentData.applicant_id.replace(/^ID-/, "ST-")
@@ -146,6 +198,7 @@ export default function EnrollmentForm() {
 
       if (response.ok && result.success) {
         localStorage.removeItem("enrollment_control_number");
+        sessionStorage.removeItem("enrollment_application");
         startNavigationLoading("/portal/log-in");
         router.push("/portal/log-in");
       } else {
@@ -180,8 +233,8 @@ export default function EnrollmentForm() {
           </p>
           <button
             onClick={() => {
-              startNavigationLoading("/admission/verify");
-              router.push("/admission/verify");
+              startNavigationLoading("/admission/verification");
+              router.push("/admission/verification");
             }}
             className="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-sm font-bold tracking-wider transition-colors"
           >
