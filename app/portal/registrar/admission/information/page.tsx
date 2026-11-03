@@ -35,6 +35,7 @@ interface ApplicantData {
     _id: string;
     filename: string;
     contentType: string;
+    documentType?: "profile" | "reportCard" | "birthCertificate";
   }>;
 }
 
@@ -264,6 +265,7 @@ function ApplicantDetailsContent() {
                     <FileItem 
                       key={file._id} 
                       name={file.filename} 
+                      documentType={file.documentType}
                       status="Uploaded" 
                       applicantId={applicant.applicant_id} 
                       fileId={file._id} 
@@ -352,11 +354,25 @@ function Field({ label, value }: { label?: string; value: string }) {
   );
 }
 
-function FileItem({ name, status, applicantId, fileId }: { name: string; status: string; applicantId: string; fileId: string; }) {
+function FileItem({ name, documentType, status, applicantId, fileId }: { name: string; documentType?: "profile" | "reportCard" | "birthCertificate"; status: string; applicantId: string; fileId: string; }) {
   const downloadUrl = `/api/portal/registrar?applicantId=${applicantId}&fileId=${fileId}`;
+  const documentLabel =
+    documentType === "profile"
+      ? "Profile Picture"
+      : documentType === "reportCard"
+        ? "Report Card"
+        : documentType === "birthCertificate"
+          ? "Birth Certificate"
+          : undefined;
+
   return (
     <div className="flex justify-between items-center border border-gray-100 p-3 rounded-lg bg-gray-50/40">
       <div className="flex flex-col min-w-0 max-w-[180px]">
+        {documentLabel && (
+          <span className="text-[10px] font-bold uppercase tracking-wide text-[#0D2B45]">
+            {documentLabel}
+          </span>
+        )}
         <span className="text-xs font-medium text-gray-700 truncate">{name}</span>
         <a href={downloadUrl} download={name} className="text-[10px] text-blue-600 hover:text-blue-800 hover:underline font-semibold mt-0.5">
           Public Download Document
