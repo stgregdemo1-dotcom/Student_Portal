@@ -254,8 +254,9 @@ export default function Portal() {
             </label>
           </div>
 
-          {!isStaff && (
-            <div className="mb-6 flex items-center">
+          <div className="mb-6 flex h-5 items-center">
+            {!isStaff ? (
+              <>
               <input
                 type="checkbox"
                 id="privacyPolicy"
@@ -283,8 +284,13 @@ export default function Portal() {
               >
                 Data Privacy Policy
               </button>
-            </div>
-          )}
+              </>
+            ) : (
+              <span aria-hidden="true" className="invisible">
+                I agree to the Data Privacy Policy
+              </span>
+            )}
+          </div>
 
           <button
             type="submit"
