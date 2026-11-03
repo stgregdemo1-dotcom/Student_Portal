@@ -126,6 +126,13 @@ export async function POST(request: NextRequest) {
       }
     });
 
+    if (typeof fields.phone !== "string" || !/^\d{11}$/.test(fields.phone)) {
+      return NextResponse.json(
+        { message: "Phone number must contain exactly 11 digits." },
+        { status: 400 }
+      );
+    }
+
     // ==========================================
     // Duplicate Application Check
     // ==========================================
