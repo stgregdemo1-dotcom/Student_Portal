@@ -13,6 +13,7 @@ export default function Portal() {
   const [password, setPassword] = useState("");
   const [isPrivacyNoticeOpen, setIsPrivacyNoticeOpen] = useState(false);
   const [hasAcknowledgedPrivacyNotice, setHasAcknowledgedPrivacyNotice] = useState(false);
+  const [isPrivacyAcknowledgementRequired, setIsPrivacyAcknowledgementRequired] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
@@ -42,14 +43,17 @@ export default function Portal() {
   const acknowledgePrivacyNotice = () => {
     setHasAcknowledgedPrivacyNotice(true);
     closePrivacyNotice();
+    if (isPrivacyAcknowledgementRequired) {
+      setIsPrivacyAcknowledgementRequired(false);
+      void authenticate(true);
+    }
   };
 
   useEffect(() => {
     document.cookie = "audit_user=; path=/; max-age=0; SameSite=Strict";
   }, [isStaff]);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const authenticate = async (privacyAcknowledged: boolean) => {
     setErrorMessage("");
 
     const loginUsername = username.trim();
@@ -69,13 +73,19 @@ export default function Portal() {
         body: JSON.stringify({
           username: loginUsername,
           password: loginPassword,
-          user_type: expectedUserType
+          user_type: expectedUserType,
+          privacyAcknowledged,
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
+        if (response.status === 428 && data.requiresPrivacyAcknowledgment) {
+          setIsPrivacyAcknowledgementRequired(true);
+          setIsPrivacyNoticeOpen(true);
+          return;
+        }
         showLoginError(data.message || "Something went wrong.");
         return;
       }
@@ -100,9 +110,14 @@ export default function Portal() {
         router.push("/portal/students/dashboard");
       }
 
-    } catch (err) {
+    } catch {
       showLoginError("Cannot connect to the server. Please check your network connection.");
     }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await authenticate(hasAcknowledgedPrivacyNotice);
   };
 
   return (
@@ -263,18 +278,12 @@ export default function Portal() {
                 className="mr-2 h-4 w-4 shrink-0 cursor-pointer accent-[#2575fc]"
                 checked={hasAcknowledgedPrivacyNotice}
                 required
-                onClick={(event) => {
-                  if (!hasAcknowledgedPrivacyNotice) {
-                    event.preventDefault();
-                    setIsPrivacyNoticeOpen(true);
-                  }
-                }}
                 onChange={(event) => {
                   setHasAcknowledgedPrivacyNotice(event.target.checked);
                 }}
               />
               <label htmlFor="privacyPolicy" className="text-sm text-[#444]">
-                I agree to the
+                I acknowledge the
               </label>
               <button
                 type="button"
@@ -287,7 +296,7 @@ export default function Portal() {
               </>
             ) : (
               <span aria-hidden="true" className="invisible">
-                I agree to the Data Privacy Policy
+                I acknowledge the Data Privacy Policy
               </span>
             )}
           </div>
