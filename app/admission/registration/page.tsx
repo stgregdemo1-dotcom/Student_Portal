@@ -21,6 +21,7 @@ interface SelectFieldProps {
   label: string;
   name: string;
   options: string[];
+  placeholder?: string;
   value?: string;
   onChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void;
 }
@@ -122,6 +123,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
   label,
   name,
   options,
+  placeholder,
   value,
   onChange,
 }) => (
@@ -136,6 +138,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
       onChange={onChange}
       className={fieldClassName}
     >
+      {placeholder && <option value="">{placeholder}</option>}
       {options.map((opt) => (
         <option key={opt} value={opt}>
           {opt}
@@ -577,6 +580,12 @@ function AdmissionFormContent() {
                 label="Last Name *"
                 name="lastName"
                 placeholder="Dela Cruz"
+              />
+              <SelectField
+                label="Suffix"
+                name="suffix"
+                options={["Jr.", "Sr.", "I", "II", "III", "IV", "V"]}
+                placeholder="Select suffix (optional)"
               />
               <InputField
                 label="Email Address *"
