@@ -37,6 +37,7 @@ export async function POST(request: NextRequest) {
         firstName: 1,
         middleName: 1,
         lastName: 1,
+        suffix: 1,
         email: 1,
         phone: 1,
         dob: 1,
