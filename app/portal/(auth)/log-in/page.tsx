@@ -4,10 +4,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { startNavigationLoading } from "../../../-components/startNavigationLoading";
+import StudentDataPrivacyNotice from "../../-components/StudentDataPrivacyNotice";
 
 export default function Portal() {
   const [showPassword, setShowPassword] = useState(false);
   const [isStaff, setIsStaff] = useState(false);
+  const [isPrivacyNoticeOpen, setIsPrivacyNoticeOpen] = useState(false);
+  const [hasAcknowledgedPrivacyNotice, setHasAcknowledgedPrivacyNotice] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
@@ -29,6 +32,13 @@ export default function Portal() {
   const handleStaffModeChange = (staff: boolean) => {
     setIsStaff(staff);
     setErrorMessage("");
+  };
+
+  const closePrivacyNotice = () => setIsPrivacyNoticeOpen(false);
+
+  const acknowledgePrivacyNotice = () => {
+    setHasAcknowledgedPrivacyNotice(true);
+    closePrivacyNotice();
   };
 
   useEffect(() => {
@@ -240,20 +250,36 @@ export default function Portal() {
             </label>
           </div>
 
-          <div className="flex items-center mb-6">
-            <input
-              type="checkbox"
-              id="privacyPolicy"
-              className="w-4 h-4 mr-2 cursor-pointer accent-[#2575fc]"
-              required
-            />
-            <label htmlFor="privacyPolicy" className="text-[#444] text-sm cursor-pointer leading-tight">
-              I agree to the{" "}
-              <Link href="#" className="text-[#2575fc] hover:underline">
-                Data Privacy Policy
-              </Link>
-            </label>
-          </div>
+          {!isStaff && (
+            <div className="mb-6 flex items-start">
+              <input
+                type="checkbox"
+                id="privacyPolicy"
+                className="mr-2 mt-0.5 h-4 w-4 cursor-pointer accent-[#2575fc]"
+                checked={hasAcknowledgedPrivacyNotice}
+                required
+                onClick={(event) => {
+                  if (!hasAcknowledgedPrivacyNotice) {
+                    event.preventDefault();
+                    setIsPrivacyNoticeOpen(true);
+                  }
+                }}
+                onChange={(event) => {
+                  setHasAcknowledgedPrivacyNotice(event.target.checked);
+                }}
+              />
+              <label htmlFor="privacyPolicy" className="text-sm leading-tight text-[#444]">
+                I have read and acknowledge the
+              </label>
+              <button
+                type="button"
+                className="ml-1 text-left text-sm font-medium leading-tight text-[#2575fc] hover:underline"
+                onClick={() => setIsPrivacyNoticeOpen(true)}
+              >
+                Data Privacy Notice
+              </button>
+            </div>
+          )}
 
           <button
             type="submit"
@@ -282,6 +308,12 @@ export default function Portal() {
         </div>
 
       </div>
+      {isPrivacyNoticeOpen && (
+        <StudentDataPrivacyNotice
+          onAcknowledge={acknowledgePrivacyNotice}
+          onClose={closePrivacyNotice}
+        />
+      )}
     </div>
   );
 }
