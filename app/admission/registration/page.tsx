@@ -503,11 +503,11 @@ function AdmissionFormContent() {
                 : { type: "error", message: "" },
             )
           }
-          className={`space-y-9 rounded-2xl border-2 bg-white p-5 shadow-[0_12px_40px_rgba(13,43,69,0.08)] transition-colors duration-200 sm:p-8 lg:p-10 ${
+          className={`space-y-9 rounded-2xl border-2 bg-white p-5 shadow-[0_12px_40px_rgba(13,43,69,0.08)] transition-[border-color,box-shadow] duration-300 sm:p-8 lg:p-10 ${
             status.type === "error"
-              ? "border-red-500"
+              ? "border-red-500 shadow-[0_0_0_3px_rgba(239,68,68,0.18),0_0_28px_rgba(239,68,68,0.45)]"
               : status.type === "success"
-                ? "border-green-500"
+                ? "border-green-500 shadow-[0_0_0_3px_rgba(34,197,94,0.2),0_0_30px_rgba(34,197,94,0.48)]"
                 : "border-slate-100"
           }`}
         >
