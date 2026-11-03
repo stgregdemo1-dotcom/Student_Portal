@@ -21,8 +21,25 @@
   animation: login-form-shake 360ms ease-in-out;
 }
 
+@keyframes login-error-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.login-error-notification {
+  animation: login-error-enter 180ms ease-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .login-form-shake {
+  .login-form-shake,
+  .login-error-notification {
     animation: none;
   }
 }
