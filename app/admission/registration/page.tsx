@@ -48,7 +48,7 @@ const documentUploads: DocumentUpload[] = [
     id: "profile",
     formFieldName: "profilePic",
     title: "Profile Picture",
-    description: "A recent photo of the applicant",
+    description: "A recent photo of the applicant with a white background",
     accept: "image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp",
     formats: "JPG, PNG, WEBP",
     maxFiles: 1,
@@ -389,19 +389,25 @@ function AdmissionFormContent() {
     setFileErrors((current) => ({ ...current, [slot]: "" }));
   };
 
-  const selectedFileCount = Object.values(selectedFiles).reduce(
-    (count, files) => count + files.length,
-    0
-  );
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setStatus({ type: "", message: "" });
 
-    if (selectedFileCount === 0) {
+    if (selectedFiles.profile.length === 0) {
       setStatus({
         type: "error",
-        message: "Please upload at least one required document.",
+        message: "Please upload a profile picture with a white background.",
+      });
+      return;
+    }
+
+    if (
+      selectedFiles.reportCard.length === 0 &&
+      selectedFiles.birthCertificate.length === 0
+    ) {
+      setStatus({
+        type: "error",
+        message: "Please upload either a report card or a birth certificate.",
       });
       return;
     }
@@ -762,7 +768,7 @@ function AdmissionFormContent() {
             <SectionHeading
               number={5}
               title="Required Documents"
-              subtitle="Upload the required documents. Use a different file for each document; report cards and birth certificates may be PDF, JPG, PNG, or WEBP. At least one document is required."
+              subtitle="Upload a recent profile picture with a white background, plus at least one supporting document: a report card, a birth certificate, or both. Use a different file for each document; report cards and birth certificates may be PDF, JPG, PNG, or WEBP."
             />
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
               {documentUploads.map((upload, index) => (
@@ -777,12 +783,22 @@ function AdmissionFormContent() {
                     <div className="min-w-0">
                       <h3 className="text-sm font-bold text-[#0D2B45]">
                         {upload.title}
+                        {upload.id === "profile" && (
+                          <span className="ml-1 text-red-600" aria-label="required">
+                            *
+                          </span>
+                        )}
                       </h3>
                       <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
                         {upload.description}
                       </p>
                     </div>
                   </div>
+                  <p className="mt-2 text-[11px] font-semibold text-[#D89B00]">
+                    {upload.id === "profile"
+                      ? "Required · White background"
+                      : "At least one supporting document required"}
+                  </p>
                   <p className="mt-4 flex min-h-10 flex-wrap content-start gap-x-1.5 text-xs leading-5 text-slate-500">
                     <span className="whitespace-nowrap">{upload.formats}</span>
                     <span className="whitespace-nowrap">
