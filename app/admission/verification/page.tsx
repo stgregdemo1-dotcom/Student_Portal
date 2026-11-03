@@ -135,20 +135,8 @@ function AccessControlForm() {
 }
 
 export default function Page() {
-  useEffect(() => {
-    const bodyOverflow = document.body.style.overflow;
-    const documentOverflow = document.documentElement.style.overflow;
-    document.body.style.overflow = "hidden";
-    document.documentElement.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = bodyOverflow;
-      document.documentElement.style.overflow = documentOverflow;
-    };
-  }, []);
-
   return (
-    <div className="flex h-[calc(100dvh-96px)] items-center justify-center overflow-hidden bg-[radial-gradient(ellipse_at_8%_46%,rgba(255,193,7,0.22),transparent_30%),radial-gradient(ellipse_at_92%_64%,rgba(71,153,220,0.20),transparent_32%),linear-gradient(135deg,#EEF5FF_0%,#FFF8E8_48%,#EAF3FF_100%)] px-4 py-4 max-md:h-[calc(100dvh-84px)]">
+    <div className="flex min-h-[calc(100svh-96px)] items-center justify-center bg-[radial-gradient(ellipse_at_8%_46%,rgba(255,193,7,0.22),transparent_30%),radial-gradient(ellipse_at_92%_64%,rgba(71,153,220,0.20),transparent_32%),linear-gradient(135deg,#EEF5FF_0%,#FFF8E8_48%,#EAF3FF_100%)] px-4 py-6 max-md:min-h-[calc(100svh-84px)]">
       <Suspense
         fallback={
           <div className="w-full max-w-sm bg-white p-8 rounded-lg shadow-lg text-center animate-pulse text-gray-400">
