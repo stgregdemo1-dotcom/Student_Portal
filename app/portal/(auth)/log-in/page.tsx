@@ -251,11 +251,11 @@ export default function Portal() {
           </div>
 
           {!isStaff && (
-            <div className="mb-6 flex items-start">
+            <div className="mb-6 flex items-center">
               <input
                 type="checkbox"
                 id="privacyPolicy"
-                className="mr-2 mt-0.5 h-4 w-4 cursor-pointer accent-[#2575fc]"
+                className="mr-2 h-4 w-4 shrink-0 cursor-pointer accent-[#2575fc]"
                 checked={hasAcknowledgedPrivacyNotice}
                 required
                 onClick={(event) => {
@@ -268,15 +268,15 @@ export default function Portal() {
                   setHasAcknowledgedPrivacyNotice(event.target.checked);
                 }}
               />
-              <label htmlFor="privacyPolicy" className="text-sm leading-tight text-[#444]">
-                I have read and acknowledge the
+              <label htmlFor="privacyPolicy" className="text-sm text-[#444]">
+                I agree to the
               </label>
               <button
                 type="button"
-                className="ml-1 text-left text-sm font-medium leading-tight text-[#2575fc] hover:underline"
+                className="ml-1 text-sm text-[#2575fc] hover:underline"
                 onClick={() => setIsPrivacyNoticeOpen(true)}
               >
-                Data Privacy Notice
+                Data Privacy Policy
               </button>
             </div>
           )}
