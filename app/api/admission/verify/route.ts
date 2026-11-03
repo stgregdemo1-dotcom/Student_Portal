@@ -31,7 +31,26 @@ export async function POST(request: NextRequest) {
         applicant_id: controlNumber.trim(),
         dob: dateOfBirth.trim(),
       },
-      { applicant_id: 1, status: 1 }
+      {
+        applicant_id: 1,
+        status: 1,
+        firstName: 1,
+        middleName: 1,
+        lastName: 1,
+        email: 1,
+        phone: 1,
+        dob: 1,
+        gender: 1,
+        nationality: 1,
+        track: 1,
+        gradeLevel: 1,
+        lastSchool: 1,
+        street: 1,
+        city: 1,
+        province: 1,
+        zip: 1,
+        _id: 0,
+      }
     )
       .collation({ locale: "en", strength: 2 })
       .lean();
@@ -58,11 +77,12 @@ export async function POST(request: NextRequest) {
         success: true,
         message: "Access granted!",
         applicantId: applicant.applicant_id,
+        application: applicant,
       },
       { status: 200 }
     );
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Verification endpoint pipeline crash:", error);
     return NextResponse.json(
       { message: "Internal server error during credential verification." },
