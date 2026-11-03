@@ -496,7 +496,20 @@ function AdmissionFormContent() {
       <div className="mx-auto max-w-[1000px]">
         <form
           onSubmit={handleSubmit}
-          className="space-y-9 rounded-2xl border border-slate-100 bg-white p-5 shadow-[0_12px_40px_rgba(13,43,69,0.08)] sm:p-8 lg:p-10"
+          onInvalidCapture={() =>
+            setStatus((current) =>
+              current.type === "error"
+                ? current
+                : { type: "error", message: "" },
+            )
+          }
+          className={`space-y-9 rounded-2xl border-2 bg-white p-5 shadow-[0_12px_40px_rgba(13,43,69,0.08)] transition-colors duration-200 sm:p-8 lg:p-10 ${
+            status.type === "error"
+              ? "border-red-500"
+              : status.type === "success"
+                ? "border-green-500"
+                : "border-slate-100"
+          }`}
         >
           <div className="relative flex flex-col gap-6 border-b border-[#DCE4ED] pb-7 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0 pr-12 sm:pr-0">
