@@ -1,6 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createHash } from "node:crypto";
 import mongoose from "mongoose";
 import { Admission, Audit } from "@/models/Schema";
+
+const admissionDocumentUploads = [
+  {
+    fieldName: "profilePic",
+    documentType: "profile",
+    title: "Profile Picture",
+    maxFiles: 1,
+    extensions: [".jpg", ".jpeg", ".png", ".webp"],
+  },
+  {
+    fieldName: "reportCard",
+    documentType: "reportCard",
+    title: "Report Card",
+    maxFiles: 2,
+    extensions: [".pdf", ".jpg", ".jpeg", ".png", ".webp"],
+  },
+  {
+    fieldName: "birthCert",
+    documentType: "birthCertificate",
+    title: "Birth Certificate",
+    maxFiles: 1,
+    extensions: [".pdf", ".jpg", ".jpeg", ".png", ".webp"],
+  },
+] as const;
+
+const contentTypeByExtension: Record<string, string> = {
+  ".pdf": "application/pdf",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".png": "image/png",
+  ".webp": "image/webp",
+};
 
 const connectDB = async () => {
   if (mongoose.connection.readyState >= 1) return;
@@ -88,8 +121,7 @@ export async function POST(request: NextRequest) {
     const fields: Record<string, any> = {};
 
     formData.forEach((value, key) => {
-      // Exclude individual file keys from general fields record
-      if (!["profilePic", "reportCard", "birthCert"].includes(key)) {
+      if (!admissionDocumentUploads.some((upload) => upload.fieldName === key)) {
         fields[key] = value;
       }
     });
@@ -129,33 +161,92 @@ export async function POST(request: NextRequest) {
     }
     // ==========================================
 
-    const fileKeys = ["profilePic", "reportCard", "birthCert"];
-    const processedAttachments = [];
-    const maxFileSize = 5 * 1024 * 1024; // 🚀 Updated to 5MB to match frontend limit
+    const processedAttachments: {
+      filename: string;
+      contentType: string;
+      documentType: string;
+      data: Buffer;
+    }[] = [];
+    const maxFileSize = 5 * 1024 * 1024;
+    const fileIdentifiers = new Map<string, string>();
 
-    for (const key of fileKeys) {
-      // 🚀 Use getAll() to properly capture all files per slot (e.g. multiple Report Cards)
-      const files = formData.getAll(key) as File[];
+    for (const upload of admissionDocumentUploads) {
+      const files = formData
+        .getAll(upload.fieldName)
+        .filter((entry): entry is File => entry instanceof File && entry.size > 0);
+
+      if (files.length > upload.maxFiles) {
+        return NextResponse.json(
+          {
+            message: `${upload.title} accepts up to ${upload.maxFiles} file${upload.maxFiles === 1 ? "" : "s"}.`,
+          },
+          { status: 400 },
+        );
+      }
 
       for (const file of files) {
-        if (file && file.size > 0 && file.name !== "undefined") {
-          if (file.size > maxFileSize) {
-            return NextResponse.json(
-              { message: `File "${file.name}" exceeds the max allowed limit of 5MB.` },
-              { status: 400 }
-            );
-          }
-
-          const bytes = await file.arrayBuffer();
-          const buffer = Buffer.from(bytes);
-
-          processedAttachments.push({
-            filename: `${key}_${file.name}`,
-            contentType: file.type,
-            data: buffer,
-          });
+        if (file.size > maxFileSize) {
+          return NextResponse.json(
+            { message: `File "${file.name}" exceeds the max allowed limit of 5MB.` },
+            { status: 400 }
+          );
         }
+
+        const extension = `.${file.name.split(".").pop()?.toLowerCase() ?? ""}`;
+        if (!upload.extensions.some((allowedExtension) => allowedExtension === extension)) {
+          return NextResponse.json(
+            { message: `File "${file.name}" is not supported for ${upload.title}.` },
+            { status: 400 },
+          );
+        }
+
+        const expectedContentType = contentTypeByExtension[extension];
+        if (
+          file.type &&
+          file.type !== "application/octet-stream" &&
+          file.type !== expectedContentType
+        ) {
+          return NextResponse.json(
+            { message: `File "${file.name}" has an unsupported file type.` },
+            { status: 400 },
+          );
+        }
+
+        const bytes = await file.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+        const fileIdentifier = createHash("sha256").update(buffer).digest("hex");
+        const existingDocumentType = fileIdentifiers.get(fileIdentifier);
+        if (existingDocumentType) {
+          const previousUpload = admissionDocumentUploads.find(
+            (document) => document.documentType === existingDocumentType,
+          );
+          return NextResponse.json(
+            {
+              message: `File "${file.name}" is already assigned to ${previousUpload?.title || "another document"}. Upload a different file for each document.`,
+            },
+            { status: 400 },
+          );
+        }
+
+        fileIdentifiers.set(fileIdentifier, upload.documentType);
+
+        processedAttachments.push({
+          filename: file.name,
+          contentType:
+            file.type && file.type !== "application/octet-stream"
+              ? file.type
+              : expectedContentType,
+          documentType: upload.documentType,
+          data: buffer,
+        });
       }
+    }
+
+    if (processedAttachments.length === 0) {
+      return NextResponse.json(
+        { message: "Please upload at least one required document." },
+        { status: 400 },
+      );
     }
 
     if (!fields.applicant_id) {
