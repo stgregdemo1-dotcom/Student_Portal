@@ -9,6 +9,8 @@ interface InputFieldProps {
   name: string;
   type?: string;
   inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
+  maxLength?: number;
+  pattern?: string;
   placeholder?: string;
   max?: string;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -88,6 +90,8 @@ const InputField: React.FC<InputFieldProps> = ({
   name,
   type = "text",
   inputMode,
+  maxLength,
+  pattern,
   placeholder,
   max,
   onChange,
@@ -101,6 +105,8 @@ const InputField: React.FC<InputFieldProps> = ({
       id={name}
       type={type}
       inputMode={inputMode}
+      maxLength={maxLength}
+      pattern={pattern}
       name={name}
       placeholder={placeholder}
       max={max}
@@ -563,8 +569,16 @@ function AdmissionFormContent() {
               <InputField
                 label="Phone Number *"
                 name="phone"
-                type="tel"
-                placeholder="+63 9xx xxx xxxx"
+                type="text"
+                inputMode="numeric"
+                maxLength={11}
+                pattern="[0-9]{11}"
+                placeholder="09XXXXXXXXX"
+                onChange={(e) => {
+                  e.currentTarget.value = e.currentTarget.value
+                    .replace(/\D/g, "")
+                    .slice(0, 11);
+                }}
               />
               <InputField
                 label="Date of Birth *"
