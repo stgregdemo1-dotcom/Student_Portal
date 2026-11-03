@@ -176,9 +176,8 @@ function DocumentIcon({ type }: { type: DocumentUpload["icon"] }) {
   const paths = {
     image: (
       <>
-        <rect x="3" y="3" width="18" height="18" rx="3" />
-        <circle cx="8.5" cy="8.5" r="1.5" />
-        <path d="m21 15-5-5L5 21" />
+        <circle cx="12" cy="8" r="4" />
+        <path d="M5 21v-2a7 7 0 0 1 14 0v2z" />
       </>
     ),
     report: (
@@ -765,129 +764,189 @@ function AdmissionFormContent() {
           </section>
 
           <section aria-labelledby="admission-section-5">
-            <SectionHeading
-              number={5}
-              title="Required Documents"
-              subtitle="Upload a recent profile picture with a white background, plus at least one supporting document: a report card, a birth certificate, or both. Use a different file for each document; report cards and birth certificates may be PDF, JPG, PNG, or WEBP."
-            />
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <div className="mb-6 rounded-2xl border border-[#DCE5EF] bg-white p-4 shadow-[0_4px_16px_rgba(16,47,73,0.06)] sm:p-6">
+              <div className="mb-5 flex items-center gap-3">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#FFB900] text-[#102F49]">
+                  <svg
+                    aria-hidden="true"
+                    className="h-5 w-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                    <path d="M3 9h18" />
+                  </svg>
+                </span>
+                <h2
+                  id="admission-section-5"
+                  className="text-xl font-extrabold text-[#102F49] sm:text-2xl"
+                >
+                  Required Documents
+                </h2>
+                <span aria-hidden="true" className="h-px flex-1 bg-[#FFB900]/70" />
+              </div>
+
+              <div className="mb-5 flex gap-3 rounded-xl border border-[#FFB900]/50 bg-[#FFF9E9] p-4 text-sm leading-6 text-[#334155]">
+                <svg
+                  aria-hidden="true"
+                  className="mt-0.5 h-5 w-5 shrink-0 text-[#A87400]"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 11v5m0-8h.01" />
+                </svg>
+                <div>
+                  <p className="font-semibold text-[#102F49]">
+                    Please prepare the following documents:
+                  </p>
+                  <ul className="mt-1 list-disc space-y-0.5 pl-5">
+                    <li>Profile Picture – Required (white background).</li>
+                    <li className="list-none">
+                      At least ONE supporting document:
+                      <ul className="mt-0.5 list-disc pl-5">
+                        <li>Report Card</li>
+                        <li>Birth Certificate</li>
+                      </ul>
+                    </li>
+                  </ul>
+                  <p className="mt-1">
+                    You may submit both supporting documents if available.
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-slate-600">
+                    Accepted formats: JPG, PNG, WEBP for profile pictures; PDF,
+                    JPG, PNG, or WEBP for supporting documents. Maximum file
+                    size: 5 MB each.
+                  </p>
+                </div>
+              </div>
+
+            <div className="grid grid-cols-1 items-stretch gap-5 lg:auto-rows-fr lg:grid-cols-3">
               {documentUploads.map((upload, index) => (
                 <div
                   key={upload.id}
-                  className="flex h-full min-w-0 flex-col rounded-xl border border-[#DCE4ED] bg-white p-4"
+                  className="flex h-full min-w-0 flex-col overflow-hidden rounded-xl border border-[#DCE5EF] bg-white shadow-[0_4px_14px_rgba(16,47,73,0.07)]"
                 >
-                  <div className="flex min-h-[60px] items-start gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-[#D89B00]">
+                  <div className="flex min-h-16 items-center gap-3 border-b border-[#DCE5EF] bg-white px-4 py-3 text-[#102F49]">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#FFB900] text-[#102F49]">
                       <DocumentIcon type={upload.icon} />
                     </span>
-                    <div className="min-w-0">
-                      <h3 className="text-sm font-bold text-[#0D2B45]">
-                        {upload.title}
-                        {upload.id === "profile" && (
-                          <span className="ml-1 text-red-600" aria-label="required">
-                            *
-                          </span>
-                        )}
-                      </h3>
-                      <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
-                        {upload.description}
-                      </p>
-                    </div>
+                    <h3 className="text-sm font-bold text-[#102F49] sm:text-base">
+                      {upload.title}
+                      {upload.id === "profile" && (
+                        <span className="ml-1 text-xs font-semibold text-[#A87400]">(Required)</span>
+                      )}
+                    </h3>
                   </div>
-                  <p className="mt-2 text-[11px] font-semibold text-[#D89B00]">
-                    {upload.id === "profile"
-                      ? "Required · White background"
-                      : "At least one supporting document required"}
-                  </p>
-                  <p className="mt-4 flex min-h-10 flex-wrap content-start gap-x-1.5 text-xs leading-5 text-slate-500">
-                    <span className="whitespace-nowrap">{upload.formats}</span>
-                    <span className="whitespace-nowrap">
-                      · Up to {upload.maxFiles} file{upload.maxFiles === 1 ? "" : "s"}
-                    </span>
-                    <span className="whitespace-nowrap">· Max 5 MB each</span>
-                  </p>
-                  <input
-                    ref={(element) => {
-                      fileInputRefs.current[index] = element;
-                    }}
-                    type="file"
-                    name={upload.formFieldName}
-                    accept={upload.accept}
-                    multiple={upload.maxFiles > 1}
-                    disabled={
-                      isSubmitting ||
-                      (upload.id === "reportCard" &&
-                        selectedFiles[upload.id].length >= upload.maxFiles)
-                    }
-                    onChange={(e) =>
-                      handleFileSelection(upload.id, e.currentTarget.files)
-                    }
-                    className="sr-only"
-                    id={`upload-${upload.id}`}
-                    aria-label={`Choose ${upload.title} files`}
-                  />
-                  <label
-                    htmlFor={`upload-${upload.id}`}
-                    className={`mt-auto inline-flex min-h-10 w-full items-center justify-center rounded-lg border border-[#DCE4ED] bg-slate-50 px-3 py-2 text-xs font-semibold text-[#183B56] transition-[transform,background-color,border-color,box-shadow] duration-300 ease-in-out hover:-translate-y-0.5 hover:border-[#D89B00] hover:bg-[#FFF8E1] hover:shadow-sm focus-within:ring-2 focus-within:ring-[#FFC107] motion-reduce:transition-none ${
-                      isSubmitting ||
-                      (upload.id === "reportCard" &&
-                        selectedFiles[upload.id].length >= upload.maxFiles)
-                        ? "cursor-not-allowed opacity-50"
-                        : "cursor-pointer"
-                    }`}
-                  >
-                    {selectedFiles[upload.id].length >= upload.maxFiles
-                      ? upload.id === "reportCard"
-                        ? `${upload.maxFiles} files selected`
-                        : "Replace file"
-                      : selectedFiles[upload.id].length > 0
-                      ? "Add another file"
-                      : "Choose file"}
-                  </label>
-                  {fileErrors[upload.id] && (
-                    <p className="mt-2 text-xs font-medium text-red-600" role="alert">
-                      {fileErrors[upload.id]}
+                  <div className="flex flex-1 flex-col p-4">
+                    <p className="min-h-10 text-sm leading-5 text-slate-600">
+                      {upload.description}
                     </p>
-                  )}
-                  {selectedFiles[upload.id].length > 0 && (
-                    <ul className="mt-3 space-y-2">
-                      {selectedFiles[upload.id].map((file, fileIndex) => (
-                        <li
-                          key={`${file.name}-${file.lastModified}-${fileIndex}`}
-                          className="flex min-w-0 items-center gap-2 rounded-lg bg-slate-50 p-2"
-                        >
-                          {file.type === "application/pdf" ||
-                          file.name.toLowerCase().endsWith(".pdf") ? (
+                    <p className="mt-3 min-h-[108px] rounded-lg border border-[#DCE5EF] bg-[#F1F6FC] p-3 text-xs leading-5 text-[#334155]">
+                      <span className="block font-semibold text-[#102F49]">
+                        {upload.formats}
+                      </span>
+                      <span>
+                        Up to {upload.maxFiles} file{upload.maxFiles === 1 ? "" : "s"} · Max 5 MB each
+                      </span>
+                      {upload.id === "profile" && (
+                        <span className="block font-medium text-[#102F49]">
+                          White background required
+                        </span>
+                      )}
+                    </p>
+                    <input
+                      ref={(element) => {
+                        fileInputRefs.current[index] = element;
+                      }}
+                      type="file"
+                      name={upload.formFieldName}
+                      accept={upload.accept}
+                      multiple={upload.maxFiles > 1}
+                      disabled={
+                        isSubmitting ||
+                        (upload.id === "reportCard" &&
+                          selectedFiles[upload.id].length >= upload.maxFiles)
+                      }
+                      onChange={(e) =>
+                        handleFileSelection(upload.id, e.currentTarget.files)
+                      }
+                      className="sr-only"
+                      id={`upload-${upload.id}`}
+                      aria-label={`Choose ${upload.title} files`}
+                    />
+                    <label
+                      htmlFor={`upload-${upload.id}`}
+                      className={`mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-lg border-2 border-[#FFB900] bg-white px-3 py-2 text-sm font-bold text-[#102F49] transition-colors duration-200 hover:bg-[#FFF9E9] focus-within:ring-2 focus-within:ring-[#FFB900] motion-reduce:transition-none ${
+                        isSubmitting ||
+                        (upload.id === "reportCard" &&
+                          selectedFiles[upload.id].length >= upload.maxFiles)
+                          ? "cursor-not-allowed opacity-50"
+                          : "cursor-pointer"
+                      }`}
+                    >
+                      {selectedFiles[upload.id].length >= upload.maxFiles
+                        ? upload.id === "reportCard"
+                          ? `${upload.maxFiles} files selected`
+                          : "Replace file"
+                        : selectedFiles[upload.id].length > 0
+                        ? "Add another file"
+                        : "Choose File"}
+                    </label>
+                    {fileErrors[upload.id] && (
+                      <p className="mt-2 text-xs font-medium text-red-600" role="alert">
+                        {fileErrors[upload.id]}
+                      </p>
+                    )}
+                    {selectedFiles[upload.id].length > 0 && (
+                      <ul className="mt-3 space-y-2">
+                        {selectedFiles[upload.id].map((file, fileIndex) => (
+                          <li
+                            key={`${file.name}-${file.lastModified}-${fileIndex}`}
+                            className="flex min-w-0 items-center gap-2 rounded-lg bg-slate-50 p-2"
+                          >
+                            {file.type === "application/pdf" ||
+                            file.name.toLowerCase().endsWith(".pdf") ? (
+                              <span
+                                aria-hidden="true"
+                                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-red-100 bg-red-50 text-[10px] font-bold text-red-600"
+                              >
+                                PDF
+                              </span>
+                            ) : (
+                              <ImagePreview file={file} />
+                            )}
                             <span
-                              aria-hidden="true"
-                              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-red-100 bg-red-50 text-[10px] font-bold text-red-600"
+                              className="min-w-0 flex-1 truncate text-xs text-slate-600"
+                              title={file.name}
                             >
-                              PDF
+                              {file.name}
                             </span>
-                          ) : (
-                            <ImagePreview file={file} />
-                          )}
-                          <span
-                            className="min-w-0 flex-1 truncate text-xs text-slate-600"
-                            title={file.name}
-                          >
-                            {file.name}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => removeFile(upload.id, fileIndex)}
-                            disabled={isSubmitting}
-                            className="shrink-0 rounded px-1.5 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
-                            aria-label={`Remove ${file.name}`}
-                          >
-                            Remove
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                            <button
+                              type="button"
+                              onClick={() => removeFile(upload.id, fileIndex)}
+                              disabled={isSubmitting}
+                              className="shrink-0 rounded px-1.5 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+                              aria-label={`Remove ${file.name}`}
+                            >
+                              Remove
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                 </div>
               ))}
+            </div>
             </div>
           </section>
 
