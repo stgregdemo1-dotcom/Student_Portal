@@ -10,6 +10,7 @@ interface AdmissionApplication {
   firstName?: string;
   middleName?: string;
   lastName?: string;
+  suffix?: string;
   email?: string;
   phone?: string;
   dob?: string;
@@ -162,6 +163,7 @@ export default function EnrollmentForm() {
       first_name: studentData.firstName,
       middle_name: studentData.middleName,
       last_name: studentData.lastName,
+      suffix: studentData.suffix,
       email_address: studentData.email,
       contact_number: studentData.phone,
       date_of_birth: studentData.dob,
@@ -259,7 +261,7 @@ export default function EnrollmentForm() {
     );
   }
 
-  const studentFullName = `${studentData.firstName} ${studentData.middleName ? `${studentData.middleName} ` : ""}${studentData.lastName}`;
+  const studentFullName = `${studentData.firstName} ${studentData.middleName ? `${studentData.middleName} ` : ""}${studentData.lastName}${studentData.suffix ? `, ${studentData.suffix}` : ""}`;
 
   const formattedStudentId = studentData.applicant_id && typeof studentData.applicant_id === "string"
     ? studentData.applicant_id.replace(/^ID-/, "ST-")
