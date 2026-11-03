@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { startNavigationLoading } from "../../-components/startNavigationLoading";
 
 function AccessControlForm() {
@@ -48,6 +49,10 @@ function AccessControlForm() {
         const confirmedId = data.applicantId;
 
         localStorage.setItem("enrollment_control_number", confirmedId);
+        sessionStorage.setItem(
+          "enrollment_application",
+          JSON.stringify(data.application),
+        );
 
         document.cookie = `enrollment_control_number=${confirmedId}; path=/; max-age=3600; SameSite=Strict`;
 
@@ -65,7 +70,18 @@ function AccessControlForm() {
   };
 
   return (
-    <form onSubmit={checkAccess} className="w-full max-w-sm bg-white p-8 rounded-lg shadow-lg text-center">
+    <form onSubmit={checkAccess} className="relative w-full max-w-sm rounded-2xl border border-slate-100 bg-white p-8 pt-16 text-center shadow-[0_12px_40px_rgba(13,43,69,0.12)]">
+      <Link
+        href="/Home"
+        prefetch
+        className="absolute left-5 top-5 inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#082B49]/20 bg-white text-[#082B49] shadow-sm transition-[transform,background-color,color,box-shadow] duration-200 hover:-translate-y-0.5 hover:bg-[#FFC107] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#082B49] focus-visible:ring-offset-2"
+        aria-label="Home"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="m3 10 9-7 9 7" />
+          <path d="M5 9v11h14V9M9 20v-6h6v6" />
+        </svg>
+      </Link>
       <h1 className="text-3xl font-bold text-gray-800 mb-5">
         Access Control
       </h1>
@@ -104,7 +120,7 @@ function AccessControlForm() {
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-md transition duration-200 font-semibold disabled:opacity-50"
+        className="w-full cursor-pointer rounded-lg border border-[#0D2B45] bg-[#0D2B45] py-3 font-bold text-white shadow-md transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:border-[#D89B00] hover:bg-[#FFC107] hover:text-[#0D2B45] hover:shadow-lg active:translate-y-0 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFC107] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:border-[#0D2B45] disabled:hover:bg-[#0D2B45] disabled:hover:text-white disabled:hover:shadow-md disabled:active:scale-100 motion-reduce:transition-none"
       >
         {loading ? "Verifying Profile..." : "Submit"}
       </button>
@@ -119,8 +135,20 @@ function AccessControlForm() {
 }
 
 export default function Page() {
+  useEffect(() => {
+    const bodyOverflow = document.body.style.overflow;
+    const documentOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = bodyOverflow;
+      document.documentElement.style.overflow = documentOverflow;
+    };
+  }, []);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(ellipse_at_8%_46%,rgba(255,193,7,0.10),transparent_25%),radial-gradient(ellipse_at_92%_64%,rgba(71,153,220,0.10),transparent_27%),linear-gradient(135deg,#F7FAFF_0%,#FFFCF5_48%,#F5F9FF_100%)] px-4">
+    <div className="flex h-[calc(100dvh-96px)] items-center justify-center overflow-hidden bg-[radial-gradient(ellipse_at_8%_46%,rgba(255,193,7,0.22),transparent_30%),radial-gradient(ellipse_at_92%_64%,rgba(71,153,220,0.20),transparent_32%),linear-gradient(135deg,#EEF5FF_0%,#FFF8E8_48%,#EAF3FF_100%)] px-4 py-4 max-md:h-[calc(100dvh-84px)]">
       <Suspense
         fallback={
           <div className="w-full max-w-sm bg-white p-8 rounded-lg shadow-lg text-center animate-pulse text-gray-400">
