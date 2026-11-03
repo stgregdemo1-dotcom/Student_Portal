@@ -79,6 +79,10 @@ export const Student = mongoose.models.Student || mongoose.model("Student", Stud
 const AttachmentSchema = new mongoose.Schema({
   filename: String,
   contentType: String,
+  documentType: {
+    type: String,
+    enum: ["profile", "reportCard", "birthCertificate"],
+  },
   data: Buffer, // 🚀 This handles your binary Base64 subType data maps automatically
 });
 
@@ -115,7 +119,8 @@ const CredentialSchema = new mongoose.Schema(
   {
     username:   { type: String },
     password:   { type: String },
-    user_type:  { type: String }
+    user_type:  { type: String },
+    privacyNoticeAcknowledged: { type: Boolean }
   },
   { collection: "credentials" }
 );
