@@ -100,6 +100,7 @@ export async function POST(request: NextRequest) {
       username: accountSetup.username,
       password: accountSetup.password,
       user_type: accountSetup.user_type || "student",
+      privacyNoticeAcknowledged: false,
     };
 
     const session = await mongoose.startSession();
