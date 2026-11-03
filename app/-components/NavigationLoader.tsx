@@ -23,11 +23,18 @@ export default function NavigationLoader() {
   useEffect(() => {
     if (!navigationTarget || navigationTarget.pathname !== pathname) return;
 
-    const minimumDisplayTime = navigationTarget.id === 0 ? 1000 : 2000;
-    const elapsedTime = Date.now() - navigationTarget.startedAt;
+    const minimumDisplayTime =
+      navigationTarget.id === 0
+        ? 1000
+        : pathname === "/admission/verification"
+          ? 600
+          : 0;
     const timer = setTimeout(
-      () => setNavigationTarget((target) => (target?.id === navigationTarget.id ? null : target)),
-      Math.max(0, minimumDisplayTime - elapsedTime),
+      () =>
+        setNavigationTarget((target) =>
+          target?.id === navigationTarget.id ? null : target,
+        ),
+      Math.max(0, minimumDisplayTime - (Date.now() - navigationTarget.startedAt)),
     );
     return () => clearTimeout(timer);
   }, [navigationTarget, pathname]);
