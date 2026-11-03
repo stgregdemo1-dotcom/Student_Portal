@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense } from "react";
 import React from "react";
+import Link from "next/link";
 
 interface InputFieldProps {
   label: string;
@@ -10,10 +11,7 @@ interface InputFieldProps {
   inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
   placeholder?: string;
   max?: string;
-  maxLength?: number;
-  error?: string;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
   onInvalid?: (e: React.InvalidEvent<HTMLInputElement>) => void;
 }
 
@@ -22,15 +20,14 @@ interface SelectFieldProps {
   name: string;
   options: string[];
   value?: string;
-  error?: string;
   onChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-  onBlur?: (e: React.FocusEvent<HTMLSelectElement>) => void;
 }
 
-type DocumentSlot = "profilePic" | "reportCard" | "birthCert";
+type DocumentSlot = "profile" | "reportCard" | "birthCertificate";
 
 interface DocumentUpload {
   id: DocumentSlot;
+  formFieldName: "profilePic" | "reportCard" | "birthCert";
   title: string;
   description: string;
   accept: string;
@@ -46,7 +43,8 @@ const labelClassName = "ml-0.5 text-xs font-semibold text-[#334155]";
 
 const documentUploads: DocumentUpload[] = [
   {
-    id: "profilePic",
+    id: "profile",
+    formFieldName: "profilePic",
     title: "Profile Picture",
     description: "A recent photo of the applicant",
     accept: "image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp",
@@ -56,29 +54,34 @@ const documentUploads: DocumentUpload[] = [
   },
   {
     id: "reportCard",
+    formFieldName: "reportCard",
     title: "Report Card",
     description: "Most recent school report card",
-    accept: "image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp",
-    formats: "JPG, PNG, WEBP",
+    accept: "application/pdf,image/jpeg,image/png,image/webp,.pdf,.jpg,.jpeg,.png,.webp",
+    formats: "PDF, JPG, PNG, WEBP",
     maxFiles: 2,
     icon: "report",
   },
   {
-    id: "birthCert",
+    id: "birthCertificate",
+    formFieldName: "birthCert",
     title: "Birth Certificate",
     description: "Applicant's birth certificate",
-    accept: "image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp",
-    formats: "JPG, PNG, WEBP",
+    accept: "application/pdf,image/jpeg,image/png,image/webp,.pdf,.jpg,.jpeg,.png,.webp",
+    formats: "PDF, JPG, PNG, WEBP",
     maxFiles: 1,
     icon: "certificate",
   },
 ];
 
 const acceptedExtensions: Record<DocumentSlot, string[]> = {
-  profilePic: [".jpg", ".jpeg", ".png", ".webp"],
-  reportCard: [".jpg", ".jpeg", ".png", ".webp"],
-  birthCert: [".jpg", ".jpeg", ".png", ".webp"],
+  profile: [".jpg", ".jpeg", ".png", ".webp"],
+  reportCard: [".pdf", ".jpg", ".jpeg", ".png", ".webp"],
+  birthCertificate: [".pdf", ".jpg", ".jpeg", ".png", ".webp"],
 };
+
+const getFileIdentifier = (file: File) =>
+  `${file.name.toLowerCase()}-${file.size}-${file.lastModified}`;
 
 const InputField: React.FC<InputFieldProps> = ({
   label,
@@ -87,10 +90,7 @@ const InputField: React.FC<InputFieldProps> = ({
   inputMode,
   placeholder,
   max,
-  maxLength,
-  error,
   onChange,
-  onBlur,
   onInvalid,
 }) => (
   <div className="flex min-w-0 flex-col gap-2">
@@ -104,18 +104,11 @@ const InputField: React.FC<InputFieldProps> = ({
       name={name}
       placeholder={placeholder}
       max={max}
-      maxLength={maxLength}
       onChange={onChange}
-      onBlur={onBlur}
       onInvalid={onInvalid}
-      className={`${fieldClassName} ${error ? "border-red-500 focus:border-red-500 focus:ring-red-500/15" : ""}`}
+      className={fieldClassName}
       required={label.includes("*")}
     />
-    {error && (
-      <p className="text-xs font-medium text-red-600 mt-0.5" role="alert">
-        {error}
-      </p>
-    )}
   </div>
 );
 
@@ -124,9 +117,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
   name,
   options,
   value,
-  error,
   onChange,
-  onBlur,
 }) => (
   <div className="flex min-w-0 flex-col gap-2">
     <label htmlFor={name} className={labelClassName}>
@@ -137,8 +128,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
       name={name}
       value={value}
       onChange={onChange}
-      onBlur={onBlur}
-      className={`${fieldClassName} ${error ? "border-red-500 focus:border-red-500 focus:ring-red-500/15" : ""}`}
+      className={fieldClassName}
     >
       {options.map((opt) => (
         <option key={opt} value={opt}>
@@ -146,11 +136,6 @@ const SelectField: React.FC<SelectFieldProps> = ({
         </option>
       ))}
     </select>
-    {error && (
-      <p className="text-xs font-medium text-red-600 mt-0.5" role="alert">
-        {error}
-      </p>
-    )}
   </div>
 );
 
@@ -252,25 +237,34 @@ function AdmissionFormContent() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [enrollmentType, setEnrollmentType] = useState<string>("New Student");
   const [gradeLevel, setGradeLevel] = useState<string>("Grade 11");
+  const [personalStatement, setPersonalStatement] = useState("");
+  const [personalStatementCountMode, setPersonalStatementCountMode] =
+    useState<"characters" | "words">("characters");
   const [maxDobDate, setMaxDobDate] = useState<string | undefined>(undefined);
-  const [lrnError, setLrnError] = useState<string>("");
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  
   const [selectedFiles, setSelectedFiles] = useState<
     Record<DocumentSlot, File[]>
   >({
-    profilePic: [],
+    profile: [],
     reportCard: [],
-    birthCert: [],
+    birthCertificate: [],
   });
   const [fileErrors, setFileErrors] = useState<
     Record<DocumentSlot, string>
   >({
-    profilePic: "",
+    profile: "",
     reportCard: "",
-    birthCert: "",
+    birthCertificate: "",
   });
   const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const personalStatementCharacterCount = personalStatement.length;
+  const personalStatementWordCount = personalStatement
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean).length;
+  const personalStatementCount =
+    personalStatementCountMode === "characters"
+      ? personalStatementCharacterCount
+      : personalStatementWordCount;
 
   useEffect(() => {
     const today = new Date();
@@ -318,39 +312,6 @@ function AdmissionFormContent() {
     }
   };
 
-  const handleLrnBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const value = e.target.value.trim();
-    if (value && value.length !== 12) {
-      setLrnError("LRN must be exactly 12 digits.");
-    } else {
-      setLrnError("");
-    }
-  };
-
-  const handleFieldBlur = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    const trimmed = value.trim();
-    let errorMsg = "";
-
-    const isRequiredField = e.target.hasAttribute("required");
-    if (isRequiredField && !trimmed) {
-      errorMsg = "This field is required.";
-    }
-
-    if (name === "email" && trimmed) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(trimmed)) {
-        errorMsg = "Please enter a valid email address format.";
-      }
-    }
-
-    setFieldErrors((prev) => ({ ...prev, [name]: errorMsg }));
-
-    if (name === "lrn") {
-      handleLrnBlur(e as React.FocusEvent<HTMLInputElement>);
-    }
-  };
-
   const handleFileSelection = (slot: DocumentSlot, fileList: FileList | null) => {
     if (!fileList || fileList.length === 0) return;
 
@@ -359,11 +320,24 @@ function AdmissionFormContent() {
 
     const addToExisting = slot === "reportCard";
     const currentFiles = addToExisting ? selectedFiles[slot] : [];
-    const availableSlots = upload.maxFiles - currentFiles.length;
+    const filesInOtherSlots = Object.entries(selectedFiles)
+      .filter(([selectedSlot]) => addToExisting || selectedSlot !== slot)
+      .flatMap(([, files]) => files);
+    const seenFileIdentifiers = new Set(
+      [...filesInOtherSlots, ...currentFiles].map(getFileIdentifier),
+    );
     const validFiles: File[] = [];
     const errors: string[] = [];
 
     for (const file of Array.from(fileList)) {
+      const fileIdentifier = getFileIdentifier(file);
+      if (seenFileIdentifiers.has(fileIdentifier)) {
+        errors.push(
+          `${file.name} is already selected. Choose a different file for each document.`,
+        );
+        continue;
+      }
+
       if (file.size > MAX_FILE_SIZE) {
         errors.push(`${file.name} exceeds the 5 MB limit.`);
         continue;
@@ -375,14 +349,15 @@ function AdmissionFormContent() {
         continue;
       }
 
-      if (validFiles.length >= availableSlots) {
+      if (currentFiles.length + validFiles.length >= upload.maxFiles) {
         errors.push(
-          `${upload.title} accepts up to ${upload.maxFiles} image${upload.maxFiles === 1 ? "" : "s"}.`
+          `${upload.title} accepts up to ${upload.maxFiles} file${upload.maxFiles === 1 ? "" : "s"}.`
         );
         continue;
       }
 
       validFiles.push(file);
+      seenFileIdentifiers.add(fileIdentifier);
     }
 
     setSelectedFiles((current) => ({
@@ -417,49 +392,11 @@ function AdmissionFormContent() {
     e.preventDefault();
     setStatus({ type: "", message: "" });
 
-    const formElements = e.currentTarget.elements;
-    let hasValidationErrors = false;
-    const newFieldErrors: Record<string, string> = {};
-
-    for (let i = 0; i < formElements.length; i++) {
-      const el = formElements[i] as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
-      if (el.name && el.hasAttribute("required") && !el.value.trim()) {
-        newFieldErrors[el.name] = "This field is required.";
-        hasValidationErrors = true;
-      }
-    }
-
-    const emailInput = (formElements.namedItem("email") as HTMLInputElement)?.value.trim() || "";
-    if (emailInput) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(emailInput)) {
-        newFieldErrors["email"] = "Please enter a valid email address format.";
-        hasValidationErrors = true;
-      }
-    }
-
-    const lrnInput = (formElements.namedItem("lrn") as HTMLInputElement)?.value || "";
-    if (lrnInput && lrnInput.length !== 12) {
-      setLrnError("LRN must be exactly 12 digits.");
-      hasValidationErrors = true;
-    }
-
-    if (hasValidationErrors) {
-      setFieldErrors(newFieldErrors);
-      setStatus({
-        type: "error",
-        message: "Please correct the highlighted errors before submitting.",
-      });
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return;
-    }
-
     if (selectedFileCount === 0) {
       setStatus({
         type: "error",
         message: "Please upload at least one required document.",
       });
-      window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
 
@@ -468,7 +405,6 @@ function AdmissionFormContent() {
         type: "error",
         message: "Please resolve the document upload errors before submitting.",
       });
-      window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
 
@@ -490,21 +426,12 @@ function AdmissionFormContent() {
           message: "Applicants must be at least 15 years old.",
         });
         setIsSubmitting(false);
-        window.scrollTo({ top: 0, behavior: "smooth" });
         return;
       }
     }
 
-    // Clean up generic/duplicate file fields
-    formData.delete("files");
-    formData.delete("profile");
-    formData.delete("birthCertificate");
-
-    // Append selected files matching the backend route.ts keys: "profilePic", "reportCard", "birthCert"
-    documentUploads.forEach(({ id }) => {
-      selectedFiles[id].forEach((file) => {
-        formData.append(id, file);
-      });
+    documentUploads.forEach(({ id, formFieldName }) => {
+      selectedFiles[id].forEach((file) => formData.append(formFieldName, file));
     });
 
     try {
@@ -520,40 +447,34 @@ function AdmissionFormContent() {
           type: "success",
           message: "Application submitted successfully!",
         });
-
-        window.scrollTo({ top: 0, behavior: "smooth" });
-
         (e.target as HTMLFormElement).reset();
         fileInputRefs.current.forEach((input) => {
           if (input) input.value = "";
         });
         setSelectedFiles({
-          profilePic: [],
+          profile: [],
           reportCard: [],
-          birthCert: [],
+          birthCertificate: [],
         });
         setFileErrors({
-          profilePic: "",
+          profile: "",
           reportCard: "",
-          birthCert: "",
+          birthCertificate: "",
         });
-        setFieldErrors({});
+        setPersonalStatement("");
         setEnrollmentType("New Student");
         setGradeLevel("Grade 11");
-        setLrnError("");
       } else {
         setStatus({
           type: "error",
           message: data.message || "Failed to submit application.",
         });
-        window.scrollTo({ top: 0, behavior: "smooth" });
       }
     } catch {
       setStatus({
         type: "error",
         message: "Network connection error. Try again.",
       });
-      window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setIsSubmitting(false);
     }
@@ -566,8 +487,8 @@ function AdmissionFormContent() {
           onSubmit={handleSubmit}
           className="space-y-9 rounded-2xl border border-slate-100 bg-white p-5 shadow-[0_12px_40px_rgba(13,43,69,0.08)] sm:p-8 lg:p-10"
         >
-          <div className="flex flex-col gap-6 border-b border-[#DCE4ED] pb-7 lg:flex-row lg:items-start lg:justify-between">
-            <div className="min-w-0">
+          <div className="relative flex flex-col gap-6 border-b border-[#DCE4ED] pb-7 lg:flex-row lg:items-start lg:justify-between">
+            <div className="min-w-0 pr-12 sm:pr-0">
               <h1 className="text-2xl font-extrabold leading-tight sm:text-3xl">
                 <span className="text-[#0D2B45]">SGCST</span>{" "}
                 <span className="text-[#D89B00]">Admission Application</span>
@@ -584,34 +505,36 @@ function AdmissionFormContent() {
               </p>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row lg:shrink-0">
-              <a
+              <Link
                 href="/admission/verification"
-                className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[#0D2B45] bg-white px-4 py-2 text-center text-sm font-semibold text-[#0D2B45] transition hover:bg-[#0D2B45] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFC107] focus-visible:ring-offset-2"
+                prefetch
+                className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[#0D2B45] bg-white px-4 py-2 text-center text-sm font-semibold italic text-[#0D2B45] no-underline transition-colors hover:text-[#D89B00] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFC107] focus-visible:ring-offset-2 sm:rounded-none sm:border-0 sm:bg-transparent sm:px-2 sm:underline sm:underline-offset-4"
               >
                 Already Applied? Check Status
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/Home"
-                className="inline-flex min-h-11 items-center justify-center rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-[#183B56] transition hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFC107] focus-visible:ring-offset-2"
+                prefetch
+                aria-label="Home"
+                title="Home"
+                className="absolute right-0 top-0 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#0D2B45] bg-white text-[#0D2B45] transition-[background-color,color,transform] duration-300 ease-in-out hover:scale-105 hover:bg-[#0D2B45] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFC107] focus-visible:ring-offset-2 motion-reduce:transition-none sm:static"
               >
-                Back
-              </a>
+                <svg
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  className="h-5 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="m3 10 9-7 9 7" />
+                  <path d="M5 9v11h14V9M9 20v-6h6v6" />
+                </svg>
+              </Link>
             </div>
           </div>
-
-          {status.message && (
-            <div
-              role="status"
-              aria-live="polite"
-              className={`rounded-lg border p-4 text-sm font-medium ${
-                status.type === "success"
-                  ? "border-green-200 bg-green-50 text-green-800"
-                  : "border-red-200 bg-red-50 text-red-700"
-              }`}
-            >
-              {status.message}
-            </div>
-          )}
 
           <section aria-labelledby="admission-section-1">
             <SectionHeading
@@ -620,58 +543,35 @@ function AdmissionFormContent() {
               subtitle="Provide your basic personal details."
             />
             <div className="grid grid-cols-1 gap-x-5 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
-              <InputField
-                label="First Name *"
-                name="firstName"
-                placeholder="Juan"
-                error={fieldErrors.firstName}
-                onBlur={handleFieldBlur}
-                onChange={() => setFieldErrors(prev => ({ ...prev, firstName: "" }))}
-              />
+              <InputField label="First Name *" name="firstName" placeholder="Juan" />
               <InputField
                 label="Middle Name"
                 name="middleName"
                 placeholder="Protacio"
-                error={fieldErrors.middleName}
-                onBlur={handleFieldBlur}
               />
               <InputField
                 label="Last Name *"
                 name="lastName"
                 placeholder="Dela Cruz"
-                error={fieldErrors.lastName}
-                onBlur={handleFieldBlur}
-                onChange={() => setFieldErrors(prev => ({ ...prev, lastName: "" }))}
               />
               <InputField
                 label="Email Address *"
                 name="email"
                 type="email"
                 placeholder="juan@example.com"
-                error={fieldErrors.email}
-                onBlur={handleFieldBlur}
-                onChange={() => setFieldErrors(prev => ({ ...prev, email: "" }))}
               />
               <InputField
                 label="Phone Number *"
                 name="phone"
                 type="tel"
                 placeholder="+63 9xx xxx xxxx"
-                error={fieldErrors.phone}
-                onBlur={handleFieldBlur}
-                onChange={() => setFieldErrors(prev => ({ ...prev, phone: "" }))}
               />
               <InputField
                 label="Date of Birth *"
                 name="dob"
                 type="date"
                 max={maxDobDate}
-                error={fieldErrors.dob}
-                onBlur={handleFieldBlur}
-                onChange={(e) => {
-                  handleDobValidation(e);
-                  setFieldErrors(prev => ({ ...prev, dob: "" }));
-                }}
+                onChange={handleDobValidation}
                 onInvalid={(e) =>
                   e.currentTarget.setCustomValidity(
                     "You must be at least 15 years old to apply."
@@ -682,17 +582,11 @@ function AdmissionFormContent() {
                 label="Gender *"
                 name="gender"
                 options={["Male", "Female", "Other"]}
-                error={fieldErrors.gender}
-                onBlur={handleFieldBlur}
-                onChange={() => setFieldErrors(prev => ({ ...prev, gender: "" }))}
               />
               <InputField
                 label="Nationality *"
                 name="nationality"
                 placeholder="Filipino"
-                error={fieldErrors.nationality}
-                onBlur={handleFieldBlur}
-                onChange={() => setFieldErrors(prev => ({ ...prev, nationality: "" }))}
               />
             </div>
           </section>
@@ -711,17 +605,12 @@ function AdmissionFormContent() {
                   "Information and Communication Technology",
                   "Hotel and Restaurant Management",
                 ]}
-                error={fieldErrors.track}
-                onBlur={handleFieldBlur}
-                onChange={() => setFieldErrors(prev => ({ ...prev, track: "" }))}
               />
               <SelectField
                 label="Enrollment Type *"
                 name="enrollmentType"
                 options={["New Student", "Transferee"]}
                 value={enrollmentType}
-                error={fieldErrors.enrollmentType}
-                onBlur={handleFieldBlur}
                 onChange={handleEnrollmentTypeChange}
               />
               <SelectField
@@ -729,36 +618,24 @@ function AdmissionFormContent() {
                 name="gradeLevel"
                 options={gradeLevelOptions}
                 value={gradeLevel}
-                error={fieldErrors.gradeLevel}
-                onBlur={handleFieldBlur}
                 onChange={(e) => setGradeLevel(e.target.value)}
               />
-              <div className="flex flex-col gap-2">
-                <InputField
-                  label="LRN"
-                  name="lrn"
-                  placeholder="12-digit LRN"
-                  inputMode="numeric"
-                  maxLength={12}
-                  onChange={(e) => {
-                    e.currentTarget.value = e.currentTarget.value.replace(/\D/g, "").slice(0, 12);
-                    if (lrnError) setLrnError("");
-                  }}
-                  onBlur={handleLrnBlur}
-                />
-                {lrnError && (
-                  <p className="text-xs font-medium text-red-600 mt-1" role="alert">
-                    {lrnError}
-                  </p>
-                )}
-              </div>
+              <InputField
+                label="LRN"
+                name="lrn"
+                placeholder="12-digit LRN"
+                inputMode="numeric"
+                onChange={(e) => {
+                  e.currentTarget.value = e.currentTarget.value.replace(
+                    /\D/g,
+                    ""
+                  );
+                }}
+              />
               <InputField
                 label="Last School Attended *"
                 name="lastSchool"
                 placeholder="School Name"
-                error={fieldErrors.lastSchool}
-                onBlur={handleFieldBlur}
-                onChange={() => setFieldErrors(prev => ({ ...prev, lastSchool: "" }))}
               />
             </div>
           </section>
@@ -774,41 +651,26 @@ function AdmissionFormContent() {
                 label="Street Address *"
                 name="street"
                 placeholder="Unit/House No, Street"
-                error={fieldErrors.street}
-                onBlur={handleFieldBlur}
-                onChange={() => setFieldErrors(prev => ({ ...prev, street: "" }))}
               />
               <InputField
                 label="City / Municipality *"
                 name="city"
                 placeholder="Manila"
-                error={fieldErrors.city}
-                onBlur={handleFieldBlur}
-                onChange={() => setFieldErrors(prev => ({ ...prev, city: "" }))}
               />
               <InputField
                 label="State / Province *"
                 name="province"
                 placeholder="Metro Manila"
-                error={fieldErrors.province}
-                onBlur={handleFieldBlur}
-                onChange={() => setFieldErrors(prev => ({ ...prev, province: "" }))}
               />
               <InputField
                 label="Zip / Postal Code *"
                 name="zip"
                 placeholder="1000"
-                error={fieldErrors.zip}
-                onBlur={handleFieldBlur}
-                onChange={() => setFieldErrors(prev => ({ ...prev, zip: "" }))}
               />
               <InputField
                 label="Country *"
                 name="country"
                 placeholder="Philippines"
-                error={fieldErrors.country}
-                onBlur={handleFieldBlur}
-                onChange={() => setFieldErrors(prev => ({ ...prev, country: "" }))}
               />
             </div>
           </section>
@@ -817,35 +679,68 @@ function AdmissionFormContent() {
             <SectionHeading
               number={4}
               title="Personal Statement"
-              subtitle="Tell us why you want to join SGCST."
+              subtitle="Share what interests you about SGCST or your future goals. A short answer is perfectly okay."
             />
             <div className="flex flex-col gap-2">
-              <label htmlFor="personalStatement" className={labelClassName}>
-                Personal Statement *
-              </label>
+              <div className="flex flex-wrap items-center justify-between gap-1">
+                <label htmlFor="personalStatement" className={labelClassName}>
+                  Personal Statement *
+                </label>
+                <p className="text-xs text-slate-500">
+                  Maximum 255 characters, including spaces.
+                </p>
+              </div>
               <textarea
                 id="personalStatement"
                 name="personalStatement"
                 rows={5}
-                className={`w-full resize-y rounded-lg border bg-white p-3.5 text-sm leading-6 text-[#183B56] outline-none transition placeholder:text-slate-400 focus:border-[#183B56] focus:ring-2 focus:ring-[#183B56]/15 ${
-                  fieldErrors.personalStatement ? "border-red-500 focus:border-red-500" : "border-[#DCE4ED]"
-                }`}
+                maxLength={255}
+                className="w-full resize-y rounded-lg border border-[#DCE4ED] bg-white p-3.5 text-sm leading-6 text-[#183B56] outline-none transition placeholder:text-slate-400 focus:border-[#183B56] focus:ring-2 focus:ring-[#183B56]/15"
                 placeholder="Why do you want to join SGCST?"
+                value={personalStatement}
+                onChange={(event) => setPersonalStatement(event.target.value)}
                 required
-                onBlur={(e) => {
-                  if (!e.target.value.trim()) {
-                    setFieldErrors(prev => ({ ...prev, personalStatement: "This field is required." }));
-                  } else {
-                    setFieldErrors(prev => ({ ...prev, personalStatement: "" }));
-                  }
-                }}
-                onChange={() => setFieldErrors(prev => ({ ...prev, personalStatement: "" }))}
               />
-              {fieldErrors.personalStatement && (
-                <p className="text-xs font-medium text-red-600 mt-0.5" role="alert">
-                  {fieldErrors.personalStatement}
-                </p>
-              )}
+              <button
+                type="button"
+                onClick={() =>
+                  setPersonalStatementCountMode((mode) =>
+                    mode === "characters" ? "words" : "characters"
+                  )
+                }
+                aria-live="polite"
+                aria-atomic="true"
+                aria-label={`Showing ${personalStatementCountMode}. Click to show ${
+                  personalStatementCountMode === "characters"
+                    ? "word count"
+                    : "character count"
+                }.`}
+                title="Click to switch between character and word count"
+                className="inline-flex self-end cursor-pointer items-center gap-1.5 rounded-sm text-right text-xs font-medium text-slate-600 underline decoration-dotted underline-offset-2 transition-colors hover:text-[#0D2B45] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFC107]"
+              >
+                {personalStatementCount}{" "}
+                {personalStatementCountMode === "characters"
+                  ? personalStatementCount === 1
+                    ? "character"
+                    : "characters"
+                  : personalStatementCount === 1
+                    ? "word"
+                    : "words"}
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  className="h-3.5 w-3.5"
+                >
+                  <path
+                    d="M3 5h9l-2-2m3 8H4l2 2"
+                    stroke="currentColor"
+                    strokeWidth="1.4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
             </div>
           </section>
 
@@ -853,7 +748,7 @@ function AdmissionFormContent() {
             <SectionHeading
               number={5}
               title="Required Documents"
-              subtitle="Upload the necessary documents to complete your application. At least one document is required."
+              subtitle="Upload the required documents. Use a different file for each document; report cards and birth certificates may be PDF, JPG, PNG, or WEBP. At least one document is required."
             />
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
               {documentUploads.map((upload, index) => (
@@ -877,7 +772,7 @@ function AdmissionFormContent() {
                   <p className="mt-4 flex min-h-10 flex-wrap content-start gap-x-1.5 text-xs leading-5 text-slate-500">
                     <span className="whitespace-nowrap">{upload.formats}</span>
                     <span className="whitespace-nowrap">
-                      · Up to {upload.maxFiles} image{upload.maxFiles === 1 ? "" : "s"}
+                      · Up to {upload.maxFiles} file{upload.maxFiles === 1 ? "" : "s"}
                     </span>
                     <span className="whitespace-nowrap">· Max 5 MB each</span>
                   </p>
@@ -886,7 +781,7 @@ function AdmissionFormContent() {
                       fileInputRefs.current[index] = element;
                     }}
                     type="file"
-                    name={upload.id}
+                    name={upload.formFieldName}
                     accept={upload.accept}
                     multiple={upload.maxFiles > 1}
                     disabled={
@@ -913,11 +808,11 @@ function AdmissionFormContent() {
                   >
                     {selectedFiles[upload.id].length >= upload.maxFiles
                       ? upload.id === "reportCard"
-                        ? `${upload.maxFiles} images selected`
-                        : "Replace image"
+                        ? `${upload.maxFiles} files selected`
+                        : "Replace file"
                       : selectedFiles[upload.id].length > 0
-                      ? "Add another image"
-                      : "Choose image"}
+                      ? "Add another file"
+                      : "Choose file"}
                   </label>
                   {fileErrors[upload.id] && (
                     <p className="mt-2 text-xs font-medium text-red-600" role="alert">
@@ -931,7 +826,17 @@ function AdmissionFormContent() {
                           key={`${file.name}-${file.lastModified}-${fileIndex}`}
                           className="flex min-w-0 items-center gap-2 rounded-lg bg-slate-50 p-2"
                         >
-                          <ImagePreview file={file} />
+                          {file.type === "application/pdf" ||
+                          file.name.toLowerCase().endsWith(".pdf") ? (
+                            <span
+                              aria-hidden="true"
+                              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-red-100 bg-red-50 text-[10px] font-bold text-red-600"
+                            >
+                              PDF
+                            </span>
+                          ) : (
+                            <ImagePreview file={file} />
+                          )}
                           <span
                             className="min-w-0 flex-1 truncate text-xs text-slate-600"
                             title={file.name}
@@ -980,6 +885,28 @@ function AdmissionFormContent() {
           </div>
         </form>
       </div>
+      {status.message && (
+        <div
+          role={status.type === "error" ? "alert" : "status"}
+          aria-live={status.type === "error" ? "assertive" : "polite"}
+          aria-atomic="true"
+          className={`fixed inset-x-4 bottom-4 z-50 mx-auto flex max-w-lg items-start justify-between gap-4 rounded-lg border p-4 text-sm font-medium shadow-lg sm:inset-x-auto sm:right-6 sm:bottom-6 ${
+            status.type === "success"
+              ? "border-green-200 bg-green-50 text-green-800"
+              : "border-red-200 bg-red-50 text-red-700"
+          }`}
+        >
+          <span>{status.message}</span>
+          <button
+            type="button"
+            onClick={() => setStatus({ type: "", message: "" })}
+            className="shrink-0 rounded px-2 py-1 text-xs font-semibold hover:bg-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current"
+            aria-label="Dismiss notification"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
     </div>
   );
 }
