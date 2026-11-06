@@ -177,9 +177,9 @@ export default function Page() {
                   <button
                     onClick={handleEnrollment}
                     disabled={enrolling || !canEnroll}
-                    className={`w-full sm:w-auto px-6 py-2.5 rounded-xl font-medium text-sm transition shadow-sm border
+                    className={`w-full sm:w-auto px-6 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-sm border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d99a00] focus-visible:ring-offset-2
                       ${canEnroll
-                        ? "bg-indigo-600 hover:bg-indigo-700 text-white border-transparent cursor-pointer"
+                        ? "bg-[#082b49] hover:bg-[#0b3b62] hover:shadow-md text-white border-transparent cursor-pointer active:scale-[0.98]"
                         : "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed pointer-events-none"}`}
                   >
                     {enrolling ? "Processing..." : `Enroll to 2nd Sem (A.Y. ${evaluation.year})`}
