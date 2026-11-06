@@ -58,7 +58,7 @@ const InputField: React.FC<InputFieldProps> = ({
   onChange,
 }) => (
   <div className="flex flex-col gap-2">
-    <label className="text-[10px] font-black uppercase text-slate-400 ml-1">
+    <label className="ml-0.5 text-xs font-semibold text-[#334155]">
       {label}
     </label>
     <input
@@ -70,7 +70,7 @@ const InputField: React.FC<InputFieldProps> = ({
       readOnly={readOnly}
       value={value || ""}
       onChange={onChange}
-      className={`w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm ${readOnly ? "bg-slate-100 cursor-not-allowed text-slate-500 font-bold" : ""
+      className={`h-12 w-full rounded-lg border border-[#DCE4ED] bg-white px-3.5 text-sm text-[#183B56] outline-none transition placeholder:text-slate-400 focus:border-[#183B56] focus:ring-2 focus:ring-[#183B56]/15 ${readOnly ? "cursor-not-allowed bg-[#F1F6FC] font-semibold text-slate-500" : ""
         }`}
     />
   </div>
@@ -230,9 +230,9 @@ export default function EnrollmentForm() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(ellipse_at_8%_46%,rgba(255,193,7,0.10),transparent_25%),radial-gradient(ellipse_at_92%_64%,rgba(71,153,220,0.10),transparent_27%),linear-gradient(135deg,#F7FAFF_0%,#FFFCF5_48%,#F5F9FF_100%)]">
+      <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(ellipse_at_8%_46%,rgba(255,193,7,0.22),transparent_30%),radial-gradient(ellipse_at_92%_64%,rgba(71,153,220,0.20),transparent_32%),linear-gradient(135deg,#EEF5FF_0%,#FFF8E8_48%,#EAF3FF_100%)]">
         <div className="text-center space-y-3">
-          <div className="w-8 h-8 border-4 border-[#166534] border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-[#FFC107] border-t-transparent"></div>
           <p className="text-sm font-semibold text-slate-500">Retrieving Enrollment Access State...</p>
         </div>
       </div>
@@ -241,9 +241,9 @@ export default function EnrollmentForm() {
 
   if (!controlNumber || !studentData || studentData.status !== "Approved") {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-[radial-gradient(ellipse_at_8%_46%,rgba(255,193,7,0.10),transparent_25%),radial-gradient(ellipse_at_92%_64%,rgba(71,153,220,0.10),transparent_27%),linear-gradient(135deg,#F7FAFF_0%,#FFFCF5_48%,#F5F9FF_100%)] p-4">
-        <div className="w-full max-w-md bg-white p-8 rounded-3xl shadow-xl text-center space-y-6">
-          <h1 className="text-2xl font-black text-red-600">Enrollment Locked</h1>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[radial-gradient(ellipse_at_8%_46%,rgba(255,193,7,0.22),transparent_30%),radial-gradient(ellipse_at_92%_64%,rgba(71,153,220,0.20),transparent_32%),linear-gradient(135deg,#EEF5FF_0%,#FFF8E8_48%,#EAF3FF_100%)] p-4">
+        <div className="w-full max-w-md space-y-6 rounded-2xl border border-slate-100 bg-white p-8 text-center shadow-[0_12px_40px_rgba(13,43,69,0.12)]">
+          <h1 className="text-2xl font-black text-[#0D2B45]">Enrollment Locked</h1>
           <p className="text-sm text-slate-500 leading-relaxed">
             No valid or approved application access authorization was found in your browser session.
           </p>
@@ -252,7 +252,7 @@ export default function EnrollmentForm() {
               startNavigationLoading("/admission/verification");
               router.push("/admission/verification");
             }}
-            className="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-sm font-bold tracking-wider transition-colors"
+            className="w-full rounded-lg border-2 border-[#E5A900] bg-[#FFC107] py-3 text-sm font-bold tracking-wide text-[#082B49] shadow-sm transition-colors hover:border-[#082B49] hover:bg-[#082B49] hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#FFC107]/60 focus-visible:ring-offset-2"
           >
             Go to Verification Page
           </button>
@@ -268,22 +268,25 @@ export default function EnrollmentForm() {
     : "ST-XXXX-XXXXX";
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_8%_46%,rgba(255,193,7,0.10),transparent_25%),radial-gradient(ellipse_at_92%_64%,rgba(71,153,220,0.10),transparent_27%),linear-gradient(135deg,#F7FAFF_0%,#FFFCF5_48%,#F5F9FF_100%)] p-6 font-sans text-[#1E293B] md:p-12">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-10 flex justify-between items-end">
+    <div className="min-h-[calc(100vh-84px)] w-full bg-[radial-gradient(ellipse_at_8%_46%,rgba(255,193,7,0.22),transparent_30%),radial-gradient(ellipse_at_92%_64%,rgba(71,153,220,0.20),transparent_32%),linear-gradient(135deg,#EEF5FF_0%,#FFF8E8_48%,#EAF3FF_100%)] px-4 pb-20 pt-8 font-sans text-[#1E293B] sm:px-6 sm:pb-24 sm:pt-10 md:min-h-[calc(100vh-96px)] lg:pb-28 lg:pt-12">
+      <div className="mx-auto max-w-[1000px]">
+        <div className="mb-8 flex flex-col gap-4 border-b border-[#DCE4ED] pb-6 sm:flex-row sm:items-start sm:justify-between sm:mb-10">
           <div>
-            <h1 className="text-4xl font-black text-[#166534]">SGCST Enrollment</h1>
-            <p className="text-slate-500 font-medium italic">Final Enrollment Confirmation</p>
+            <h1 className="text-2xl font-extrabold leading-tight sm:text-3xl">
+              <span className="text-[#0D2B45]">SGCST</span>{" "}
+              <span className="text-[#D89B00]">Enrollment</span>
+            </h1>
+            <p className="mt-2 text-sm font-semibold text-[#183B56] sm:text-base">Final Enrollment Confirmation</p>
           </div>
-          <button onClick={() => router.back()} disabled={submitting} className="text-sm font-bold text-slate-400 hover:text-red-600 transition-colors">
+          <button onClick={() => router.back()} disabled={submitting} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[#0D2B45] bg-white px-4 py-2 text-sm font-semibold text-[#0D2B45] transition-colors hover:border-[#D89B00] hover:text-[#A87400] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFC107] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0 sm:border-0 sm:bg-transparent sm:px-2">
             Back
           </button>
         </div>
 
         {/* 🚀 FIXED: Changed container layout shell from a div to a form handler */}
-        <form onSubmit={handleEnrollmentSubmit} className="bg-white rounded-3xl p-8 md:p-12 shadow-xl space-y-10">
-          <div className="pb-6 border-b border-slate-100">
-            <h3 className="text-2xl font-black text-[#166534]">Student Information</h3>
+        <form onSubmit={handleEnrollmentSubmit} className="space-y-9 rounded-2xl border border-slate-100 bg-white p-5 shadow-[0_12px_40px_rgba(13,43,69,0.08)] sm:p-8 lg:p-10">
+          <div className="border-b border-[#FFC107]/70 pb-6">
+            <h3 className="text-lg font-bold text-[#0D2B45] sm:text-xl">Student Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
               <InputField label="Control ID" value={studentData.applicant_id} readOnly />
               <InputField label="Full Name" value={studentFullName} readOnly />
@@ -293,8 +296,8 @@ export default function EnrollmentForm() {
             </div>
           </div>
 
-          <div className="pb-6 border-b border-slate-100">
-            <h3 className="text-2xl font-black text-[#166534]">Account Setup</h3>
+          <div className="border-b border-[#FFC107]/70 pb-6">
+            <h3 className="text-lg font-bold text-[#0D2B45] sm:text-xl">Account Setup</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
               <InputField label="Student ID" value={formattedStudentId} readOnly />
               <br />
@@ -316,7 +319,7 @@ export default function EnrollmentForm() {
           </div>
 
           <div>
-            <h4 className="text-sm font-black text-amber-600 uppercase tracking-widest mb-6">Emergency Contact</h4>
+            <h4 className="mb-6 text-sm font-black uppercase tracking-widest text-[#A87400]">Emergency Contact</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <InputField
                 label="Contact Person *"
@@ -347,14 +350,14 @@ export default function EnrollmentForm() {
             </div>
           </div>
 
-          <div className="flex items-start gap-3 pt-4">
+          <div className="flex items-start gap-3 border-t border-[#DCE4ED] pt-6">
             <input
               type="checkbox"
               checked={agree}
               onChange={(e) => setAgree(e.target.checked)}
               required
               disabled={submitting}
-              className="mt-1"
+              className="mt-1 h-4 w-4 shrink-0 accent-[#0D2B45]"
             />
             <label className="text-sm leading-snug text-slate-600 select-none">
               I hereby confirm my enrollment for the upcoming academic term and agree to comply with all university policies, fees, and requirements.
@@ -362,7 +365,7 @@ export default function EnrollmentForm() {
           </div>
 
           {errorMsg && (
-            <div className="text-red-500 text-xs font-semibold bg-red-50 p-4 rounded-xl border border-red-100">
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-xs font-semibold text-red-700">
               {errorMsg}
             </div>
           )}
@@ -370,7 +373,7 @@ export default function EnrollmentForm() {
           <button
             type="submit"
             disabled={!agree || submitting}
-            className={`w-full py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl transition-all ${agree && !submitting ? "bg-[#166534] hover:bg-[#14532d] text-white" : "bg-slate-300 text-slate-500 cursor-not-allowed"
+            className={`group flex min-h-14 w-full items-center justify-center rounded-[10px] border-2 px-5 py-4 text-sm font-bold uppercase tracking-wide shadow-[0_5px_16px_rgba(13,43,69,0.18)] transition-[background-color,color,border-color,box-shadow] duration-300 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#FFC107]/60 focus-visible:ring-offset-2 ${agree && !submitting ? "border-[#E5A900] bg-[#FFC107] text-[#082B49] hover:border-[#082B49] hover:bg-[#082B49] hover:text-white hover:shadow-[0_8px_20px_rgba(8,43,73,0.26)]" : "cursor-not-allowed border-slate-300 bg-slate-300 text-slate-500"
               }`}
           >
             {submitting ? "Processing Enrollment..." : "Confirm Enrollment"}
