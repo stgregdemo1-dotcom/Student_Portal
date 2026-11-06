@@ -151,7 +151,7 @@ export default function StudentSchedulePage() {
             className="min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain rounded-xl border border-slate-300 bg-white shadow-sm"
           >
             <div
-            className="grid h-full min-h-[660px] min-w-[760px] overflow-hidden bg-white [--schedule-row-min:52px] lg:min-h-[612px] lg:min-w-0 lg:[--schedule-row-min:48px]"
+            className="grid h-full min-h-[948px] min-w-[760px] overflow-hidden bg-white [--schedule-row-min:76px] lg:min-h-[900px] lg:min-w-0 lg:[--schedule-row-min:72px]"
             style={{
               gap: 0,
               gridTemplateColumns: "84px repeat(5, minmax(120px, 1fr))",
@@ -192,7 +192,7 @@ export default function StudentSchedulePage() {
                     gridColumnStart: 1,
                     gridRowStart: rowStart,
                   }}
-                  className={`sticky left-0 z-10 flex min-w-0 flex-col items-center justify-center border-b border-r border-slate-300 p-0.5 text-center font-mono text-xs font-extrabold leading-tight text-slate-900 sm:p-1 ${block.isLunch ? "bg-amber-50 text-amber-900" : "bg-slate-50"
+                  className={`sticky left-0 z-10 flex min-w-0 flex-col items-center justify-center border-b border-r border-slate-300 p-0.5 text-center font-mono text-[13px] font-extrabold leading-tight text-slate-900 sm:p-1 ${block.isLunch ? "bg-amber-50 text-amber-900" : "bg-slate-50"
                     }`}
                 >
                   <span>{block.start}</span>
@@ -238,27 +238,30 @@ export default function StudentSchedulePage() {
                   type="button"
                   aria-label={`${sub.subject_name || sub.subject_id}, ${sub["subject-day"]}, ${sub.class_time?.start} to ${sub.class_time?.end}. Tap for details.`}
                   onClick={() => setSelectedSubject(sub)}
-                  className={`m-0.5 flex min-h-0 min-w-0 cursor-pointer flex-col overflow-auto overscroll-contain rounded-md border border-slate-300 text-left shadow-sm transition-colors hover:brightness-95 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#d99a00] sm:m-1 sm:rounded-lg ${isSingleHour ? "items-center justify-center gap-0.5 p-0.5 sm:gap-1 sm:p-1" : "items-stretch justify-start gap-1 p-1 sm:gap-1.5 sm:p-1.5"} ${colorStyle}`}
+                  className={`m-0.5 flex min-h-0 min-w-0 cursor-pointer flex-col overflow-auto overscroll-contain rounded-md border border-slate-300 text-left shadow-sm transition-colors hover:brightness-95 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#d99a00] sm:m-1 sm:rounded-lg ${isSingleHour ? "items-center justify-center gap-1 p-2" : "items-stretch justify-start gap-1.5 p-2 sm:gap-2 sm:p-2.5"} ${colorStyle}`}
                   style={{
                     gridColumnStart: colStart,
                     gridRowStart: startTrack,
                     gridRowEnd: endTrack,
                   }}
                 >
-                  <div className={`w-full shrink-0 whitespace-normal break-words text-center font-extrabold uppercase leading-tight tracking-tight ${isSingleHour ? "text-[9px] sm:text-[10px]" : "text-[10px] sm:text-xs"}`}>
+                  <div className="w-full shrink-0 whitespace-normal break-words text-center text-base font-extrabold uppercase leading-tight tracking-tight">
                     {sub.subject_name || sub.subject_id}
                   </div>
 
                   {isSingleHour ? (
-                    <div className="w-full shrink-0 whitespace-normal break-words text-center text-[7px] font-semibold leading-tight text-slate-700 sm:text-[8px]">
-                      {sub.room || "Room TBA"} · {sub.class_time?.start}–{sub.class_time?.end}
+                    <div className="flex w-full shrink-0 flex-col gap-0.5 border-t border-slate-300/70 pt-1 text-center text-xs font-semibold leading-tight text-slate-700">
+                      <span className="whitespace-normal break-words">Room: {sub.room || "Room TBA"}</span>
+                      <span className="whitespace-normal break-words font-mono text-emerald-800">
+                        {sub.class_time?.start}–{sub.class_time?.end}
+                      </span>
                     </div>
                   ) : (
-                    <div className="flex min-w-0 shrink-0 flex-col gap-0.5 border-t border-slate-300/70 pt-1 text-left text-[8px] sm:gap-1 sm:text-[10px]">
-                      <div className="whitespace-normal break-words font-bold text-slate-700">
+                    <div className="flex min-w-0 shrink-0 flex-col gap-1 border-t border-slate-300/70 pt-1.5 text-left text-xs sm:gap-1.5">
+                      <div className="whitespace-normal break-words text-[13px] font-bold text-slate-700">
                         Room: {sub.room || "Room TBA"}
                       </div>
-                      <div className="whitespace-normal break-words font-mono font-bold text-emerald-800">
+                      <div className="whitespace-normal break-words font-mono text-[13px] font-bold text-emerald-800">
                         Time: {sub.class_time?.start}–{sub.class_time?.end}
                       </div>
                     </div>
