@@ -93,7 +93,7 @@ export default function Page() {
 
   return (
     <main className="flex min-h-screen flex-1 items-center justify-center bg-gray-50 p-5 md:min-h-0 md:overflow-hidden">
-      <div className="w-full max-w-3xl text-center md:max-h-full md:overflow-y-auto">
+      <div className="w-full max-w-3xl text-center md:max-h-full md:overflow-hidden">
 
         {/* Main Content Card */}
         <div className="bg-white rounded-2xl p-10 shadow-sm border border-gray-200 text-left">
