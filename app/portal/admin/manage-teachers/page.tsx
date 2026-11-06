@@ -119,7 +119,7 @@ function FacultyModalContent({
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div className="portal-modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl max-h-[90vh] overflow-y-auto">
         <div className="mb-4 flex items-center justify-between border-b pb-3">
           <h3 className="text-xl font-semibold text-gray-800">
@@ -599,7 +599,7 @@ export default function ManageTeachers() {
                         <button
                           disabled={passwordRequestingId !== null}
                           onClick={() => handleEditClick(teacher)}
-                          className="teacher-action-button"
+                          className="teacher-edit-button"
                         >
                           Edit
                         </button>
@@ -676,7 +676,7 @@ export default function ManageTeachers() {
       />
       {teacherToSendPassword && (
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
+          className="portal-modal-backdrop fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) closePasswordConfirmation();
           }}
