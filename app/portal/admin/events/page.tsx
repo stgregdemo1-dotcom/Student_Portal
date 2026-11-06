@@ -282,7 +282,10 @@ export default function CalendarModule() {
               {day}
             </div>
 
-            <div className="space-y-1 max-h-[calc(100%-1.5rem)] overflow-y-auto animate-fade-in">
+            <div
+              aria-label={`Events on ${dateKey}`}
+              className="max-h-16 space-y-1 overflow-y-auto overscroll-contain pr-0.5 animate-fade-in"
+            >
               {events[dateKey]?.map((event, index) => (
                 <div
                   key={event._id || index}
@@ -503,7 +506,7 @@ export default function CalendarModule() {
       )}
 
       {selectedDay && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+        <div className="portal-modal-backdrop fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white p-5 rounded-2xl w-80 shadow-xl border border-blue-100">
             <h2 className="font-bold mb-3 text-blue-950">
               {editEventId !== null ? "Edit Event" : "Add Event"}{" "}
@@ -581,7 +584,7 @@ export default function CalendarModule() {
       )}
       {eventToDelete && (
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 p-4"
+          className="portal-modal-backdrop fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 p-4"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) closeDeleteDialog();
           }}
