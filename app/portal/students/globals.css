@@ -1,4 +1,6 @@
+@import "@fortawesome/fontawesome-free/css/all.min.css";
 @import "tailwindcss";
+@import "../../-components/portal-interactions.css";
 
 :root {
   --font-sans: Arial, sans-serif;
@@ -14,6 +16,27 @@ body {
   min-height: 100vh;
   /* Better mobile touch tap highlights */
   -webkit-tap-highlight-color: transparent;
+}
+
+.student-portal :where(button:not(:disabled), a[href], select:not(:disabled)) {
+  cursor: pointer;
+}
+
+.student-portal :where(button:not(:disabled), a[href], select:not(:disabled)):focus-visible {
+  outline: 1px solid #d99a00;
+  outline-offset: 1px;
+  --tw-ring-offset-width: 0px;
+  --tw-ring-shadow: var(--tw-ring-inset,) 0 0 0 1px var(--tw-ring-color);
+}
+
+.student-portal button:not(:disabled):hover,
+.student-portal a[href]:hover,
+.student-portal select:not(:disabled):hover {
+  filter: brightness(0.96);
+}
+
+.student-portal button:not(:disabled):active {
+  transform: scale(0.98);
 }
 
 /* Base Layout Container */
@@ -42,7 +65,7 @@ body {
   position: fixed;
   top: 0;
   left: 0;
-  bottom: 0;
+  bottom: -40px;
   z-index: 50;
   transition: transform 0.3s ease-in-out;
 }
@@ -131,4 +154,19 @@ body {
   border-radius: 0.75rem;
   border: 1px solid #e2e8f0;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+}
+
+.student-sidebar-watermark-area::before {
+  content: url("/sgcst-seal-watermark.png");
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 220px;
+  height: 220px;
+  transform: translateX(-50%);
+  object-fit: contain;
+  object-position: center;
+  opacity: 0.12;
+  pointer-events: none;
+  z-index: 0;
 }
