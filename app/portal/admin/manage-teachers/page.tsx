@@ -14,6 +14,7 @@ interface Teacher {
   department_id: string;
   status: string;
   role_id: string;
+  archived?: boolean;
 }
 
 interface FacultyModalProps {
@@ -290,8 +291,15 @@ export default function ManageTeachers() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [archiveFilter, setArchiveFilter] = useState<"current" | "archived" | "all">("current");
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [teacherArchiveAction, setTeacherArchiveAction] = useState<{ teacher: Teacher; archive: boolean } | null>(null);
+  const [archiveUsername, setArchiveUsername] = useState("");
+  const [archivePassword, setArchivePassword] = useState("");
+  const [archiveError, setArchiveError] = useState("");
+  const [isArchiving, setIsArchiving] = useState(false);
   const [passwordRequestingId, setPasswordRequestingId] = useState<string | null>(null);
   const [teacherToSendPassword, setTeacherToSendPassword] = useState<Teacher | null>(null);
   const [adminUsername, setAdminUsername] = useState("");
@@ -329,6 +337,18 @@ export default function ManageTeachers() {
     return Array.from(new Set(deps)).sort();
   }, [teachers]);
 
+  const statusOptions = useMemo(() => {
+    const statuses = teachers
+      .map((teacher) => teacher.status?.trim())
+      .filter((status): status is string => Boolean(status));
+    return Array.from(new Map(statuses.map((status) => [status.toLowerCase(), status])).values())
+      .sort((a, b) => a.localeCompare(b));
+  }, [teachers]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, departmentFilter, statusFilter, archiveFilter]);
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
     setCurrentPage(1);
@@ -337,6 +357,64 @@ export default function ManageTeachers() {
   const handleDepartmentFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setDepartmentFilter(e.target.value);
     setCurrentPage(1);
+  };
+
+  const handleStatusFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setStatusFilter(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const openTeacherArchiveDialog = (teacher: Teacher, archive: boolean) => {
+    setTeacherArchiveAction({ teacher, archive });
+    setArchiveError("");
+    setArchiveUsername("");
+    setArchivePassword("");
+  };
+
+  const closeTeacherArchiveDialog = () => {
+    if (isArchiving) return;
+    setTeacherArchiveAction(null);
+    setArchiveUsername("");
+    setArchivePassword("");
+    setArchiveError("");
+  };
+
+  const handleTeacherArchiveAction = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!teacherArchiveAction) return;
+
+    setIsArchiving(true);
+    setArchiveError("");
+    try {
+      const response = await fetch("/api/portal/admin?table=teachers", {
+        method: teacherArchiveAction.archive ? "DELETE" : "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          teacher_id: teacherArchiveAction.teacher.teacher_id,
+          username: archiveUsername.trim(),
+          password: archivePassword,
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        setArchiveError(result.message || `Could not ${teacherArchiveAction.archive ? "archive" : "restore"} the teacher.`);
+        return;
+      }
+
+      setTeachers((current) => current.map((teacher) =>
+        teacher.teacher_id === teacherArchiveAction.teacher.teacher_id
+          ? { ...teacher, archived: teacherArchiveAction.archive }
+          : teacher
+      ));
+      setTeacherArchiveAction(null);
+      setArchiveUsername("");
+      setArchivePassword("");
+    } catch (error) {
+      console.error("Teacher archive request failed:", error);
+      setArchiveError(`Could not ${teacherArchiveAction.archive ? "archive" : "restore"} the teacher because of a network or server error.`);
+    } finally {
+      setIsArchiving(false);
+    }
   };
 
   const handleSetPasswordClick = useCallback((teacher: Teacher) => {
@@ -417,8 +495,13 @@ export default function ManageTeachers() {
         t.teacher_id?.toLowerCase().includes(q);
 
       const matchesDepartment = departmentFilter ? t.department_id === departmentFilter : true;
+      const matchesStatus = statusFilter
+        ? t.status?.trim().toLowerCase() === statusFilter.toLowerCase()
+        : true;
+      const matchesArchive = archiveFilter === "all"
+        || (archiveFilter === "archived" ? Boolean(t.archived) : !t.archived);
 
-      return matchesSearch && matchesDepartment;
+      return matchesSearch && matchesDepartment && matchesStatus && matchesArchive;
     });
 
     return filtered.sort((a, b) => {
@@ -437,7 +520,7 @@ export default function ManageTeachers() {
       if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
       return 0;
     });
-  }, [teachers, searchQuery, departmentFilter, sortField, sortDirection]);
+  }, [teachers, searchQuery, departmentFilter, statusFilter, archiveFilter, sortField, sortDirection]);
 
   const totalPages = Math.ceil(sortedTeachers.length / ITEMS_PER_PAGE) || 1;
   const paginatedTeachers = useMemo(() => {
@@ -518,6 +601,32 @@ export default function ManageTeachers() {
               </option>
             ))}
           </select>
+
+          <select
+            value={statusFilter}
+            onChange={handleStatusFilterChange}
+            className="w-full sm:w-40 py-2 px-3 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            aria-label="Filter by employment status"
+          >
+            <option value="">All Statuses</option>
+            {statusOptions.map((status) => (
+              <option key={status} value={status}>{status}</option>
+            ))}
+          </select>
+
+          <select
+            value={archiveFilter}
+            onChange={(event) => {
+              setArchiveFilter(event.target.value as "current" | "archived" | "all");
+              setCurrentPage(1);
+            }}
+            className="w-full sm:w-40 py-2 px-3 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            aria-label="Filter archived teachers"
+          >
+            <option value="current">Current Teachers</option>
+            <option value="archived">Archived</option>
+            <option value="all">All Teachers</option>
+          </select>
         </div>
 
         <button
@@ -575,34 +684,56 @@ export default function ManageTeachers() {
                     <td className="py-4">
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          teacher.status === "Active"
+                          teacher.archived
+                            ? "bg-slate-100 text-slate-700"
+                            : teacher.status?.toLowerCase() === "active"
                             ? "bg-green-100 text-green-700"
-                            : teacher.status === "Inactive"
+                            : teacher.status?.toLowerCase() === "inactive"
                             ? "bg-red-100 text-red-700"
                             : "bg-yellow-100 text-yellow-700"
                         }`}
                       >
-                        {teacher.status}
+                        {teacher.archived ? "Archived" : teacher.status}
                       </span>
                     </td>
                     <td className="py-4 font-semibold">{teacher.role_id}</td>
                     <td className="py-4 text-right">
                       <div className="flex justify-end gap-3 items-center">
-                        <button
-                          disabled={passwordRequestingId !== null}
-                          onClick={() => handleSetPasswordClick(teacher)}
-                          className="teacher-action-button"
-                        >
-                          {passwordRequestingId === teacher.teacher_id ? "Sending..." : "Set Password"}
-                        </button>
-                        <span className="text-gray-200">|</span>
-                        <button
-                          disabled={passwordRequestingId !== null}
-                          onClick={() => handleEditClick(teacher)}
-                          className="teacher-edit-button"
-                        >
-                          Edit
-                        </button>
+                        {teacher.archived ? (
+                          <button
+                            type="button"
+                            onClick={() => openTeacherArchiveDialog(teacher, false)}
+                            className="teacher-edit-button"
+                          >
+                            Restore
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              disabled={passwordRequestingId !== null}
+                              onClick={() => handleSetPasswordClick(teacher)}
+                              className="teacher-action-button"
+                            >
+                              {passwordRequestingId === teacher.teacher_id ? "Sending..." : "Set Password"}
+                            </button>
+                            <span className="text-gray-200">|</span>
+                            <button
+                              disabled={passwordRequestingId !== null}
+                              onClick={() => handleEditClick(teacher)}
+                              className="teacher-edit-button"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              disabled={passwordRequestingId !== null}
+                              onClick={() => openTeacherArchiveDialog(teacher, true)}
+                              className="teacher-edit-button"
+                            >
+                              Archive
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -674,6 +805,83 @@ export default function ManageTeachers() {
         onClose={handleCloseModal}
         onSave={handleSaveTeacher}
       />
+      {teacherArchiveAction && (
+        <div
+          className="portal-modal-backdrop fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) closeTeacherArchiveDialog();
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="archive-teacher-title"
+            className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
+          >
+            <h2 id="archive-teacher-title" className="text-xl font-semibold text-gray-800">
+              {teacherArchiveAction.archive ? "Archive teacher?" : "Restore teacher?"}
+            </h2>
+            <p className="mt-2 text-sm text-gray-600">
+              {teacherArchiveAction.archive
+                ? "This hides the teacher from the current list but keeps the record so it can be restored later: "
+                : "This makes the teacher visible in the current list again: "}
+              <span className="font-semibold text-gray-800">
+                {teacherArchiveAction.teacher.prefix} {teacherArchiveAction.teacher.first_name} {teacherArchiveAction.teacher.last_name}
+              </span>
+            </p>
+            <form onSubmit={handleTeacherArchiveAction} className="mt-5 space-y-4">
+              <div>
+                <label htmlFor="archive-teacher-admin-username" className="mb-1 block text-sm font-medium text-gray-700">
+                  Admin username
+                </label>
+                <input
+                  id="archive-teacher-admin-username"
+                  type="text"
+                  autoComplete="username"
+                  required
+                  value={archiveUsername}
+                  onChange={(event) => setArchiveUsername(event.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-800 focus:border-blue-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label htmlFor="archive-teacher-admin-password" className="mb-1 block text-sm font-medium text-gray-700">
+                  Admin password
+                </label>
+                <input
+                  id="archive-teacher-admin-password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={archivePassword}
+                  onChange={(event) => setArchivePassword(event.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-800 focus:border-blue-500 focus:outline-none"
+                />
+              </div>
+              {archiveError && <p role="alert" className="text-sm font-medium text-red-700">{archiveError}</p>}
+              <div className="flex justify-end gap-3 border-t pt-4">
+                <button
+                  type="button"
+                  disabled={isArchiving}
+                  onClick={closeTeacherArchiveDialog}
+                  className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isArchiving}
+                  className="rounded-lg bg-[#0B3763] px-4 py-2 text-sm font-medium text-white hover:bg-[#06264A] disabled:opacity-50"
+                >
+                  {isArchiving
+                    ? (teacherArchiveAction.archive ? "Archiving…" : "Restoring…")
+                    : (teacherArchiveAction.archive ? "Confirm archive" : "Confirm restore")}
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      )}
       {teacherToSendPassword && (
         <div
           className="portal-modal-backdrop fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
