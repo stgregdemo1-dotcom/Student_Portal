@@ -225,7 +225,7 @@ const GradingSheet = () => {
 
   if (!teacherId && !loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FFFDF0]">
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="bg-white p-8 rounded-xl border border-red-200 text-center shadow-md">
           <p className="text-red-600 font-bold mb-2">Access Denied</p>
           <p className="text-gray-600 text-sm">Please log in to load your grading dashboard schedules.</p>
@@ -235,8 +235,8 @@ const GradingSheet = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#FFFDF0] py-10 px-4 font-sans relative">
-      <div className="max-w-5xl mx-auto">
+    <div className="min-h-screen bg-gray-100 py-10 px-4 font-sans relative">
+      <div className="mx-auto w-full max-w-4xl">
 
         {/* Header Section */}
         <div className="bg-white border-t-4 border-[#FFD700] p-6 rounded-xl shadow-md mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
