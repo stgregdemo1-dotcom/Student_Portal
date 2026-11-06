@@ -1,1 +1,133 @@
 @import "tailwindcss";
+@import "../../-components/portal-interactions.css";
+
+.admin-portal main:not(.admin-events-page) button:not(:disabled) {
+  border-color: #0b3763 !important;
+  background-color: #0b3763 !important;
+  color: #fff !important;
+}
+
+.admin-portal main:not(.admin-events-page) button:not(:disabled):hover {
+  border-color: #ffb900 !important;
+  background-color: #ffb900 !important;
+  color: #06264a !important;
+  filter: none;
+}
+
+.admin-portal main:not(.admin-events-page) button.admin-dashboard-retry-button:not(:disabled) {
+  display: inline-flex !important;
+  min-height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #fca5a5 !important;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.875rem !important;
+  background-color: transparent !important;
+  color: #991b1b !important;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.25rem;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: none !important;
+}
+
+.admin-portal main:not(.admin-events-page) button.admin-dashboard-retry-button:not(:disabled):hover {
+  border-color: #ef4444 !important;
+  background-color: transparent !important;
+  color: #7f1d1d !important;
+}
+
+.admin-portal main:not(.admin-events-page) button.admin-cancel-button:not(:disabled),
+.admin-portal main:not(.admin-events-page) button.admin-cancel-button:not(:disabled):hover,
+.admin-portal main:not(.admin-events-page) button.admin-modal-close:not(:disabled),
+.admin-portal main:not(.admin-events-page) button.admin-modal-close:not(:disabled):hover {
+  background: transparent !important;
+  background-color: transparent !important;
+  color: #475569 !important;
+  box-shadow: none !important;
+  filter: none;
+}
+
+.admin-portal main:not(.admin-events-page) button.admin-cancel-button:not(:disabled),
+.admin-portal main:not(.admin-events-page) button.admin-cancel-button:not(:disabled):hover {
+  border: 1px solid #cbd5e1 !important;
+}
+
+.admin-portal main:not(.admin-events-page) button.admin-modal-close:not(:disabled),
+.admin-portal main:not(.admin-events-page) button.admin-modal-close:not(:disabled):hover {
+  border-color: transparent !important;
+}
+
+.admin-portal main:not(.admin-events-page) button.admin-cancel-button:not(:disabled):hover,
+.admin-portal main:not(.admin-events-page) button.admin-modal-close:not(:disabled):hover {
+  color: #0f172a !important;
+}
+
+.admin-portal main:not(.admin-events-page) button.admin-modal-close {
+  padding: 0.25rem !important;
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
+.admin-portal main:not(.admin-events-page) button.admin-cancel-button:not(:disabled):hover {
+  text-decoration: underline;
+}
+
+.admin-portal main:not(.admin-events-page) button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.admin-portal .admin-calendar-toolbar button.calendar-today-button {
+  border-color: #94a3b8 !important;
+  background-color: #fff !important;
+  color: #0f172a !important;
+}
+
+.admin-portal .admin-calendar-toolbar button.calendar-month-button {
+  border-color: transparent !important;
+  background-color: transparent !important;
+  color: #334155 !important;
+}
+
+.admin-portal .admin-calendar-toolbar button.admin-calendar-toolbar-action {
+  border-color: #bfdbfe !important;
+  background-color: #fff !important;
+  color: #0b3763 !important;
+}
+
+.admin-portal .admin-calendar-toolbar button.admin-calendar-toolbar-action:hover,
+.admin-portal .admin-calendar-toolbar button.calendar-today-button:hover,
+.admin-portal .admin-calendar-toolbar button.calendar-month-button:hover:not(:disabled) {
+  border-color: #bfdbfe !important;
+  background-color: #eff6ff !important;
+  color: #0b3763 !important;
+  filter: none;
+}
+
+.admin-portal .admin-events-page button.admin-save-event-button {
+  border-color: #0b3763 !important;
+  background-color: #0b3763 !important;
+  color: #fff !important;
+}
+
+.admin-portal .admin-events-page button.admin-save-event-button:hover {
+  border-color: #06264a !important;
+  background-color: #06264a !important;
+  color: #fff !important;
+  filter: none;
+}
+
+.admin-portal .admin-events-page button.admin-cancel-event-button,
+.admin-portal .admin-events-page button.admin-cancel-event-button:hover {
+  border: 1px solid #cbd5e1 !important;
+  background-color: transparent !important;
+  color: #475569 !important;
+  filter: none;
+}
+
+.admin-portal .admin-events-page button.admin-cancel-event-button:hover {
+  color: #0f172a !important;
+  text-decoration: underline;
+}
