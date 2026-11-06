@@ -25,6 +25,7 @@ type Subject = {
   subject_day: string;
   room: string;
   status: string;
+  archived?: boolean;
 };
 
 type TeacherOption = {
@@ -392,11 +393,12 @@ export default function ManageSubjects() {
   const [selectedYear, setSelectedYear] = useState("");
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [subjectToDelete, setSubjectToDelete] = useState<Subject | null>(null);
-  const [deleteUsername, setDeleteUsername] = useState("");
-  const [deletePassword, setDeletePassword] = useState("");
-  const [deleteError, setDeleteError] = useState("");
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [subjectArchiveAction, setSubjectArchiveAction] = useState<{ subject: Subject; archive: boolean } | null>(null);
+  const [archiveUsername, setArchiveUsername] = useState("");
+  const [archivePassword, setArchivePassword] = useState("");
+  const [archiveError, setArchiveError] = useState("");
+  const [isArchiving, setIsArchiving] = useState(false);
+  const [archiveFilter, setArchiveFilter] = useState<"current" | "archived" | "all">("current");
   const [sortField, setSortField] = useState<keyof Subject | "composite_subject">("subject_id");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
@@ -446,7 +448,7 @@ export default function ManageSubjects() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedYear]);
+  }, [searchQuery, selectedYear, archiveFilter]);
 
   const getTeacherFullName = (teacherId: string) => {
     const match = teachers.find((t) => t.teacher_id === teacherId);
@@ -483,7 +485,9 @@ export default function ManageSubjects() {
     const schedCodeYear = s.sched_code?.substring(0, 4);
     const matchesYear = !selectedYear || schedCodeYear === selectedYear;
 
-    return matchesSearch && matchesYear;
+    const matchesArchive = archiveFilter === "all"
+      || (archiveFilter === "archived" ? Boolean(s.archived) : !s.archived);
+    return matchesSearch && matchesYear && matchesArchive;
   });
 
   const sortedSubjects = [...filteredSubjects].sort((a, b) => {
@@ -554,46 +558,50 @@ export default function ManageSubjects() {
     }
   };
 
-  const handleDeleteSubject = async (event: React.FormEvent) => {
+  const handleArchiveAction = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!subjectToDelete) return;
+    if (!subjectArchiveAction) return;
 
-    setIsDeleting(true);
-    setDeleteError("");
+    setIsArchiving(true);
+    setArchiveError("");
     try {
       const response = await fetch("/api/portal/admin?table=subjects", {
-        method: "DELETE",
+        method: subjectArchiveAction.archive ? "DELETE" : "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          subject_id: subjectToDelete.subject_id,
-          username: deleteUsername.trim(),
-          password: deletePassword,
+          subject_id: subjectArchiveAction.subject.subject_id,
+          username: archiveUsername.trim(),
+          password: archivePassword,
         }),
       });
       const result = await response.json();
       if (!response.ok) {
-        setDeleteError(result.message || "Could not delete the subject schedule.");
+        setArchiveError(result.message || `Could not ${subjectArchiveAction.archive ? "archive" : "restore"} the subject schedule.`);
         return;
       }
 
-      setSubjects((current) => current.filter((subject) => subject.subject_id !== subjectToDelete.subject_id));
-      setSubjectToDelete(null);
-      setDeleteUsername("");
-      setDeletePassword("");
+      setSubjects((current) => current.map((subject) => (
+        subject.subject_id === subjectArchiveAction.subject.subject_id
+          ? { ...subject, archived: subjectArchiveAction.archive }
+          : subject
+      )));
+      setSubjectArchiveAction(null);
+      setArchiveUsername("");
+      setArchivePassword("");
     } catch (error) {
-      console.error("Subject schedule deletion request failed:", error);
-      setDeleteError("Could not delete the subject schedule because of a network or server error.");
+      console.error("Subject schedule archive request failed:", error);
+      setArchiveError(`Could not ${subjectArchiveAction.archive ? "archive" : "restore"} the subject schedule because of a network or server error.`);
     } finally {
-      setIsDeleting(false);
+      setIsArchiving(false);
     }
   };
 
-  const closeDeleteDialog = () => {
-    if (isDeleting) return;
-    setSubjectToDelete(null);
-    setDeleteUsername("");
-    setDeletePassword("");
-    setDeleteError("");
+  const closeArchiveDialog = () => {
+    if (isArchiving) return;
+    setSubjectArchiveAction(null);
+    setArchiveUsername("");
+    setArchivePassword("");
+    setArchiveError("");
   };
 
   return (
@@ -622,6 +630,19 @@ export default function ManageSubjects() {
                   {year}
                 </option>
               ))}
+            </select>
+          </div>
+          <div className="w-full sm:w-auto">
+            <label htmlFor="subject-archive-filter" className="sr-only">Filter archived subjects</label>
+            <select
+              id="subject-archive-filter"
+              value={archiveFilter}
+              onChange={(e) => setArchiveFilter(e.target.value as "current" | "archived" | "all")}
+              className="w-full sm:w-auto px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-700"
+            >
+              <option value="current">Current Subjects</option>
+              <option value="archived">Archived</option>
+              <option value="all">All Subjects</option>
             </select>
           </div>
         </div>
@@ -692,14 +713,16 @@ export default function ManageSubjects() {
                     </td>
                     <td className="py-4">
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${subject.status === "Active"
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${subject.archived
+                            ? "bg-slate-100 text-slate-700"
+                            : subject.status === "Active"
                             ? "bg-green-100 text-green-700"
                             : subject.status === "Inactive"
                               ? "bg-red-100 text-red-700"
                               : "bg-yellow-100 text-yellow-700"
                           }`}
                       >
-                        {subject.status}
+                        {subject.archived ? "Archived" : subject.status}
                       </span>
                     </td>
                     <td className="py-4 font-semibold">
@@ -711,23 +734,39 @@ export default function ManageSubjects() {
                     <td className="py-4 font-semibold">{subject.room}</td>
                     <td className="py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleEditClick(subject)}
-                          className="admin-subject-edit-button"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSubjectToDelete(subject);
-                            setDeleteError("");
-                          }}
-                          className="admin-subject-delete-button"
-                        >
-                          Delete
-                        </button>
+                        {!subject.archived && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleEditClick(subject)}
+                              className="admin-subject-edit-button"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSubjectArchiveAction({ subject, archive: true });
+                                setArchiveError("");
+                              }}
+                              className="admin-subject-delete-button"
+                            >
+                              Archive
+                            </button>
+                          </>
+                        )}
+                        {subject.archived && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSubjectArchiveAction({ subject, archive: false });
+                              setArchiveError("");
+                            }}
+                            className="admin-subject-edit-button"
+                          >
+                            Restore
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -787,74 +826,77 @@ export default function ManageSubjects() {
         onSave={handleSaveSubject}
         dbTeachers={teachers}
       />
-      {subjectToDelete && (
+      {subjectArchiveAction && (
         <div
           className="portal-modal-backdrop fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
           onMouseDown={(event) => {
-            if (event.target === event.currentTarget) closeDeleteDialog();
+            if (event.target === event.currentTarget) closeArchiveDialog();
           }}
         >
           <section
             role="dialog"
             aria-modal="true"
-            aria-labelledby="delete-subject-title"
+            aria-labelledby="archive-subject-title"
             className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
           >
-            <h3 id="delete-subject-title" className="text-xl font-semibold text-gray-800">
-              Delete subject schedule?
+            <h3 id="archive-subject-title" className="text-xl font-semibold text-gray-800">
+              {subjectArchiveAction.archive ? "Archive subject schedule?" : "Restore subject schedule?"}
             </h3>
             <p className="mt-2 text-sm text-gray-600">
-              This permanently removes{" "}
+              {subjectArchiveAction.archive
+                ? "This hides the schedule from active portals but keeps the record so it can be restored later: "
+                : "This makes the schedule available in active portals again: "}
               <span className="font-semibold text-gray-800">
-                {subjectToDelete.sched_code} — {subjectToDelete.subject_name}
+                {subjectArchiveAction.subject.sched_code} — {subjectArchiveAction.subject.subject_name}
               </span>{" "}
-              from the subjects collection. Existing student records may still reference it.
             </p>
-            <form onSubmit={handleDeleteSubject} className="mt-5 space-y-4">
+            <form onSubmit={handleArchiveAction} className="mt-5 space-y-4">
               <div>
-                <label htmlFor="delete-admin-username" className="mb-1 block text-sm font-medium text-gray-700">
+                <label htmlFor="archive-admin-username" className="mb-1 block text-sm font-medium text-gray-700">
                   Admin username
                 </label>
                 <input
-                  id="delete-admin-username"
+                  id="archive-admin-username"
                   type="text"
                   autoComplete="username"
                   required
-                  value={deleteUsername}
-                  onChange={(event) => setDeleteUsername(event.target.value)}
+                  value={archiveUsername}
+                  onChange={(event) => setArchiveUsername(event.target.value)}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-800 focus:border-blue-500 focus:outline-none"
                 />
               </div>
               <div>
-                <label htmlFor="delete-admin-password" className="mb-1 block text-sm font-medium text-gray-700">
+                <label htmlFor="archive-admin-password" className="mb-1 block text-sm font-medium text-gray-700">
                   Admin password
                 </label>
                 <input
-                  id="delete-admin-password"
+                  id="archive-admin-password"
                   type="password"
                   autoComplete="current-password"
                   required
-                  value={deletePassword}
-                  onChange={(event) => setDeletePassword(event.target.value)}
+                  value={archivePassword}
+                  onChange={(event) => setArchivePassword(event.target.value)}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-800 focus:border-blue-500 focus:outline-none"
                 />
               </div>
-              {deleteError && <p role="alert" className="text-sm font-medium text-red-700">{deleteError}</p>}
+              {archiveError && <p role="alert" className="text-sm font-medium text-red-700">{archiveError}</p>}
               <div className="flex justify-end gap-3 border-t pt-4">
                 <button
                   type="button"
-                  disabled={isDeleting}
-                  onClick={closeDeleteDialog}
+                  disabled={isArchiving}
+                  onClick={closeArchiveDialog}
                   className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={isDeleting}
-                  className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                  disabled={isArchiving}
+                  className="rounded-lg bg-[#0B3763] px-4 py-2 text-sm font-medium text-white hover:bg-[#06264A] disabled:opacity-50"
                 >
-                  {isDeleting ? "Deleting…" : "Confirm delete"}
+                  {isArchiving
+                    ? (subjectArchiveAction.archive ? "Archiving…" : "Restoring…")
+                    : (subjectArchiveAction.archive ? "Confirm archive" : "Confirm restore")}
                 </button>
               </div>
             </form>
