@@ -212,24 +212,24 @@ export default function ClassSchedule() {
     return index !== -1 ? index + 2 : 2;
   };
 
-  const getTimeRowIndex = (timeStr: string | undefined): number => {
+  const getTimeRowIndex = (timeStr: string | undefined, edge: "start" | "end"): number => {
     const target = normalizeTime(timeStr);
     if (!target) return 1;
 
     const match = target.match(/^(\d{2}):(\d{2})\s(AM|PM)$/);
     if (!match) return 1;
 
-    let [_, hourStr, minStr, period] = match;
+    const [, hourStr, minStr, period] = match;
     let hours = parseInt(hourStr, 10);
-    let minutes = parseInt(minStr, 10);
+    const minutes = parseInt(minStr, 10);
 
     if (period === "PM" && hours !== 12) hours += 12;
     if (period === "AM" && hours === 12) hours = 0;
 
-    const baseTimelineMinutes = 7 * 60; 
-    const targetMinutes = (hours * 60) + minutes;
-    const relativeRow = ((targetMinutes - baseTimelineMinutes) / 60) + 1;
-    return Math.max(1, relativeRow);
+    const baseTimelineMinutes = 7 * 60;
+    const elapsedHours = ((hours * 60) + minutes - baseTimelineMinutes) / 60;
+    const roundedHours = edge === "start" ? Math.floor(elapsedHours) : Math.ceil(elapsedHours);
+    return Math.max(1, roundedHours + 1);
   };
 
   const gridTemplateStyle = {
@@ -318,8 +318,8 @@ export default function ClassSchedule() {
               <div className="absolute inset-0 grid pointer-events-none z-10" style={{ ...gridTemplateStyle, gridTemplateRows: `repeat(${HOURS.length}, 2.75rem)` }}>
                 {!loadingSubjects && subjects.map((subj) => {
                   const colStart = getColumnIndex(subj.subject_day);
-                  const rowStart = getTimeRowIndex(subj.class_time?.start);
-                  const rowEnd = getTimeRowIndex(subj.class_time?.end);
+                  const rowStart = getTimeRowIndex(subj.class_time?.start, "start");
+                  const rowEnd = getTimeRowIndex(subj.class_time?.end, "end");
 
                   return (
                     <div
@@ -422,11 +422,11 @@ export default function ClassSchedule() {
                 ))}
               </div>
 
-              <div className="absolute inset-0 grid pointer-events-none p-0.5 gap-x-1 z-15" style={{ ...gridTemplateStyle, gridTemplateRows: `repeat(${HOURS.length}, 2.75rem)` }}>
+              <div className="absolute inset-0 grid pointer-events-none gap-x-1 z-15" style={{ ...gridTemplateStyle, gridTemplateRows: `repeat(${HOURS.length}, 2.75rem)` }}>
                 {!loadingTeacherSubjects && teacherSubjects.map((subj) => {
                   const colStart = getColumnIndex(subj.subject_day);
-                  const rowStart = getTimeRowIndex(subj.class_time?.start);
-                  const rowEnd = getTimeRowIndex(subj.class_time?.end);
+                  const rowStart = getTimeRowIndex(subj.class_time?.start, "start");
+                  const rowEnd = getTimeRowIndex(subj.class_time?.end, "end");
 
                   return (
                     <div
@@ -529,11 +529,11 @@ export default function ClassSchedule() {
                 ))}
               </div>
 
-              <div className="absolute inset-0 grid pointer-events-none p-0.5 gap-x-1 z-15" style={{ ...gridTemplateStyle, gridTemplateRows: `repeat(${HOURS.length}, 2.75rem)` }}>
+              <div className="absolute inset-0 grid pointer-events-none gap-x-1 z-15" style={{ ...gridTemplateStyle, gridTemplateRows: `repeat(${HOURS.length}, 2.75rem)` }}>
                 {!loadingRoomSubjects && roomSubjects.map((subj) => {
                   const colStart = getColumnIndex(subj.subject_day);
-                  const rowStart = getTimeRowIndex(subj.class_time?.start);
-                  const rowEnd = getTimeRowIndex(subj.class_time?.end);
+                  const rowStart = getTimeRowIndex(subj.class_time?.start, "start");
+                  const rowEnd = getTimeRowIndex(subj.class_time?.end, "end");
 
                   return (
                     <div
