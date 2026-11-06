@@ -1,15 +1,47 @@
 @import "tailwindcss";
 @import "../../-components/portal-interactions.css";
 
-.registrar-portal main button {
-  background-color: #06264a !important;
-  border-color: #06264a !important;
-  color: #fff !important;
+.registrar-portal main button.registrar-back-button {
+  border: 0 !important;
+  background: transparent !important;
+  color: #475569 !important;
+  box-shadow: none !important;
 }
 
-.registrar-portal main button:hover:not(:disabled) {
-  background-color: #0b315d !important;
-  border-color: #0b315d !important;
+.registrar-portal main button.registrar-back-button:hover:not(:disabled) {
+  background: #f1f5f9 !important;
+  color: #0b3763 !important;
+}
+
+.registrar-portal main button.registrar-review-approve {
+  border: 1px solid #a7f3d0 !important;
+  background: #ecfdf5 !important;
+  color: #047857 !important;
+}
+
+.registrar-portal main button.registrar-review-approve:hover:not(:disabled) {
+  border-color: #6ee7b7 !important;
+  background: #d1fae5 !important;
+  color: #065f46 !important;
+}
+
+.registrar-portal main button.registrar-review-reject {
+  border: 1px solid #fecaca !important;
+  background: #fef2f2 !important;
+  color: #b91c1c !important;
+}
+
+.registrar-portal main button.registrar-review-reject:hover:not(:disabled) {
+  border-color: #fca5a5 !important;
+  background: #fee2e2 !important;
+  color: #991b1b !important;
+}
+
+.registrar-portal main button.registrar-review-approve:disabled,
+.registrar-portal main button.registrar-review-reject:disabled {
+  border-color: #e2e8f0 !important;
+  background: #f1f5f9 !important;
+  color: #94a3b8 !important;
 }
 
 .registrar-portal button.registrar-exit-button {
