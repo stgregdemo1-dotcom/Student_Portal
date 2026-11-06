@@ -223,7 +223,7 @@ export default function SettingsConfigPage() {
   const selectedSemester = String(config?.current_semester ?? "1");
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-8 font-sans">
+    <div className="w-full space-y-8 p-4 font-sans sm:p-6">
       <div>
         <h2 className="text-2xl font-black text-gray-800 tracking-tight">
           System Global Configurations
