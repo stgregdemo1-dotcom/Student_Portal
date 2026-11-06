@@ -106,32 +106,34 @@ export default function StudentSchedulePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-100 font-bold text-gray-500">
-        Syncing calendar schedule matrix with student record profile...
+      <div className="flex min-h-[50vh] items-center justify-center p-6">
+        <div role="status" className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-5 py-4 text-sm font-semibold text-slate-600 shadow-sm">
+          <span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-[#d99a00]" aria-hidden="true" />
+          Loading your class schedule…
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-start bg-gradient-to-br from-slate-100 to-slate-300 p-2 md:p-10 font-sans gap-8">
-      <div className="w-full max-w-7xl bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-200">
-
-        {/* Header Banner */}
-        <div className="bg-black text-white p-5 border-b border-gray-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="flex h-full min-h-0 w-full flex-col items-center justify-start font-sans">
+    <div className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
+      <div className="flex shrink-0 flex-col justify-between gap-2 border-b-4 border-[#f2b600] bg-[linear-gradient(100deg,#fff1bd_0%,#fff8dc_58%,#ffffff_100%)] px-4 py-2 text-[#082b49] sm:flex-row sm:items-center sm:px-5 sm:py-2.5">
           <div>
-            <h1 className="text-xl md:text-2xl font-black uppercase tracking-[0.2em]">Weekly Time Grid</h1>
-            <p className="text-[9px] font-bold opacity-50 mt-1 uppercase tracking-[0.4em]">
-              Student ID Logged In: {studentId || "Guest Mode"}
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#b77700] sm:text-[11px]">Schedule</p>
+          <h1 className="mt-0.5 text-lg font-extrabold tracking-tight sm:text-xl">Weekly Class Timetable</h1>
+          <p className="mt-0.5 text-[11px] font-semibold text-slate-700 sm:text-xs">
+              {studentId ? `Student ID: ${studentId}` : "Guest mode"}
             </p>
           </div>
 
-          <div className="flex justify-center items-center gap-2">
-            <label htmlFor="semester-select" className="text-xs font-black uppercase tracking-wider opacity-70 text-white">Semester:</label>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <label htmlFor="semester-select" className="text-xs font-extrabold uppercase tracking-wider text-[#082b49]">Semester</label>
             <select
               id="semester-select"
               value={selectedSemester}
               onChange={(e) => setSelectedSemester(e.target.value)}
-              className="bg-gray-900 border border-gray-700 text-white text-xs font-bold rounded-lg p-2.5 outline-none focus:ring-1 focus:ring-gray-500 cursor-pointer min-w-[160px]"
+            className="min-h-10 min-w-[150px] cursor-pointer rounded-lg border border-amber-400 bg-white px-3 text-sm font-bold text-[#082b49] shadow-sm outline-none transition hover:border-[#d99a00] hover:shadow-md focus-visible:ring-2 focus-visible:ring-[#d99a00] focus-visible:ring-offset-2 sm:min-h-11 sm:min-w-[170px]"
             >
               <option value="1st Semester">1st Semester</option>
               <option value="2nd Semester">2nd Semester</option>
@@ -139,25 +141,41 @@ export default function StudentSchedulePage() {
           </div>
         </div>
 
-        {/* Dynamic CSS Grid Wrapper */}
-        <div className="p-4 md:p-6 overflow-x-auto">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-1 sm:p-1.5">
           <div
-            className="min-w-[950px] grid border border-gray-200 rounded-xl overflow-hidden bg-gray-50/30"
+            className="grid min-h-0 min-w-0 flex-1 overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm"
             style={{
-              gridTemplateColumns: "100px repeat(5, minmax(0, 1fr))",
-              gridTemplateRows: "auto repeat(12, minmax(60px, auto))"
+              height: "100%",
+              gap: 0,
+              gridTemplateColumns: "clamp(72px, 10vw, 128px) repeat(5, minmax(0, 1fr))",
+              gridTemplateRows: "32px repeat(12, minmax(clamp(28px, calc((100dvh - 300px) / 12), 50px), 1fr))"
             }}
           >
 
-            {/* Row 1: Headers */}
-            <div className="bg-black text-white p-3 px-4 text-center font-black border-b border-r border-gray-800 uppercase tracking-widest text-[9px] flex items-center justify-center min-w-0 w-[100px]">Time</div>
+            <div className="flex min-w-0 items-center justify-center border-b border-r border-amber-400 bg-[#ffe8a3] p-1 text-center text-xs font-extrabold uppercase tracking-wide text-[#082b49] sm:p-2">Time</div>
             {DAYS.map((day) => (
-              <div key={day} className="bg-black text-white p-3 text-center font-black border-b border-r last:border-r-0 border-gray-800 uppercase tracking-widest text-[9px] flex items-center justify-center min-w-0">
-                {day}
+              <div key={day} className="flex min-w-0 items-center justify-center border-b border-r border-amber-400 bg-[#ffe8a3] p-1 text-center text-xs font-extrabold uppercase tracking-wide text-[#082b49] last:border-r-0 sm:p-2">
+                <span className="sm:hidden">{day.slice(0, 3)}</span>
+                <span className="hidden sm:inline">{day}</span>
               </div>
             ))}
 
-            {/* Map each interval directly to its corresponding row track */}
+            {DAYS.flatMap((day, dayIndex) =>
+              TIME_BLOCKS.map((block, timeIndex) => (
+                <div
+                  key={`${day}-${block.start}`}
+                  aria-hidden="true"
+                  style={{
+                    gridColumnStart: dayIndex + 2,
+                    gridRowStart: timeIndex + 2,
+                  }}
+                  className={`border-b border-r border-slate-300 last:border-r-0 ${
+                    block.isLunch ? "bg-amber-50/40" : timeIndex % 2 === 0 ? "bg-white" : "bg-slate-50/50"
+                  }`}
+                />
+              )),
+            )}
+
             {TIME_BLOCKS.map((block, index) => {
               const rowStart = index + 2;
               return (
@@ -167,7 +185,7 @@ export default function StudentSchedulePage() {
                     gridColumnStart: 1,
                     gridRowStart: rowStart,
                   }}
-                  className={`border-r border-b border-gray-200 font-mono text-[8px] text-gray-500 font-bold text-center flex flex-col items-center justify-center leading-normal bg-gray-50 w-[100px] min-w-0 p-1 ${block.isLunch ? "bg-yellow-50/40 text-yellow-700 font-black" : ""
+                  className={`flex min-w-0 flex-col items-center justify-center border-b border-r border-slate-300 p-0.5 text-center font-mono text-xs font-extrabold leading-tight text-slate-900 sm:p-1 ${block.isLunch ? "bg-amber-50 text-amber-900" : "bg-slate-50"
                     }`}
                 >
                   <span>{block.start}</span>
@@ -175,64 +193,69 @@ export default function StudentSchedulePage() {
               );
             })}
 
-            {/* Continuous Lunch Break Spacer (Spans all columns on Row Track 7) */}
-            <div className="col-start-2 col-span-5 row-start-7 bg-yellow-50/50 text-center p-3 border-y border-yellow-100 flex items-center justify-center min-w-0">
-              <div className="text-yellow-700 font-black uppercase tracking-[0.4em] text-[10px] italic">Lunch Break</div>
+            <div className="col-start-2 col-span-5 row-start-7 flex min-w-0 items-center justify-center border-y border-amber-300 bg-amber-50/90 p-1 text-center">
+              <div className="text-[10px] font-extrabold uppercase tracking-wider text-amber-900 sm:text-xs sm:tracking-[0.25em]">Lunch Break</div>
             </div>
 
-            {/* Render Spanning Subjects Directly into the Grid Layout Matrix */}
             {filteredSchedules.map((sub, index) => {
-              const dayIndex = DAYS.indexOf(sub["subject-day"] as any);
+              const dayIndex = DAYS.findIndex((day) => day === sub["subject-day"]);
               if (dayIndex === -1) return null;
 
               const colStart = dayIndex + 2;
               const startTrack = getTimeGridLine(sub.class_time?.start);
               const endTrack = getTimeGridLine(sub.class_time?.end);
+              const isSingleHour = endTrack - startTrack === 1;
 
               const spec = sub.subject_specification?.toLowerCase().trim() || "";
-              let colorStyle = "bg-gray-50 border-l-4 border-l-gray-400 text-gray-800";
+              let colorStyle = "border-l-4 border-l-slate-400 bg-slate-100 text-slate-900 hover:bg-slate-200";
 
               switch (spec) {
                 case "core":
-                  colorStyle = "bg-blue-50/80 hover:bg-blue-100 border-l-4 border-l-blue-500 text-gray-800 shadow-sm";
+                  colorStyle = "border-l-4 border-l-blue-600 bg-blue-50 text-slate-900 hover:bg-blue-100";
                   break;
                 case "applied":
-                  colorStyle = "bg-teal-50/80 hover:bg-teal-100 border-l-4 border-l-teal-500 text-gray-800 shadow-sm";
+                  colorStyle = "border-l-4 border-l-teal-600 bg-teal-50 text-slate-900 hover:bg-teal-100";
                   break;
                 case "specialized":
-                  colorStyle = "bg-purple-50/80 hover:bg-purple-100 border-l-4 border-l-purple-500 text-gray-800 shadow-sm";
+                  colorStyle = "border-l-4 border-l-purple-600 bg-purple-50 text-slate-900 hover:bg-purple-100";
                   break;
                 case "other_subjects":
                 case "other":
-                  colorStyle = "bg-orange-50/80 hover:bg-orange-100 border-l-4 border-l-orange-500 text-gray-800 shadow-sm";
+                  colorStyle = "border-l-4 border-l-orange-600 bg-orange-50 text-slate-900 hover:bg-orange-100";
                   break;
               }
 
               return (
                 <div
                   key={index}
-                  className={`m-1 p-2.5 rounded-lg transition-all flex flex-col justify-between border border-gray-200/40 min-w-0 overflow-hidden ${colorStyle}`}
+                  className={`m-0.5 flex min-w-0 flex-col justify-center gap-0.5 overflow-hidden rounded-md border border-slate-300 p-1 shadow-sm transition-colors sm:m-1 sm:gap-1 sm:rounded-lg sm:p-1.5 ${colorStyle}`}
                   style={{
                     gridColumnStart: colStart,
                     gridRowStart: startTrack,
                     gridRowEnd: endTrack,
                   }}
                 >
-                  <div className="font-black leading-tight uppercase text-[10px] tracking-tight text-center line-clamp-2">
+                  <div className="line-clamp-2 text-center text-[10px] font-extrabold uppercase leading-tight tracking-tight sm:text-xs">
                     {sub.subject_name || sub.subject_id}
                   </div>
 
-                  <div className="mt-1 text-left flex flex-col gap-0.5 border-t border-gray-200/50 pt-1">
-                    <div className="text-[8px] text-gray-400 font-bold italic uppercase opacity-80 truncate">
-                      Room: {sub.room || "—"}
+                  {isSingleHour ? (
+                    <div className="truncate border-t border-slate-300/70 pt-0.5 text-center text-[9px] font-bold text-slate-800 sm:text-[11px]">
+                      {sub.room || "Room TBA"} · {sub.class_time?.start}–{sub.class_time?.end}
                     </div>
-                    <div className="text-[8px] text-indigo-500 font-mono font-black uppercase truncate">
-                      Code: {sub.sched_code || "—"}
+                  ) : (
+                    <div className="flex flex-col gap-px border-t border-slate-300/70 pt-0.5 text-left sm:gap-0.5 sm:pt-1">
+                      <div className="truncate text-[8px] font-bold text-slate-700 sm:text-[10px]">
+                        Room: {sub.room || "—"}
+                      </div>
+                      <div className="truncate font-mono text-[8px] font-bold text-indigo-800 sm:text-[10px]">
+                        Code: {sub.sched_code || "—"}
+                      </div>
+                      <div className="truncate font-mono text-[8px] font-bold text-emerald-800 sm:text-[10px]">
+                        {sub.class_time?.start} - {sub.class_time?.end}
+                      </div>
                     </div>
-                    <div className="text-[7.5px] text-emerald-600 font-mono font-bold tracking-tighter uppercase truncate">
-                      ⏱️ {sub.class_time?.start} - {sub.class_time?.end}
-                    </div>
-                  </div>
+                  )}
                 </div>
               );
             })}
@@ -240,14 +263,13 @@ export default function StudentSchedulePage() {
           </div>
         </div>
 
-        {/* Legend */}
-        <div className="flex flex-wrap justify-center gap-6 p-6 text-[8px] font-black uppercase tracking-[0.2em] border-t bg-gray-50/50">
+        <div className="flex shrink-0 flex-wrap justify-center gap-x-4 gap-y-1 border-t border-slate-200 bg-slate-50 px-3 py-1.5 text-[9px] font-extrabold uppercase tracking-wide sm:gap-x-6 sm:gap-y-1 sm:px-5 sm:py-2 sm:text-[10px]">
           {['Core Tracks', 'Applied Modules', 'Specialized Paths', 'Other Subjects'].map((name, idx) => {
             const colors = ['bg-blue-500', 'bg-teal-500', 'bg-purple-500', 'bg-orange-500'];
             return (
               <div key={name} className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${colors[idx]} border border-gray-200`}></div>
-                <span className="text-gray-400">{name}</span>
+                <div className={`h-2.5 w-2.5 rounded-full ${colors[idx]} ring-2 ring-white`}></div>
+                <span className="text-slate-600">{name}</span>
               </div>
             );
           })}
