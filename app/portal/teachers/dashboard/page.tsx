@@ -203,7 +203,7 @@ export default function Dashboard() {
           })}
         </div>
 
-        <div className="mt-1 min-h-0 flex-1 overflow-hidden border-t border-slate-100 pt-2">
+        <div className="mt-1 min-h-0 flex-1 overflow-visible border-t border-slate-100 pt-2 md:overflow-hidden">
           <div className="mb-1 flex items-center justify-between">
             <h4 className="text-xs font-bold text-slate-800">Upcoming Events</h4>
             <span className="text-[10px] text-slate-400">{nextEvents.length} shown</span>
@@ -215,7 +215,7 @@ export default function Dashboard() {
           ) : nextEvents.length === 0 ? (
             <p className="py-2 text-xs text-slate-500">No upcoming events scheduled.</p>
           ) : (
-            <ul className="grid max-h-full grid-cols-1 gap-1 overflow-y-auto sm:grid-cols-2 md:grid-cols-1">
+            <ul className="grid grid-cols-1 gap-1 overflow-visible sm:grid-cols-2 md:max-h-full md:grid-cols-1 md:overflow-y-auto">
               {nextEvents.map((event, index) => (
                 <li key={event._id || `${event.event_date}-${event.title}-${index}`}>
                   <button
@@ -276,7 +276,7 @@ export default function Dashboard() {
         ) : filteredSubjects.length === 0 ? (
           <p className="py-4 text-sm text-gray-500">No classes match “{subjectFilter}”.</p>
         ) : (
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-2 [scrollbar-color:#94a3b8_transparent] [scrollbar-width:thin]">
+          <div className="min-h-0 flex-1 overflow-visible pr-2 md:overflow-y-auto md:overscroll-contain md:[scrollbar-color:#94a3b8_transparent] md:[scrollbar-width:thin]">
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:gap-4">
             {filteredSubjects.map((subject: any, index: number) => {
               const total = subject.totalStudents || 0;
