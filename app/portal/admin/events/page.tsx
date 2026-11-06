@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import type { FormEvent } from "react";
 
 type CalendarEvent = {
   _id?: string;
@@ -9,6 +10,15 @@ type CalendarEvent = {
   color: string;
   startTime: string;
   endTime: string;
+};
+
+type StoredCalendarEvent = {
+  _id?: string;
+  event_date: string;
+  title: string;
+  color: string;
+  start_time: string;
+  end_time: string;
 };
 
 type EventMap = Record<string, CalendarEvent[]>;
@@ -27,8 +37,12 @@ export default function CalendarModule() {
   const [startTime, setStartTime] = useState("07:00 AM");
   const [endTime, setEndTime] = useState("08:00 AM");
   const [color, setColor] = useState("bg-blue-500");
-  const [editIndex, setEditIndex] = useState<number | null>(null);
   const [editEventId, setEditEventId] = useState<string | null>(null);
+  const [eventToDelete, setEventToDelete] = useState<CalendarEvent | null>(null);
+  const [deleteUsername, setDeleteUsername] = useState("");
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
   const today = new Date();
@@ -71,11 +85,12 @@ export default function CalendarModule() {
       const response = await fetch("/api/portal/admin?table=events");
       if (!response.ok) throw new Error("Failed to fetch events");
 
-      const rawData = await response.json();
+      const rawData: unknown = await response.json();
+      if (!Array.isArray(rawData)) throw new Error("The events response is not a list.");
 
       const mappedEvents: EventMap = {};
       const eventRecords: CalendarEvent[] = [];
-      rawData.forEach((item: any) => {
+      (rawData as StoredCalendarEvent[]).forEach((item) => {
         const dateKey = item.event_date;
         const eventRecord = {
           _id: item._id,
@@ -147,13 +162,61 @@ export default function CalendarModule() {
     }
   };
 
+  const deleteEvent = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!eventToDelete?._id) return;
+
+    setIsDeleting(true);
+    setDeleteError("");
+    try {
+      const response = await fetch("/api/portal/admin?table=events", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event_id: eventToDelete._id,
+          username: deleteUsername.trim(),
+          password: deletePassword,
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        setDeleteError(result.message || "Could not delete the event.");
+        return;
+      }
+
+      setEvents((current) => {
+        const updated = { ...current };
+        updated[eventToDelete.eventDate] = (updated[eventToDelete.eventDate] || [])
+          .filter((item) => item._id !== eventToDelete._id);
+        if (updated[eventToDelete.eventDate].length === 0) delete updated[eventToDelete.eventDate];
+        return updated;
+      });
+      setAllEvents((current) => current.filter((item) => item._id !== eventToDelete._id));
+      setEventToDelete(null);
+      setDeleteUsername("");
+      setDeletePassword("");
+    } catch (error) {
+      console.error("Event deletion request failed:", error);
+      setDeleteError("Could not delete the event because of a network or server error.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const closeDeleteDialog = () => {
+    if (isDeleting) return;
+    setEventToDelete(null);
+    setDeleteUsername("");
+    setDeletePassword("");
+    setDeleteError("");
+  };
+
   const closeModal = () => {
     setSelectedDay(null);
     setTitle("");
     setStartTime("07:00 AM");
     setEndTime("08:00 AM");
     setColor("bg-blue-500");
-    setEditIndex(null);
     setEditEventId(null);
   };
 
@@ -200,7 +263,6 @@ export default function CalendarModule() {
             key={day}
             onClick={() => {
               setSelectedDay(currentDay);
-              setEditIndex(null);
               setEditEventId(null);
               setTitle("");
               setStartTime("07:00 AM");
@@ -244,12 +306,22 @@ export default function CalendarModule() {
                       setEndTime(event.endTime);
                       setColor(event.color);
 
-                      setEditIndex(index);
                       setEditEventId(event._id || null);
                     }}
                     className="mt-1 text-[9px] opacity-80 hover:opacity-100 block underline"
                   >
                     ✏️ Edit
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!event._id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (event._id) setEventToDelete(event);
+                    }}
+                    className="mt-1 block text-[9px] font-semibold text-white/90 underline decoration-white/60 underline-offset-2 transition hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Remove
                   </button>
                 </div>
               ))}
@@ -403,6 +475,16 @@ export default function CalendarModule() {
                         <p className="mt-1 text-sm text-slate-600">{formattedDate}</p>
                         <p className="mt-0.5 text-xs text-slate-500">{event.startTime} – {event.endTime}</p>
                       </div>
+                      <button
+                        type="button"
+                        disabled={!event._id}
+                        onClick={() => {
+                          if (event._id) setEventToDelete(event);
+                        }}
+                        className="shrink-0 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Remove
+                      </button>
                     </li>
                   );
                 })}
@@ -487,6 +569,74 @@ export default function CalendarModule() {
               Cancel
             </button>
           </div>
+        </div>
+      )}
+      {eventToDelete && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 p-4"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) closeDeleteDialog();
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-event-title"
+            className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
+          >
+            <h2 id="delete-event-title" className="text-lg font-bold text-slate-900">Remove this event?</h2>
+            <p className="mt-2 text-sm text-slate-600">
+              This permanently removes <span className="font-semibold text-slate-900">{eventToDelete.title}</span> from the calendar and event history.
+            </p>
+            <form onSubmit={deleteEvent} className="mt-5 space-y-4">
+              <div>
+                <label htmlFor="delete-event-admin-username" className="mb-1 block text-sm font-medium text-slate-700">
+                  Admin username
+                </label>
+                <input
+                  id="delete-event-admin-username"
+                  type="text"
+                  autoComplete="username"
+                  required
+                  value={deleteUsername}
+                  onChange={(event) => setDeleteUsername(event.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-blue-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label htmlFor="delete-event-admin-password" className="mb-1 block text-sm font-medium text-slate-700">
+                  Admin password
+                </label>
+                <input
+                  id="delete-event-admin-password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={deletePassword}
+                  onChange={(event) => setDeletePassword(event.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-blue-500 focus:outline-none"
+                />
+              </div>
+              {deleteError && <p role="alert" className="text-sm font-medium text-red-700">{deleteError}</p>}
+              <div className="flex justify-end gap-3 border-t border-slate-200 pt-4">
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={closeDeleteDialog}
+                  className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isDeleting}
+                  className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+                >
+                  {isDeleting ? "Removing…" : "Confirm remove"}
+                </button>
+              </div>
+            </form>
+          </section>
         </div>
       )}
     </div>
