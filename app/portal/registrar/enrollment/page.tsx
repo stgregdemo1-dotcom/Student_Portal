@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import RegistrarSearchInput from "@/app/-components/RegistrarSearchInput";
 
 interface EnrollmentRequest {
   _id: string;
@@ -113,8 +114,8 @@ export default function EnrollmentPage() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="bg-white rounded-xl shadow overflow-hidden border border-gray-100 flex flex-col justify-between min-h-[500px]">
+    <div className="w-full">
+      <div className="bg-white rounded-xl shadow overflow-hidden border border-gray-100">
         
         <div>
           {/* Table Header Section with Title + Search on Left, Refresh on Right */}
@@ -124,16 +125,14 @@ export default function EnrollmentPage() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
               <h3 className="text-lg font-semibold text-gray-800 whitespace-nowrap">Enrollment Requests</h3>
               
-              {/* 🔍 Search Input Field */}
-              <input 
-                type="text"
-                placeholder="Search student name..."
+              <RegistrarSearchInput
                 value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(1); 
+                onChange={(value) => {
+                  setSearchQuery(value);
+                  setCurrentPage(1);
                 }}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64"
+                placeholder="Search student name..."
+                ariaLabel="Search enrollment requests by student name"
               />
             </div>
 
