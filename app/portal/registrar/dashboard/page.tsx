@@ -251,10 +251,10 @@ export default function DashboardPage() {
       </div>
 
       {/* Charts Grid: Admission Status, Student Status, & Failed Remarks Breakdown */}
-      <div className="grid grid-cols-1 gap-3 overflow-visible md:min-h-0 md:flex-1 md:grid-cols-3 md:overflow-hidden md:gap-3">
+      <div className="grid grid-cols-1 gap-3 overflow-visible md:flex-none md:grid-cols-3 md:gap-3">
         {/* Admission Applications Status Pie Chart */}
-        <div className="flex flex-col rounded-xl border border-slate-200 bg-white p-2 shadow-sm sm:rounded-2xl sm:p-3 md:min-h-0 md:overflow-hidden">
-          <h3 className="mb-2 shrink-0 text-xs font-bold text-slate-800 sm:text-sm">
+        <div className="flex flex-col rounded-xl border border-slate-200 bg-white p-2 shadow-sm sm:rounded-2xl sm:p-3 md:h-[360px]">
+          <h3 className="mb-2 shrink-0 text-sm font-bold text-slate-800 sm:text-base">
             Admission Status
           </h3>
           <StatusPieChart 
@@ -266,8 +266,8 @@ export default function DashboardPage() {
         </div>
 
         {/* Student Collection Status Pie Chart - NOW CLICKABLE */}
-        <div className="flex flex-col rounded-xl border border-slate-200 bg-white p-2 shadow-sm sm:rounded-2xl sm:p-3 md:min-h-0 md:overflow-hidden">
-          <h3 className="mb-2 shrink-0 text-xs font-bold text-slate-800 sm:text-sm">
+        <div className="flex flex-col rounded-xl border border-slate-200 bg-white p-2 shadow-sm sm:rounded-2xl sm:p-3 md:h-[360px]">
+          <h3 className="mb-2 shrink-0 text-sm font-bold text-slate-800 sm:text-base">
             Student Status
           </h3>
           <StatusPieChart 
@@ -279,9 +279,9 @@ export default function DashboardPage() {
         </div>
 
         {/* Failed Remarks Breakdown Pie Chart */}
-        <div className="flex flex-col rounded-xl border border-slate-200 bg-white p-2 shadow-sm sm:rounded-2xl sm:p-3 md:min-h-0 md:overflow-hidden">
+        <div className="flex flex-col rounded-xl border border-slate-200 bg-white p-2 shadow-sm sm:rounded-2xl sm:p-3 md:h-[360px]">
           <div className="mb-2 flex shrink-0 items-center justify-between gap-1">
-            <h3 className="text-xs font-bold text-slate-800 sm:text-sm">
+            <h3 className="text-sm font-bold text-slate-800 sm:text-base">
               Failed Remarks Analysis
             </h3>
             {currentConfigYear && (
@@ -361,16 +361,28 @@ function StatusPieChart({
 
   if (total === 0) {
     return (
-      <div className="flex h-52 items-center justify-center text-sm font-medium text-slate-400">
+      <div className="flex min-h-52 flex-1 items-center justify-center text-sm font-medium text-slate-400">
         No records available.
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col items-center justify-start gap-3 overflow-y-auto py-1">
+    <div
+      className="flex-none py-1"
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: "12px",
+      }}
+    >
       <div className="relative flex items-center justify-center">
-      <svg viewBox="-1 -1 2 2" className="size-32 shrink-0 -rotate-90 transform overflow-visible sm:size-36 md:size-32 lg:size-36">
+      <svg
+        viewBox="-1 -1 2 2"
+        className="shrink-0 -rotate-90 transform overflow-visible"
+        style={{ width: "clamp(190px, 15vw, 220px)", height: "clamp(190px, 15vw, 220px)" }}
+      >
           {data.map((item, index) => {
             const percentage = item.count / total;
             const sliceAngle = percentage * 2 * Math.PI;
@@ -405,11 +417,14 @@ function StatusPieChart({
         </svg>
         {/* Center Total Overlay Badge */}
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <span className="text-lg font-extrabold text-slate-800">{total}</span>
+          <span className="text-2xl font-extrabold text-slate-800">{total}</span>
         </div>
       </div>
 
-      <div className="grid w-full shrink-0 grid-cols-2 gap-x-2 gap-y-1">
+      <div
+        className="w-full shrink-0 gap-x-3 gap-y-1"
+        style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}
+      >
         {data.map((item) => {
           const percent = ((item.count / total) * 100).toFixed(1);
           const color = COLOR_PALETTE[item.status] || DEFAULT_COLOR;
@@ -418,12 +433,12 @@ function StatusPieChart({
             <div 
               key={item.status} 
               onClick={() => onSliceClick && onSliceClick(item.status)}
-              className={`flex min-w-0 cursor-pointer items-center justify-between gap-1 rounded px-1 py-1 text-[9px] transition-colors hover:bg-blue-50 hover:text-blue-900 sm:text-[10px] ${
+              className={`flex min-w-0 cursor-pointer items-center justify-between gap-1 rounded px-1.5 py-1.5 text-xs transition-colors hover:bg-blue-50 hover:text-blue-900 sm:text-sm ${
                 onSliceClick ? "cursor-pointer hover:bg-slate-50 p-1 rounded transition-colors" : ""
               }`}
             >
               <div className="flex min-w-0 items-center gap-1">
-                <span className={`size-2 shrink-0 rounded-full ${color.bg}`} />
+                <span className={`size-2.5 shrink-0 rounded-full ${color.bg}`} />
                 <span className="truncate font-semibold text-slate-700">{item.status}</span>
               </div>
               <div className="flex items-center gap-1.5">
@@ -471,4 +486,4 @@ function ActivityItem({ svgPath, color, bg, title, desc, time }: ActivityItemPro
       </div>
     </div>
   );
-}
+}2
