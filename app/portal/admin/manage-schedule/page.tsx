@@ -315,7 +315,7 @@ export default function ClassSchedule() {
                 ))}
               </div>
 
-              <div className="absolute inset-0 grid pointer-events-none p-0.5 gap-x-1 z-15" style={{ ...gridTemplateStyle, gridTemplateRows: `repeat(${HOURS.length}, 2.75rem)` }}>
+              <div className="absolute inset-0 grid pointer-events-none z-10" style={{ ...gridTemplateStyle, gridTemplateRows: `repeat(${HOURS.length}, 2.75rem)` }}>
                 {!loadingSubjects && subjects.map((subj) => {
                   const colStart = getColumnIndex(subj.subject_day);
                   const rowStart = getTimeRowIndex(subj.class_time?.start);
