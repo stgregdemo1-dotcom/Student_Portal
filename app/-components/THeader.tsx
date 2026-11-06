@@ -55,7 +55,7 @@ export default function THeader({ onToggleSidebar }: HeaderProps) {
   }, []);
 
   return (
-    <header className="h-16 bg-white border-b flex items-center justify-between px-4 md:px-6 sticky top-0 z-30 shadow-sm">
+    <header className="sticky top-0 z-30 flex h-16 w-full shrink-0 items-center justify-between border-b bg-white px-4 shadow-sm md:px-6">
       <div className="flex items-center gap-3">
         {/* Mobile Hamburger Toggle Button */}
         <button
@@ -80,7 +80,7 @@ export default function THeader({ onToggleSidebar }: HeaderProps) {
         </button>
 
         <h2 className="text-lg md:text-xl font-semibold text-gray-800">
-          Teacher Dashboard
+          Teacher Portal
         </h2>
       </div>
 
