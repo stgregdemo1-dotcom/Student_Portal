@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import './globals.css';
 import Header from '../../-components/aheader';
 import Footer from '../../-components/afooter';
@@ -12,11 +13,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const isDashboardPage = usePathname() === '/portal/registrar/dashboard';
+
+  useEffect(() => {
+    if (!isSidebarOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isSidebarOpen]);
 
   return (
     <html lang="en">
-      <body className="antialiased text-slate-900 bg-slate-50">
-        <div className="flex min-h-screen relative overflow-x-hidden">
+      <body className="registrar-portal antialiased text-slate-900 bg-slate-50">
+        <div className={`relative flex overflow-x-hidden ${isDashboardPage ? 'min-h-dvh overflow-y-auto md:h-dvh md:overflow-hidden' : 'min-h-screen'}`}>
           {/* Mobile Overlay Backdrop */}
           {isSidebarOpen && (
             <div 
@@ -32,10 +45,13 @@ export default function RootLayout({
           />
 
           {/* Main Content Area */}
-          <div className="flex-1 ml-0 md:ml-64 flex flex-col min-h-screen w-full max-w-full">
-            <Header onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
+          <div className={`ml-0 flex w-full max-w-full flex-1 flex-col md:ml-64 ${isDashboardPage ? 'min-h-dvh overflow-visible md:min-h-0 md:overflow-hidden' : 'min-h-screen'}`}>
+            <Header
+              title="Registrar Portal"
+              onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+            />
             
-            <main className="flex-1 p-4 md:p-6">
+            <main className={`${isDashboardPage ? 'flex-none overflow-visible p-2 md:flex md:min-h-0 md:flex-1 md:flex-col md:overflow-hidden md:p-4' : 'flex-1 p-4 md:p-6'}`}>
               {children}
             </main>
 
