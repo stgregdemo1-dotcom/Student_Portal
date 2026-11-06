@@ -1,164 +1,281 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect } from "react";
 
-export default function EnrolleeDetailsPage() {
-  const router = useRouter();
-  const [enrollee, setEnrollee] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+interface SubjectSchedule {
+  sched_code: string;
+  subject_id: string;
+  subject_name: string;
+  room: string;
+  semester: string;
+  "subject-day": string;
+  subject_specification?: string;
+  class_time: {
+    start: string;
+    end: string;
+  };
+}
+
+const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"] as const;
+
+const TIME_BLOCKS = [
+  { start: "7:00 AM" },
+  { start: "8:00 AM" },
+  { start: "9:00 AM" },
+  { start: "10:00 AM" },
+  { start: "11:00 AM" },
+  { start: "12:00 PM", isLunch: true },
+  { start: "1:00 PM" },
+  { start: "2:00 PM" },
+  { start: "3:00 PM" },
+  { start: "4:00 PM" },
+  { start: "5:00 PM" },
+  { start: "6:00 PM" },
+];
+
+const getTimeGridLine = (timeStr: string): number => {
+  if (!timeStr) return 2;
+  const cleanTime = timeStr.trim().toUpperCase();
+
+  const match = cleanTime.match(/^(\d+):/);
+  if (!match) return 2;
+  const hour = parseInt(match[1]);
+  const isPM = cleanTime.includes("PM");
+
+  let militaryHour = hour;
+  if (isPM && hour !== 12) militaryHour += 12;
+  if (!isPM && hour === 12) militaryHour = 0;
+
+  const baseHour = 7;
+  const trackLine = (militaryHour - baseHour) + 2;
+
+  return Math.max(2, Math.min(trackLine, 14));
+};
+
+export default function StudentSchedulePage() {
+  const [studentId, setStudentId] = useState<string>("");
+  const [schedules, setSchedules] = useState<SubjectSchedule[]>([]);
+  const [selectedSemester, setSelectedSemester] = useState<string>("1st Semester");
+  const [loading, setLoading] = useState<boolean>(true);
+
+  const getCookie = (name: string): string => {
+    if (typeof document === "undefined") return "";
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop()?.split(';').shift() || "";
+    return "";
+  };
 
   useEffect(() => {
-    const fetchProfileData = async () => {
-      try {
-        const res = await fetch("/api/portal/student");
-        const jsonResponse = await res.json();
+    const cachedUsername = getCookie("username");
+    if (cachedUsername) {
+      setStudentId(cachedUsername);
+    } else {
+      console.warn("No authentication student session found.");
+      setLoading(false);
+    }
+  }, []);
 
-        if (res.ok && jsonResponse.success) {
-          setEnrollee(jsonResponse.data);
+  useEffect(() => {
+    if (!studentId) return;
+
+    const fetchStudentSchedule = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/portal/student?getSchedule=true`);
+        const result = await response.json();
+
+        if (result && result.success && result.subjects) {
+          setSchedules(result.subjects);
         } else {
-          setError(jsonResponse.message || "Failed to load profile details.");
+          console.warn("No active schedules matched this profile query layout.");
         }
-      } catch (err) {
-        console.error("Pipeline layout connection failure:", err);
-        setError("A network fault occurred while reading configuration profiles.");
+      } catch (error) {
+        console.error("Error pulling active student schedule records:", error);
       } finally {
         setLoading(false);
       }
     };
+    fetchStudentSchedule();
+  }, [studentId]);
 
-    fetchProfileData();
-  }, [router]);
+  const filteredSchedules = schedules.filter((subject) => {
+    const dbTargetCode = selectedSemester === "1st Semester" ? "1" : "2";
+    return String(subject.semester).trim() === dbTargetCode;
+  });
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <p className="text-gray-400 font-medium animate-pulse">Loading secure profile state...</p>
-      </div>
-    );
-  }
-
-  if (error || !enrollee) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white p-4">
-        <div className="text-center space-y-4">
-          <p className="text-red-500 font-semibold">{error || "Access Denied"}</p>
-          <button onClick={() => router.push("/login")} className="cursor-pointer rounded-xl bg-[#082b49] px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-[#0b3b62] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d99a00] focus-visible:ring-offset-2 active:scale-[0.98]">
-            Go to Login Portal
-          </button>
+      <div className="flex min-h-[50vh] items-center justify-center p-6">
+        <div role="status" className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-5 py-4 text-sm font-semibold text-slate-600 shadow-sm">
+          <span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-[#d99a00]" aria-hidden="true" />
+          Loading your class schedule…
         </div>
       </div>
     );
   }
-
-  const initialLetters = `${enrollee.first_name?.[0] || ""}${enrollee.last_name?.[0] || ""}`;
 
   return (
-    <div className="min-h-screen bg-gray-50/50 px-4 py-12 font-sans">
-      <div className="max-w-4xl mx-auto space-y-6">
-
-        <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm flex flex-col md:flex-row items-center gap-6">
-          <div className="w-24 h-24 bg-indigo-600 rounded-2xl flex items-center justify-center text-white text-3xl font-black shadow-lg shadow-indigo-100 uppercase">
-            {initialLetters}
+    <div className="flex h-full min-h-0 w-full flex-col items-center justify-start font-sans">
+    <div className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
+      <div className="flex shrink-0 flex-col justify-between gap-2 border-b-4 border-[#f2b600] bg-[linear-gradient(100deg,#fff1bd_0%,#fff8dc_58%,#ffffff_100%)] px-4 py-2 text-[#082b49] sm:flex-row sm:items-center sm:px-5 sm:py-2.5">
+          <div>
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#b77700] sm:text-[11px]">Schedule</p>
+          <h1 className="mt-0.5 text-lg font-extrabold tracking-tight sm:text-xl">Weekly Class Timetable</h1>
+          <p className="mt-0.5 text-[11px] font-semibold text-slate-700 sm:text-xs">
+              {studentId ? `Student ID: ${studentId}` : "Guest mode"}
+            </p>
           </div>
-          <div className="text-center md:text-left flex-1">
-            <h1 className="text-3xl font-black text-gray-900 tracking-tight">
-              {enrollee.first_name} {enrollee.middle_name ? `${enrollee.middle_name} ` : ""}{enrollee.last_name}
-            </h1>
-            <p className="text-indigo-600 font-bold text-sm uppercase tracking-wide">{enrollee.track || "N/A"}</p>
-            <p className="text-gray-400 text-xs mt-1 font-mono uppercase">Student ID: {enrollee.student_id}</p>
+
+        <div className="flex items-center gap-2 sm:gap-3">
+          <label htmlFor="semester-select" className="text-xs font-extrabold uppercase tracking-wider text-[#082b49]">Semester</label>
+            <select
+              id="semester-select"
+              value={selectedSemester}
+              onChange={(e) => setSelectedSemester(e.target.value)}
+            className="min-h-10 min-w-[150px] cursor-pointer rounded-lg border border-amber-400 bg-white px-3 text-sm font-bold text-[#082b49] shadow-sm outline-none transition hover:border-[#d99a00] hover:shadow-md focus-visible:ring-2 focus-visible:ring-[#d99a00] focus-visible:ring-offset-2 sm:min-h-11 sm:min-w-[170px]"
+            >
+              <option value="1st Semester">1st Semester</option>
+              <option value="2nd Semester">2nd Semester</option>
+            </select>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-6">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-1 sm:p-1.5">
+          <div
+            className="grid min-h-0 min-w-0 flex-1 overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm"
+            style={{
+              height: "100%",
+              gap: 0,
+              gridTemplateColumns: "clamp(72px, 10vw, 128px) repeat(5, minmax(0, 1fr))",
+              gridTemplateRows: "32px repeat(12, minmax(clamp(28px, calc((100dvh - 300px) / 12), 50px), 1fr))"
+            }}
+          >
 
-          <Card title="Personal Details">
-            <Grid>
-              <Field label="Email Address" value={enrollee.email_address} />
-              <Field label="Contact Number" value={enrollee.contact_number} />
-              <Field label="Birth Date" value={enrollee.date_of_birth} />
-              <Field label="Gender" value={enrollee.gender} />
-              <Field label="Nationality" value={enrollee.nationality} />
-            </Grid>
-          </Card>
-
-          <Card title="Academic History">
-            <Grid>
-              <Field label="Secondary School" value={enrollee.secondary_school} />
-              <Field label="Graduation Year" value={enrollee.graduation_year} />
-              <Field label="Grade Level" value={enrollee.gradeLevel} />
-              <Field label="Course / Program Track" value={enrollee.track} />
-            </Grid>
-          </Card>
-
-          <Card title="Contact & Emergency">
-            <Grid>
-              <div className="md:col-span-2">
-                <Field label="Residential Address" value={enrollee.residential_address} />
+            <div className="flex min-w-0 items-center justify-center border-b border-r border-amber-400 bg-[#ffe8a3] p-1 text-center text-xs font-extrabold uppercase tracking-wide text-[#082b49] sm:p-2">Time</div>
+            {DAYS.map((day) => (
+              <div key={day} className="flex min-w-0 items-center justify-center border-b border-r border-amber-400 bg-[#ffe8a3] p-1 text-center text-xs font-extrabold uppercase tracking-wide text-[#082b49] last:border-r-0 sm:p-2">
+                <span className="sm:hidden">{day.slice(0, 3)}</span>
+                <span className="hidden sm:inline">{day}</span>
               </div>
-              <div className="md:col-span-2 mt-4 p-5 bg-gray-50 rounded-2xl border border-gray-100">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2 text-center md:text-left">
-                  In Case of Emergency
-                </label>
-                <div className="flex flex-col md:flex-row justify-between items-center gap-2">
-                  <span className="text-sm font-bold text-gray-800">
-                    {enrollee.emergency_contact_person || "Not Provided"}
-                  </span>
-                  <span className="text-sm font-bold text-gray-800">
-                    {enrollee.emergency_contact_relationship || "Not Provided"}
-                  </span>
-                  {enrollee.emergency_contact_number && (
-                    <span className="text-sm font-mono font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-lg">
-                      {enrollee.emergency_contact_number}
-                    </span>
+            ))}
+
+            {DAYS.flatMap((day, dayIndex) =>
+              TIME_BLOCKS.map((block, timeIndex) => (
+                <div
+                  key={`${day}-${block.start}`}
+                  aria-hidden="true"
+                  style={{
+                    gridColumnStart: dayIndex + 2,
+                    gridRowStart: timeIndex + 2,
+                  }}
+                  className={`border-b border-r border-slate-300 last:border-r-0 ${
+                    block.isLunch ? "bg-amber-50/40" : timeIndex % 2 === 0 ? "bg-white" : "bg-slate-50/50"
+                  }`}
+                />
+              )),
+            )}
+
+            {TIME_BLOCKS.map((block, index) => {
+              const rowStart = index + 2;
+              return (
+                <div
+                  key={index}
+                  style={{
+                    gridColumnStart: 1,
+                    gridRowStart: rowStart,
+                  }}
+                  className={`flex min-w-0 flex-col items-center justify-center border-b border-r border-slate-300 p-0.5 text-center font-mono text-xs font-extrabold leading-tight text-slate-900 sm:p-1 ${block.isLunch ? "bg-amber-50 text-amber-900" : "bg-slate-50"
+                    }`}
+                >
+                  <span>{block.start}</span>
+                </div>
+              );
+            })}
+
+            <div className="col-start-2 col-span-5 row-start-7 flex min-w-0 items-center justify-center border-y border-amber-300 bg-amber-50/90 p-1 text-center">
+              <div className="text-[10px] font-extrabold uppercase tracking-wider text-amber-900 sm:text-xs sm:tracking-[0.25em]">Lunch Break</div>
+            </div>
+
+            {filteredSchedules.map((sub, index) => {
+              const dayIndex = DAYS.findIndex((day) => day === sub["subject-day"]);
+              if (dayIndex === -1) return null;
+
+              const colStart = dayIndex + 2;
+              const startTrack = getTimeGridLine(sub.class_time?.start);
+              const endTrack = getTimeGridLine(sub.class_time?.end);
+              const isSingleHour = endTrack - startTrack === 1;
+
+              const spec = sub.subject_specification?.toLowerCase().trim() || "";
+              let colorStyle = "border-l-4 border-l-slate-400 bg-slate-100 text-slate-900 hover:bg-slate-200";
+
+              switch (spec) {
+                case "core":
+                  colorStyle = "border-l-4 border-l-blue-600 bg-blue-50 text-slate-900 hover:bg-blue-100";
+                  break;
+                case "applied":
+                  colorStyle = "border-l-4 border-l-teal-600 bg-teal-50 text-slate-900 hover:bg-teal-100";
+                  break;
+                case "specialized":
+                  colorStyle = "border-l-4 border-l-purple-600 bg-purple-50 text-slate-900 hover:bg-purple-100";
+                  break;
+                case "other_subjects":
+                case "other":
+                  colorStyle = "border-l-4 border-l-orange-600 bg-orange-50 text-slate-900 hover:bg-orange-100";
+                  break;
+              }
+
+              return (
+                <div
+                  key={index}
+                  className={`m-0.5 flex min-w-0 flex-col justify-center gap-0.5 overflow-hidden rounded-md border border-slate-300 p-1 shadow-sm transition-colors sm:m-1 sm:gap-1 sm:rounded-lg sm:p-1.5 ${colorStyle}`}
+                  style={{
+                    gridColumnStart: colStart,
+                    gridRowStart: startTrack,
+                    gridRowEnd: endTrack,
+                  }}
+                >
+                  <div className="line-clamp-2 text-center text-[10px] font-extrabold uppercase leading-tight tracking-tight sm:text-xs">
+                    {sub.subject_name || sub.subject_id}
+                  </div>
+
+                  {isSingleHour ? (
+                    <div className="truncate border-t border-slate-300/70 pt-0.5 text-center text-[9px] font-bold text-slate-800 sm:text-[11px]">
+                      {sub.room || "Room TBA"} · {sub.class_time?.start}–{sub.class_time?.end}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-px border-t border-slate-300/70 pt-0.5 text-left sm:gap-0.5 sm:pt-1">
+                      <div className="truncate text-[8px] font-bold text-slate-700 sm:text-[10px]">
+                        Room: {sub.room || "—"}
+                      </div>
+                      <div className="truncate font-mono text-[8px] font-bold text-indigo-800 sm:text-[10px]">
+                        Code: {sub.sched_code || "—"}
+                      </div>
+                      <div className="truncate font-mono text-[8px] font-bold text-emerald-800 sm:text-[10px]">
+                        {sub.class_time?.start} - {sub.class_time?.end}
+                      </div>
+                    </div>
                   )}
                 </div>
-              </div>
-            </Grid>
-          </Card>
+              );
+            })}
 
-          <Card title="Others">
-            <div>
-              <Grid>
-                <Field label="Enrollment Status" value={enrollee.status} />
-                <Field label="Assigned Section" value={enrollee.assigned_section} />
-                <Field label="Academic Year" value={enrollee.academic_year} />
-                <Field label="Semester" value={enrollee.semester ? `${enrollee.semester}${enrollee.semester === "1" ? "st" : "nd"} Semester` : "—"} />
-              </Grid>
-            </div>
-          </Card>
-
+          </div>
         </div>
+
+        <div className="flex shrink-0 flex-wrap justify-center gap-x-4 gap-y-1 border-t border-slate-200 bg-slate-50 px-3 py-1.5 text-[9px] font-extrabold uppercase tracking-wide sm:gap-x-6 sm:gap-y-1 sm:px-5 sm:py-2 sm:text-[10px]">
+          {['Core Tracks', 'Applied Modules', 'Specialized Paths', 'Other Subjects'].map((name, idx) => {
+            const colors = ['bg-blue-500', 'bg-teal-500', 'bg-purple-500', 'bg-orange-500'];
+            return (
+              <div key={name} className="flex items-center gap-2">
+                <div className={`h-2.5 w-2.5 rounded-full ${colors[idx]} ring-2 ring-white`}></div>
+                <span className="text-slate-600">{name}</span>
+              </div>
+            );
+          })}
+        </div>
+
       </div>
-    </div>
-  );
-}
-
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
-      <h2 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6 border-b border-gray-50 pb-4">
-        {title}
-      </h2>
-      {children}
-    </div>
-  );
-}
-
-function Grid({ children }: { children: React.ReactNode }) {
-  return <div className="grid md:grid-cols-2 gap-x-12 gap-y-6">{children}</div>;
-}
-
-function Field({ label, value }: { label: string; value: any }) {
-  return (
-    <div>
-      <label className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider block mb-1">
-        {label}
-      </label>
-      <p className="text-sm font-semibold text-gray-800">
-        {value || "Not provided"}
-      </p>
     </div>
   );
 }
