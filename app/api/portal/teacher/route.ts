@@ -46,6 +46,21 @@ export async function GET(request: NextRequest) {
     const action = searchParams.get("action");
     const teacherId = searchParams.get("id") || searchParams.get("teacher_id") || getAuditUser(request);
 
+    if (action === "events") {
+      const events = await Events.find({}).sort({ event_date: 1 }).lean();
+      return NextResponse.json({
+        success: true,
+        events: events.map((event: any) => ({
+          _id: event._id?.toString(),
+          event_date: event.event_date || "",
+          title: event.title || "Untitled Event",
+          color: event.color || "bg-blue-500",
+          start_time: event.start_time || "",
+          end_time: event.end_time || "",
+        })),
+      }, { status: 200 });
+    }
+
     if (!action) {
       if (!teacherId || teacherId === "SYSTEM") {
         return NextResponse.json(
