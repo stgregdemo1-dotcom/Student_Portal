@@ -392,6 +392,11 @@ export default function ManageSubjects() {
   const [selectedYear, setSelectedYear] = useState("");
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [subjectToDelete, setSubjectToDelete] = useState<Subject | null>(null);
+  const [deleteUsername, setDeleteUsername] = useState("");
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
   const [sortField, setSortField] = useState<keyof Subject | "composite_subject">("subject_id");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
@@ -549,6 +554,48 @@ export default function ManageSubjects() {
     }
   };
 
+  const handleDeleteSubject = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!subjectToDelete) return;
+
+    setIsDeleting(true);
+    setDeleteError("");
+    try {
+      const response = await fetch("/api/portal/admin?table=subjects", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subject_id: subjectToDelete.subject_id,
+          username: deleteUsername.trim(),
+          password: deletePassword,
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        setDeleteError(result.message || "Could not delete the subject schedule.");
+        return;
+      }
+
+      setSubjects((current) => current.filter((subject) => subject.subject_id !== subjectToDelete.subject_id));
+      setSubjectToDelete(null);
+      setDeleteUsername("");
+      setDeletePassword("");
+    } catch (error) {
+      console.error("Subject schedule deletion request failed:", error);
+      setDeleteError("Could not delete the subject schedule because of a network or server error.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const closeDeleteDialog = () => {
+    if (isDeleting) return;
+    setSubjectToDelete(null);
+    setDeleteUsername("");
+    setDeletePassword("");
+    setDeleteError("");
+  };
+
   return (
     <div className="p-6">
       <div className="p-4 bg-white flex flex-col md:flex-row justify-between items-center shadow rounded-t-xl border-b border-gray-100 gap-4">
@@ -669,6 +716,16 @@ export default function ManageSubjects() {
                       >
                         Edit
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSubjectToDelete(subject);
+                          setDeleteError("");
+                        }}
+                        className="ml-3 text-red-600 hover:text-red-800 text-sm font-medium"
+                      >
+                        Delete
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -727,6 +784,80 @@ export default function ManageSubjects() {
         onSave={handleSaveSubject}
         dbTeachers={teachers}
       />
+      {subjectToDelete && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) closeDeleteDialog();
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-subject-title"
+            className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
+          >
+            <h3 id="delete-subject-title" className="text-xl font-semibold text-gray-800">
+              Delete subject schedule?
+            </h3>
+            <p className="mt-2 text-sm text-gray-600">
+              This permanently removes{" "}
+              <span className="font-semibold text-gray-800">
+                {subjectToDelete.sched_code} — {subjectToDelete.subject_name}
+              </span>{" "}
+              from the subjects collection. Existing student records may still reference it.
+            </p>
+            <form onSubmit={handleDeleteSubject} className="mt-5 space-y-4">
+              <div>
+                <label htmlFor="delete-admin-username" className="mb-1 block text-sm font-medium text-gray-700">
+                  Admin username
+                </label>
+                <input
+                  id="delete-admin-username"
+                  type="text"
+                  autoComplete="username"
+                  required
+                  value={deleteUsername}
+                  onChange={(event) => setDeleteUsername(event.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-800 focus:border-blue-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label htmlFor="delete-admin-password" className="mb-1 block text-sm font-medium text-gray-700">
+                  Admin password
+                </label>
+                <input
+                  id="delete-admin-password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={deletePassword}
+                  onChange={(event) => setDeletePassword(event.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-800 focus:border-blue-500 focus:outline-none"
+                />
+              </div>
+              {deleteError && <p role="alert" className="text-sm font-medium text-red-700">{deleteError}</p>}
+              <div className="flex justify-end gap-3 border-t pt-4">
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={closeDeleteDialog}
+                  className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isDeleting}
+                  className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                >
+                  {isDeleting ? "Deleting…" : "Confirm delete"}
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      )}
     </div>
   );
 }
