@@ -16,6 +16,12 @@ interface SubjectSchedule {
   } | string;
 }
 
+interface SchedulePlacement {
+  lane: number;
+  laneCount: number;
+  overlaps: boolean;
+}
+
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"] as const;
 
 const HOURS = [
@@ -63,6 +69,16 @@ function getSpecificationStyle(subject_specification?: string) {
         tag: "bg-[#0B3763] text-white"
       };
   }
+}
+
+function getTimeInMinutes(value: string): number | null {
+  const match = value.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!match) return null;
+
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  if (hour < 1 || hour > 12 || minute > 59) return null;
+  return ((hour % 12) + (match[3].toUpperCase() === "PM" ? 12 : 0)) * 60 + minute;
 }
 
 export default function TeacherSchedulePage() {
@@ -138,6 +154,67 @@ export default function TeacherSchedulePage() {
     const dbTargetCode = selectedSemester === "1st Semester" ? "1" : "2";
     return String(subject.semester).trim() === dbTargetCode;
   });
+  const schedulePlacements = new Map<number, SchedulePlacement>();
+  const schedulesByDay = new Map<number, Array<{ index: number; start: number; end: number }>>();
+
+  filteredSchedules.forEach((subject, index) => {
+    const startTime = typeof subject.class_time === "string"
+      ? subject.class_time.split("-")[0]?.trim() || ""
+      : subject.class_time?.start || "";
+    const endTime = typeof subject.class_time === "string"
+      ? subject.class_time.split("-")[1]?.trim() || ""
+      : subject.class_time?.end || "";
+    const start = getTimeInMinutes(startTime);
+    const end = getTimeInMinutes(endTime);
+    if (start === null || end === null || start >= end) {
+      schedulePlacements.set(index, { lane: 0, laneCount: 1, overlaps: false });
+      return;
+    }
+
+    const dayIndex = getColumnIndex(subject.subject_day);
+    const daySchedules = schedulesByDay.get(dayIndex) || [];
+    daySchedules.push({ index, start, end });
+    schedulesByDay.set(dayIndex, daySchedules);
+  });
+
+  schedulesByDay.forEach((daySchedules) => {
+    const sortedSchedules = daySchedules.sort((a, b) => a.start - b.start || a.end - b.end);
+    let conflictGroup: typeof sortedSchedules = [];
+    let groupEnd = -1;
+
+    const placeConflictGroup = () => {
+      if (conflictGroup.length === 0) return;
+      const laneEnds: number[] = [];
+      const assigned = conflictGroup.map((schedule) => {
+        let lane = laneEnds.findIndex((laneEnd) => laneEnd <= schedule.start);
+        if (lane === -1) lane = laneEnds.length;
+        laneEnds[lane] = schedule.end;
+        return { index: schedule.index, lane };
+      });
+      const laneCount = laneEnds.length;
+      assigned.forEach(({ index, lane }) => {
+        schedulePlacements.set(index, {
+          lane,
+          laneCount,
+          overlaps: conflictGroup.length > 1,
+        });
+      });
+      conflictGroup = [];
+      groupEnd = -1;
+    };
+
+    sortedSchedules.forEach((schedule) => {
+      if (conflictGroup.length > 0 && schedule.start >= groupEnd) {
+        placeConflictGroup();
+      }
+      conflictGroup.push(schedule);
+      groupEnd = Math.max(groupEnd, schedule.end);
+    });
+    placeConflictGroup();
+  });
+
+  const overlappingScheduleCount = [...schedulePlacements.values()]
+    .filter((placement) => placement.overlaps).length;
 
   if (loading) {
     return (
@@ -160,6 +237,11 @@ export default function TeacherSchedulePage() {
             <p className="mt-0.5 text-[11px] font-semibold text-slate-700 sm:text-xs">
               {teacherId ? `Teacher ID: ${teacherId}` : "Guest mode"}
             </p>
+            {overlappingScheduleCount > 0 && (
+              <p role="alert" className="mt-1 text-[10px] font-bold text-red-700 sm:text-xs">
+                Schedule conflict: {overlappingScheduleCount} overlapping class blocks are shown side by side.
+              </p>
+            )}
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
@@ -232,15 +314,20 @@ export default function TeacherSchedulePage() {
               const rowEnd = Math.max(rowStart + 1, getTimeRowIndex(endTime));
               const styles = getSpecificationStyle(subject.subject_specification);
               const singleHour = rowEnd - rowStart === 1;
+              const placement = schedulePlacements.get(index) || { lane: 0, laneCount: 1, overlaps: false };
 
               return (
                 <div
                   key={`${subject.sched_code}-${index}`}
-                  className={`m-0.5 flex min-w-0 flex-col justify-center gap-0.5 overflow-hidden rounded-md border border-slate-300 p-1 shadow-sm transition-colors sm:m-1 sm:gap-1 sm:rounded-lg sm:p-1.5 ${styles.card} ${styles.border}`}
+                  title={placement.overlaps ? "Schedule overlaps another class. Please ask the administrator to correct the schedule." : undefined}
+                  className={`relative z-10 m-0.5 flex min-w-0 flex-col justify-center gap-0.5 overflow-hidden rounded-md border border-slate-300 p-1 shadow-sm transition-colors sm:m-1 sm:gap-1 sm:rounded-lg sm:p-1.5 ${styles.card} ${styles.border} ${placement.overlaps ? "ring-2 ring-inset ring-red-500" : ""}`}
                   style={{
                     gridColumnStart: getColumnIndex(subject.subject_day),
                     gridRowStart: rowStart,
                     gridRowEnd: rowEnd,
+                    width: `calc(100% / ${placement.laneCount} - 0.5rem)`,
+                    marginLeft: `calc(100% * ${placement.lane} / ${placement.laneCount})`,
+                    justifySelf: "start",
                   }}
                 >
                   <div className={`line-clamp-2 text-center text-[10px] font-extrabold uppercase leading-tight tracking-tight sm:text-xs ${styles.text}`}>
