@@ -728,7 +728,7 @@ export default function ManageTeachers() {
                               type="button"
                               disabled={passwordRequestingId !== null}
                               onClick={() => openTeacherArchiveDialog(teacher, true)}
-                              className="teacher-edit-button"
+                              className="admin-subject-delete-button"
                             >
                               Archive
                             </button>
