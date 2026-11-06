@@ -85,6 +85,7 @@ export default function TeacherSchedulePage() {
   const [teacherId, setTeacherId] = useState<string>("");
   const [schedules, setSchedules] = useState<SubjectSchedule[]>([]);
   const [selectedSemester, setSelectedSemester] = useState<string>("1st Semester");
+  const [selectedSubject, setSelectedSubject] = useState<SubjectSchedule | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
   const getCookie = (name: string): string => {
@@ -126,6 +127,17 @@ export default function TeacherSchedulePage() {
 
     fetchTeacherSubjects();
   }, [teacherId]);
+
+  useEffect(() => {
+    if (!selectedSubject) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSelectedSubject(null);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedSubject]);
 
   const getColumnIndex = (dayString: string): number => {
     const idx = DAYS.findIndex(d => d.toLowerCase() === dayString?.toLowerCase().trim());
@@ -228,6 +240,7 @@ export default function TeacherSchedulePage() {
   }
 
   return (
+    <>
     <div className="flex h-full min-h-0 w-full flex-col items-center justify-start font-sans">
       <div className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
         <div className="flex shrink-0 flex-col justify-between gap-2 border-b-4 border-[#FFB900] bg-[linear-gradient(100deg,#DCEAF5_0%,#F2F7FB_58%,#FFFFFF_100%)] px-4 py-2 text-[#06264A] sm:flex-row sm:items-center sm:px-5 sm:py-2.5">
@@ -313,14 +326,16 @@ export default function TeacherSchedulePage() {
               const rowStart = getTimeRowIndex(startTime);
               const rowEnd = Math.max(rowStart + 1, getTimeRowIndex(endTime));
               const styles = getSpecificationStyle(subject.subject_specification);
-              const singleHour = rowEnd - rowStart === 1;
               const placement = schedulePlacements.get(index) || { lane: 0, laneCount: 1, overlaps: false };
 
               return (
-                <div
+                <button
                   key={`${subject.sched_code}-${index}`}
-                  title={placement.overlaps ? "Schedule overlaps another class. Please ask the administrator to correct the schedule." : undefined}
-                  className={`relative z-10 m-0.5 flex min-w-0 flex-col justify-center gap-0.5 overflow-hidden rounded-md border border-slate-300 p-1 shadow-sm transition-colors sm:m-1 sm:gap-1 sm:rounded-lg sm:p-1.5 ${styles.card} ${styles.border} ${placement.overlaps ? "ring-2 ring-inset ring-red-500" : ""}`}
+                  type="button"
+                  aria-label={`${subject.subject_name || subject.subject_id}, ${subject.subject_day}, ${startTime} to ${endTime}. Tap for details.`}
+                  title={placement.overlaps ? "Schedule conflict. Select for class details." : undefined}
+                  onClick={() => setSelectedSubject(subject)}
+                  className={`relative z-10 m-0.5 flex min-w-0 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-md border border-slate-300 p-1 text-center shadow-sm transition-colors hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#d99a00] sm:m-1 sm:rounded-lg sm:p-1.5 ${styles.card} ${styles.border} ${placement.overlaps ? "ring-2 ring-inset ring-red-500" : ""}`}
                   style={{
                     gridColumnStart: getColumnIndex(subject.subject_day),
                     gridRowStart: rowStart,
@@ -330,26 +345,10 @@ export default function TeacherSchedulePage() {
                     justifySelf: "start",
                   }}
                 >
-                  <div className={`line-clamp-2 text-center text-[10px] font-extrabold uppercase leading-tight tracking-tight sm:text-xs ${styles.text}`}>
+                  <span className={`line-clamp-3 w-full break-words text-[10px] font-extrabold uppercase leading-tight tracking-tight sm:text-xs ${styles.text}`}>
                     {subject.subject_name || subject.subject_id}
-                  </div>
-                  {singleHour ? (
-                    <div className="truncate border-t border-slate-300/70 pt-0.5 text-center text-[9px] font-bold text-slate-800 sm:text-[11px]">
-                      {subject.room || "Room TBA"} · {startTime}–{endTime}
-                    </div>
-                  ) : (
-                    <div className="flex flex-col gap-px border-t border-slate-300/70 pt-0.5 text-left sm:gap-0.5 sm:pt-1">
-                      <div className="truncate text-[8px] font-bold text-slate-700 sm:text-[10px]">Room: {subject.room || "—"}</div>
-                      <div className="truncate font-mono text-[8px] font-bold text-[#0B3763] sm:text-[10px]">Code: {subject.sched_code || "—"}</div>
-                      <div className="truncate font-mono text-[8px] font-bold text-emerald-800 sm:text-[10px]">{startTime} - {endTime}</div>
-                    </div>
-                  )}
-                  {subject.subject_specification && (
-                    <span className={`self-center rounded-md px-1.5 py-0.5 text-[7px] font-black uppercase tracking-wider ${styles.tag}`}>
-                      {subject.subject_specification.replace("_", " ")}
-                    </span>
-                  )}
-                </div>
+                  </span>
+                </button>
               );
             })}
           </div>
@@ -368,5 +367,77 @@ export default function TeacherSchedulePage() {
         </div>
       </div>
     </div>
+    {selectedSubject && (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4"
+        onClick={() => setSelectedSubject(null)}
+      >
+        <section
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="teacher-schedule-subject-title"
+          className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-amber-700">Class details</p>
+              <h2 id="teacher-schedule-subject-title" className="mt-1 text-lg font-extrabold text-[#06264A]">
+                {selectedSubject.subject_name || selectedSubject.subject_id}
+              </h2>
+            </div>
+            <button
+              type="button"
+              aria-label="Close class details"
+              onClick={() => setSelectedSubject(null)}
+              className="rounded-lg px-2 py-1 text-xl font-bold text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+            >
+              ×
+            </button>
+          </div>
+          <dl className="mt-4 space-y-3 text-sm">
+            <div>
+              <dt className="font-semibold text-slate-500">Subject ID</dt>
+              <dd className="font-bold text-slate-800">{selectedSubject.subject_id || "—"}</dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-slate-500">Day and time</dt>
+              <dd className="font-bold text-slate-800">
+                {selectedSubject.subject_day || "—"}, {typeof selectedSubject.class_time === "string"
+                  ? selectedSubject.class_time
+                  : `${selectedSubject.class_time?.start || "—"}–${selectedSubject.class_time?.end || "—"}`}
+              </dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-slate-500">Room</dt>
+              <dd className="font-bold text-slate-800">{selectedSubject.room || "Room TBA"}</dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-slate-500">Schedule code</dt>
+              <dd className="font-mono font-bold text-slate-800">{selectedSubject.sched_code || "—"}</dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-slate-500">Semester</dt>
+              <dd className="font-bold text-slate-800">
+                {String(selectedSubject.semester).trim() === "1" ? "1st Semester" : "2nd Semester"}
+              </dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-slate-500">Subject type</dt>
+              <dd className="font-bold capitalize text-slate-800">
+                {selectedSubject.subject_specification?.replaceAll("_", " ") || "—"}
+              </dd>
+            </div>
+            {schedulePlacements.get(filteredSchedules.indexOf(selectedSubject))?.overlaps && (
+              <div role="alert">
+                <dt className="font-semibold text-red-700">Schedule conflict</dt>
+                <dd className="font-bold text-red-700">This class overlaps another class on the timetable.</dd>
+              </div>
+            )}
+          </dl>
+        </section>
+      </div>
+    )}
+    </>
   );
 }
