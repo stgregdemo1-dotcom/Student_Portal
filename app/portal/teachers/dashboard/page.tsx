@@ -575,7 +575,7 @@ export default function Dashboard() {
           <p className="py-4 text-sm text-gray-500">No classes match “{subjectFilter}”.</p>
         ) : (
           <div className="overflow-visible pr-2">
-          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:gap-4">
+          <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-3 lg:grid-cols-2 lg:gap-4">
             {filteredSubjects.map((subject: any, index: number) => {
               const total = subject.totalStudents || 0;
               const passed = subject.passedCount || 0;
@@ -590,9 +590,9 @@ export default function Dashboard() {
                   key={subject.subject_id || index}
                   href={`/portal/teachers/grades${subject.sched_code ? `?sched_code=${encodeURIComponent(subject.sched_code)}` : ""}`}
                   aria-label={`View grades for ${subject.subject_name || "this class"}`}
-                  className="group block cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0B3763] focus-visible:ring-offset-2"
+                  className="group block h-full cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0B3763] focus-visible:ring-offset-2"
                 >
-                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[#0B3763]/50 hover:shadow-md sm:p-5">
+                <div className="flex h-full flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[#0B3763]/50 hover:shadow-md sm:p-5">
                   <div className="mb-3 flex items-start justify-between gap-3">
                     <div>
                       <h4 className="font-semibold text-gray-800 text-lg">
@@ -690,7 +690,7 @@ export default function Dashboard() {
                     {(!subject.topStudents || subject.topStudents.length === 0) ? (
                       <p className="text-xs text-gray-400 italic">No grades recorded yet.</p>
                     ) : (
-                      <div className="space-y-2">
+                      <div className="max-h-32 space-y-2 overflow-y-auto overscroll-contain pr-1 [scrollbar-color:#94a3b8_transparent] [scrollbar-width:thin]">
                         {subject.topStudents.map((student: any, sIdx: number) => (
                           <div key={sIdx} className="flex justify-between items-center bg-gray-50 p-2.5 rounded text-sm">
                             <div>
@@ -707,7 +707,7 @@ export default function Dashboard() {
                       </div>
                     )}
                   </div>
-                  <div className="mt-3 flex items-center justify-end gap-2 border-t border-slate-100 pt-3 text-xs font-bold text-[#0B3763]">
+                  <div className="mt-auto flex items-center justify-end gap-2 border-t border-slate-100 pt-3 text-xs font-bold text-[#0B3763]">
                     <span>View grades</span>
                     <i className="fa-solid fa-arrow-right transition-transform group-hover:translate-x-1" aria-hidden="true" />
                   </div>
