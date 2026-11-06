@@ -27,7 +27,7 @@ export default function TeacherClientLayout({
   }, [isSidebarOpen]);
 
   return (
-    <div className={`teacher-portal relative flex overflow-x-clip ${isDashboardPage ? "min-h-dvh md:h-dvh md:overflow-hidden" : "h-dvh overflow-hidden"}`}>
+    <div className={`teacher-portal relative flex overflow-x-clip ${isDashboardPage ? "min-h-dvh" : "h-dvh overflow-hidden"}`}>
       {isSidebarOpen && (
         <button
           type="button"
@@ -42,9 +42,9 @@ export default function TeacherClientLayout({
         onClose={() => setIsSidebarOpen(false)}
       />
 
-      <div className={`flex min-w-0 flex-1 flex-col ${isDashboardPage ? "overflow-visible md:min-h-0 md:overflow-hidden" : isSchedulePage ? "overflow-hidden" : "overflow-y-auto"}`}>
+      <div className={`flex min-w-0 flex-1 flex-col ${isDashboardPage ? "overflow-visible" : isSchedulePage ? "overflow-hidden" : "overflow-y-auto"}`}>
         <THeader onToggleSidebar={() => setIsSidebarOpen((open) => !open)} />
-        <main className={`min-w-0 ${isSchedulePage ? "min-h-0 flex-1 overflow-hidden p-2" : isDashboardPage ? "flex-1 overflow-visible p-2 md:flex md:min-h-0 md:flex-1 md:flex-col md:overflow-hidden md:p-4" : "flex-1 p-6"}`}>
+        <main className={`min-w-0 ${isSchedulePage ? "min-h-0 flex-1 overflow-hidden p-2" : isDashboardPage ? "flex-none overflow-visible p-2 md:p-4" : "flex-1 p-6"}`}>
           {children}
         </main>
         <div className="shrink-0">
