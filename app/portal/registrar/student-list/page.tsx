@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import RegistrarSearchInput from "@/app/-components/RegistrarSearchInput";
 
 interface StudentRecord {
   _id: string;
@@ -41,6 +42,7 @@ function StudentListContent() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [sortKey, setSortKey] = useState<SortableKeys>("student_id");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [expandedStudentId, setExpandedStudentId] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -152,6 +154,14 @@ function StudentListContent() {
   };
 
   const filteredStudents = students.filter((record) => {
+    const search = searchQuery.trim().toLowerCase();
+    const matchesSearch =
+      !search ||
+      `${record.student_id || ""} ${record.first_name || ""} ${record.last_name || ""} ${record.track || ""}`
+        .toLowerCase()
+        .includes(search);
+    if (!matchesSearch) return false;
+
     if (statusFilter !== "All") {
       const currentStatus = (record.status || "Pending").toLowerCase();
       if (!currentStatus.includes(statusFilter.toLowerCase())) return false;
@@ -207,14 +217,23 @@ function StudentListContent() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="bg-white rounded-xl shadow overflow-hidden border border-gray-100 flex flex-col justify-between min-h-[500px]">
+    <div className="w-full">
+      <div className="bg-white rounded-xl shadow overflow-hidden border border-gray-100">
         <div>
           {/* Table Header Section */}
           <div className="p-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-            <div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
               <h3 className="text-lg font-semibold text-gray-800">Student List</h3>
               <p className="text-xs text-gray-500">Comprehensive registry of all students across all statuses.</p>
+              <RegistrarSearchInput
+                value={searchQuery}
+                onChange={(value) => {
+                  setSearchQuery(value);
+                  setCurrentPage(1);
+                }}
+                placeholder="Search students..."
+                ariaLabel="Search students by name, ID, or track"
+              />
             </div>
             
             {/* Filter and Refresh Controls */}
