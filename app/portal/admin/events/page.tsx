@@ -286,10 +286,25 @@ export default function CalendarModule() {
               {events[dateKey]?.map((event, index) => (
                 <div
                   key={event._id || index}
-                  className={`${event.color} text-white text-[10px] px-2 py-1 rounded-lg shadow-sm w-full`}
+                  className={`relative ${event.color} text-white text-[10px] px-2 py-1 rounded-lg shadow-sm w-full`}
                 >
-                  <div className="font-semibold truncate">
-                    {event.title}
+                  <div className="flex items-start justify-between gap-1">
+                    <div className="min-w-0 flex-1 truncate font-semibold">
+                      {event.title}
+                    </div>
+                    <button
+                      type="button"
+                      disabled={!event._id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (event._id) setEventToDelete(event);
+                      }}
+                      aria-label={`Delete ${event.title}`}
+                      title="Delete event"
+                      className="-mr-1 -mt-1 shrink-0 rounded px-1 text-sm font-bold leading-5 text-white/90 transition hover:bg-black/15 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      ×
+                    </button>
                   </div>
 
                   <div className="text-[9px] opacity-90 truncate">
@@ -297,6 +312,7 @@ export default function CalendarModule() {
                   </div>
 
                   <button
+                    type="button"
                     onClick={(e) => {
                       e.stopPropagation();
 
@@ -308,20 +324,10 @@ export default function CalendarModule() {
 
                       setEditEventId(event._id || null);
                     }}
-                    className="mt-1 text-[9px] opacity-80 hover:opacity-100 block underline"
+                    aria-label={`Edit ${event.title}`}
+                    className="mt-1 block text-[9px] opacity-80 underline transition hover:opacity-100"
                   >
-                    ✏️ Edit
-                  </button>
-                  <button
-                    type="button"
-                    disabled={!event._id}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (event._id) setEventToDelete(event);
-                    }}
-                    className="mt-1 block text-[9px] font-semibold text-white/90 underline decoration-white/60 underline-offset-2 transition hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    Remove
+                    Edit
                   </button>
                 </div>
               ))}
@@ -481,9 +487,11 @@ export default function CalendarModule() {
                         onClick={() => {
                           if (event._id) setEventToDelete(event);
                         }}
-                        className="shrink-0 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        aria-label={`Delete ${event.title}`}
+                        title="Delete event"
+                        className="-mr-2 -mt-2 shrink-0 rounded-lg px-2 text-xl font-bold leading-7 text-slate-500 transition hover:bg-red-50 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        Remove
+                        ×
                       </button>
                     </li>
                   );
