@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import RegistrarSearchInput from "@/app/-components/RegistrarSearchInput";
 
 interface SubjectReference {
   subject_id: string;
@@ -29,6 +30,7 @@ export default function EnrollmentPage() {
   const [selectedYear, setSelectedYear] = useState<string>("All");
   const [selectedSemester, setSelectedSemester] = useState<string>("All");
   const [selectedSection, setSelectedSection] = useState<string>("All");
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 20;
@@ -73,12 +75,18 @@ export default function EnrollmentPage() {
     const matchesYear = selectedYear === "All" || record.year === selectedYear;
     const matchesSemester = selectedSemester === "All" || record.semester === selectedSemester;
     const matchesSection = selectedSection === "All" || record.section === selectedSection;
-    return matchesYear && matchesSemester && matchesSection;
+    const search = searchQuery.trim().toLowerCase();
+    const matchesSearch =
+      !search ||
+      `${record.student_id} ${record.first_name} ${record.last_name} ${record.year} ${record.semester} ${record.section}`
+        .toLowerCase()
+        .includes(search);
+    return matchesYear && matchesSemester && matchesSection && matchesSearch;
   });
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedYear, selectedSemester, selectedSection]);
+  }, [selectedYear, selectedSemester, selectedSection, searchQuery]);
 
   const totalItems = filteredRequests.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
@@ -101,6 +109,12 @@ export default function EnrollmentPage() {
           <h3 className="text-lg font-semibold text-gray-800">Students Evaluation Requests</h3>
           
           <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
+            <RegistrarSearchInput
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Search student or section..."
+              ariaLabel="Search evaluation requests by student, year, semester, or section"
+            />
             
             {/* Year Filter Dropdown */}
             <div className="flex items-center gap-1.5">
