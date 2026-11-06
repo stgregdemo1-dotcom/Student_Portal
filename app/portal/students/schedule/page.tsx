@@ -59,6 +59,17 @@ export default function StudentSchedulePage() {
   const [selectedSubject, setSelectedSubject] = useState<SubjectSchedule | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
+  useEffect(() => {
+    if (!selectedSubject) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSelectedSubject(null);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedSubject]);
+
   const getCookie = (name: string): string => {
     if (typeof document === "undefined") return "";
     const value = `; ${document.cookie}`;
@@ -211,7 +222,6 @@ export default function StudentSchedulePage() {
               const colStart = dayIndex + 2;
               const startTrack = getTimeGridLine(sub.class_time?.start);
               const endTrack = getTimeGridLine(sub.class_time?.end);
-              const isSingleHour = endTrack - startTrack === 1;
 
               const spec = sub.subject_specification?.toLowerCase().trim() || "";
               let colorStyle = "border-l-4 border-l-slate-400 bg-slate-100 text-slate-900 hover:bg-slate-200";
@@ -238,34 +248,16 @@ export default function StudentSchedulePage() {
                   type="button"
                   aria-label={`${sub.subject_name || sub.subject_id}, ${sub["subject-day"]}, ${sub.class_time?.start} to ${sub.class_time?.end}. Tap for details.`}
                   onClick={() => setSelectedSubject(sub)}
-                  className={`m-0.5 flex min-h-0 min-w-0 cursor-pointer flex-col overflow-hidden rounded-md border border-slate-300 text-left shadow-sm transition-colors hover:brightness-95 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#d99a00] sm:m-1 sm:rounded-lg ${isSingleHour ? "items-center justify-center gap-1 p-1 sm:p-2" : "items-stretch justify-start gap-1 p-1 sm:gap-2 sm:p-2.5"} ${colorStyle}`}
+                  className={`m-0.5 flex min-h-0 min-w-0 cursor-pointer flex-col items-center justify-center overflow-visible rounded-md border border-slate-300 p-1 text-center shadow-sm transition-colors hover:brightness-95 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#d99a00] sm:m-1 sm:rounded-lg sm:p-2 ${colorStyle}`}
                   style={{
                     gridColumnStart: colStart,
                     gridRowStart: startTrack,
                     gridRowEnd: endTrack,
                   }}
                 >
-                  <div className="w-full shrink-0 whitespace-normal break-words text-center text-xs font-extrabold uppercase leading-tight tracking-tight sm:text-base">
+                  <div className="w-full whitespace-normal break-words text-center text-sm font-extrabold uppercase leading-tight tracking-tight sm:text-base">
                     {sub.subject_name || sub.subject_id}
                   </div>
-
-                  {isSingleHour ? (
-                    <div className="hidden w-full shrink-0 flex-col gap-0.5 border-t border-slate-300/70 pt-1 text-center text-[9px] font-semibold leading-tight text-slate-700 sm:flex sm:text-xs">
-                      <span className="whitespace-normal break-words">Room: {sub.room || "Room TBA"}</span>
-                      <span className="whitespace-normal break-words font-mono text-emerald-800">
-                        {sub.class_time?.start}–{sub.class_time?.end}
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="hidden min-w-0 shrink-0 flex-col gap-1 border-t border-slate-300/70 pt-1.5 text-left text-[10px] sm:flex sm:gap-1.5 sm:text-xs">
-                      <div className="whitespace-normal break-words font-bold text-slate-700 sm:text-[13px]">
-                        Room: {sub.room || "Room TBA"}
-                      </div>
-                      <div className="whitespace-normal break-words font-mono font-bold text-emerald-800 sm:text-[13px]">
-                        Time: {sub.class_time?.start}–{sub.class_time?.end}
-                      </div>
-                    </div>
-                  )}
                 </button>
               );
             })}
