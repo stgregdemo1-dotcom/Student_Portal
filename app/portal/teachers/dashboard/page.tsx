@@ -210,7 +210,7 @@ export default function Dashboard() {
 
   return (
     <>
-    <div className="flex w-full flex-col gap-3 overflow-visible md:h-full md:min-h-0 md:flex-1 md:overflow-y-auto">
+    <div className="flex w-full flex-col gap-3 overflow-visible">
       <div className="portal-dashboard-heading shrink-0 px-1 py-1">
         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-700">Teacher Portal</p>
         <h2 className="mt-0.5 text-xl font-bold tracking-tight text-[#06264A] md:text-2xl">Dashboard</h2>
