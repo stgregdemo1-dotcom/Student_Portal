@@ -13,6 +13,18 @@ interface RosterStudent {
   remarks: string;
 }
 
+function getAutomaticRemark(grades: Array<number | string>): string {
+  const numericGrades = grades
+    .slice(0, 2)
+    .map(Number)
+    .filter((grade) => Number.isFinite(grade) && grade > 0);
+
+  if (numericGrades.length === 0) return "";
+
+  const average = numericGrades.reduce((sum, grade) => sum + grade, 0) / numericGrades.length;
+  return average >= 75 ? "Passed" : "Failed";
+}
+
 const GradingSheet = () => {
   const [teacherId, setTeacherId] = useState<string>("");
   const [schedules, setSchedules] = useState<Schedule[]>([]);
@@ -107,10 +119,10 @@ const GradingSheet = () => {
 
           const initialGradesMap: { [key: string]: (number | string)[] } = {};
           sortedStudents.forEach((std: any) => {
+            const studentGrades = [std.grades[0] || 0, std.grades[1] || 0];
             initialGradesMap[std.student_id] = [
-              std.grades[0] || 0, // 1st
-              std.grades[1] || 0, // 2nd
-              std.remarks || ""   // Remarks
+              ...studentGrades,
+              getAutomaticRemark(studentGrades),
             ];
           });
           setGrades(initialGradesMap);
@@ -128,6 +140,9 @@ const GradingSheet = () => {
       const studentGrades = prev[studentId] || [0, 0, ""];
       const newGrades = [...studentGrades];
       newGrades[colIndex] = val;
+      if (colIndex < 2) {
+        newGrades[2] = getAutomaticRemark(newGrades.slice(0, 2));
+      }
       return { ...prev, [studentId]: newGrades };
     });
   };
@@ -167,7 +182,7 @@ const GradingSheet = () => {
         acc[studentId] = [
           studentGrades[0] || 0,
           studentGrades[1] || 0,
-          (studentGrades[2] as string) || ""
+          getAutomaticRemark(studentGrades.slice(0, 2))
         ];
         return acc;
       }, {} as { [key: string]: (number | string)[] });
@@ -220,8 +235,7 @@ const GradingSheet = () => {
 
   const allStudentsHaveRemarks = rosterList.length > 0 && rosterList.every(student => {
     const studentGradesMap = grades[student.student_id];
-    const remark = studentGradesMap ? (studentGradesMap[2] as string) : "";
-    return remark && remark.trim() !== "";
+    return studentGradesMap ? getAutomaticRemark(studentGradesMap.slice(0, 2)) !== "" : false;
   });
 
   const isSubjectActive = activeClass?.status === "Active";
@@ -320,7 +334,7 @@ const GradingSheet = () => {
                       <th className="px-6 py-5 text-center">1st</th>
                       <th className="px-6 py-5 text-center">2nd</th>
                       <th className="px-6 py-5 text-center">Average</th>
-                      <th className="px-6 py-5 text-center">Remarks</th>
+                      <th className="px-6 py-5 text-center">Remarks (Auto)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -329,7 +343,7 @@ const GradingSheet = () => {
                       const currentGradesMap = grades[currentStudentId] || [0, 0, ""];
 
                       const numericGrades = currentGradesMap.slice(0, 2) as number[];
-                      const currentRemarks = (currentGradesMap[2] as string) || "";
+                      const currentRemarks = getAutomaticRemark(numericGrades);
 
                       // Calculate Average safely
                       const g1 = Number(numericGrades[0]) || 0;
@@ -378,24 +392,12 @@ const GradingSheet = () => {
 
                           {/* Remarks Column */}
                           <td className="px-6 py-4 text-center">
-                            {isEditing && !isEvaluating ? (
-                              <select
-                                value={currentRemarks}
-                                onChange={(e) => updateGradeState(currentStudentId, 2, e.target.value)}
-                                className="w-32 bg-white border-2 border-[#FFD700] text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-[#0B3763] p-2 outline-none font-bold cursor-pointer"
-                              >
-                                <option value="">Select Option</option>
-                                <option value="Passed">Passed</option>
-                                <option value="Failed">Failed</option>
-                              </select>
-                            ) : (
-                              <span className={`inline-block min-w-[70px] py-1 px-2.5 rounded-md text-xs font-black uppercase tracking-wider ${
-                                currentRemarks === "Passed" ? "text-emerald-700 bg-emerald-100" :
-                                currentRemarks === "Failed" ? "text-red-700 bg-red-100" : "text-gray-400 bg-gray-100 font-normal normal-case"
-                              }`}>
-                                {currentRemarks || "-"}
-                              </span>
-                            )}
+                            <span className={`inline-block min-w-[70px] py-1 px-2.5 rounded-md text-xs font-black uppercase tracking-wider ${
+                              currentRemarks === "Passed" ? "text-emerald-700 bg-emerald-100" :
+                              currentRemarks === "Failed" ? "text-red-700 bg-red-100" : "text-gray-400 bg-gray-100 font-normal normal-case"
+                            }`}>
+                              {currentRemarks || "-"}
+                            </span>
                           </td>
                         </tr>
                       );
