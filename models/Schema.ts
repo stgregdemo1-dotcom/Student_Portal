@@ -25,6 +25,7 @@ const TeacherSchema = new mongoose.Schema(
     department_id:  { type: String },
     status:         { type: String },
     role_id:        { type: String },
+    archived:       { type: Boolean, default: false },
   },
   { collection: "teachers" }
 );
