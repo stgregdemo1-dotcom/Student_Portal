@@ -2,6 +2,8 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -9,6 +11,8 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
+  const pathname = usePathname();
+
   const navItems = [
     { name: 'Dashboard', href: '/portal/admin/dashboard', icon: <path d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /> },
     { name: 'Manage Teachers', href: '/portal/admin/manage-teachers', icon: <path d="M4.26 10.174L10.74 12c.38.1.74-.14.74-.53V3.84c0-.38-.34-.65-.7-.57L4.3 4.44a.6.6 0 00-.46.58v4.57c0 .28.2.53.42.58zM19.74 10.174L13.26 12c-.38.1-.74-.14-.74-.53V3.84c0-.38.34-.65.7-.57l6.44 1.17c.28.05.46.3.46.58v4.57c0 .28-.2.53-.42.58z" /> },
@@ -27,72 +31,123 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
   return (
     <aside 
       className={`
-        fixed left-0 top-0 h-screen w-64 bg-yellow-400 text-yellow-950 flex flex-col z-50 shadow-lg
+        fixed left-0 top-0 isolate h-dvh w-64 overflow-hidden border-r border-white/10 bg-[#06264A] text-white flex flex-col z-50 shadow-[3px_0_10px_rgba(2,12,27,0.12)]
         transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full'} 
         md:translate-x-0
       `}
+      style={{
+        fontFamily: 'Arial, sans-serif',
+        backgroundImage: 'linear-gradient(180deg, #06264A 0%, #0B3763 50%, #06264A 100%)',
+      }}
     >
-      <div className="p-6 border-b border-yellow-500/30 flex items-center justify-between">
-        <h2 className="text-xl font-black tracking-tighter uppercase">Admin Portal</h2>
-        
-        {/* Mobile Close Button */}
-        {onClose && (
-          <button 
-            onClick={onClose}
-            className="p-1 rounded-lg hover:bg-yellow-500/40 text-yellow-950 md:hidden transition-colors"
-            aria-label="Close sidebar"
+      <div className="relative flex h-full min-h-0 flex-col">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-[420px] overflow-hidden">
+          <Image
+            src="/sgcst-seal-watermark.png"
+            alt=""
+            width={480}
+            height={480}
+            className="absolute -bottom-44 -right-60 h-[480px] w-[480px] max-w-none object-contain opacity-[0.22]"
+            style={{ filter: 'grayscale(1) sepia(1) hue-rotate(165deg) saturate(1.7) brightness(1.1)' }}
+          />
+          <span className="absolute bottom-10 -right-20 h-3 w-56 rotate-[-35deg] bg-[#FFB900]" />
+          <span className="absolute bottom-8 -right-20 h-3 w-56 rotate-[-35deg] bg-[#F47721]" />
+        </div>
+
+        <div className="relative z-10 shrink-0 px-4 pb-3 pt-5 text-center">
+          <div className="mx-auto mb-2 h-[76px] w-[76px] overflow-hidden rounded-full border-2 border-white/80 bg-white shadow-sm">
+            <Image
+              src="/logo1.jpg"
+              alt="Saint Gregory College of Science and Technology seal"
+              width={76}
+              height={76}
+              className="h-full w-full object-cover"
+              priority
+            />
+          </div>
+          <h2 className="text-base font-extrabold leading-tight tracking-wide">SAINT GREGORY</h2>
+          <p className="mt-0.5 text-[11px] font-bold uppercase leading-tight tracking-wide">
+            College of Science and Technology
+          </p>
+          <div className="mx-1 mt-3 h-px bg-[#FFB900]/70" />
+
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="absolute right-3 top-3 rounded-lg border border-transparent p-2 text-white transition-all hover:border-[#FFB900] hover:bg-[#FFB900]/20 focus-visible:outline-none md:hidden"
+              aria-label="Close sidebar"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="h-5 w-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        <nav className="relative z-10 min-h-0 flex-1 overflow-y-auto px-3 py-2">
+          <ul className="space-y-1">
+            {navItems.map((item) => {
+              const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+              return (
+                <li key={item.name}>
+                  <Link
+                    href={item.href}
+                    onClick={() => onClose && onClose()}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-bold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFB900] focus-visible:ring-offset-2 focus-visible:ring-offset-[#06264A] ${
+                      isActive
+                        ? 'border-[#FFB900] bg-[#FFB900] text-[#06264A] shadow-[0_2px_6px_rgba(0,0,0,0.18)]'
+                        : 'border-transparent bg-transparent text-white hover:translate-x-0.5 hover:border-[#FFB900]/70 hover:bg-white/10 hover:shadow-sm'
+                    }`}
+                  >
+                    {item.name === 'Dashboard' ? (
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center">
+                        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-[18px] w-[18px]">
+                          <rect x="3" y="3" width="8" height="8" rx="1.5" />
+                          <rect x="14" y="3" width="7" height="5" rx="1" />
+                          <rect x="14" y="11" width="7" height="10" rx="1.5" />
+                          <rect x="3" y="14" width="8" height="7" rx="1.5" />
+                        </svg>
+                      </span>
+                    ) : (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={2}
+                        stroke="currentColor"
+                        className="h-5 w-5 shrink-0"
+                      >
+                        {item.icon}
+                      </svg>
+                    )}
+                    <span className="truncate">{item.name}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+
+        <div className="relative z-10 shrink-0 border-t border-white/20 p-3">
+          <button
+            onClick={handleLogout}
+            className="group flex w-full cursor-pointer items-center gap-3 rounded-lg border border-[#c2410c] bg-[#e64b1b] px-4 py-2.5 text-left text-sm font-bold text-white shadow-md transition-colors duration-200 ease-in-out hover:border-[#ff9100] hover:bg-[#ff9100] hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFB900] active:scale-[0.98] motion-reduce:transition-none"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={2}
+              stroke="currentColor"
+              className="h-5 w-5 shrink-0"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
             </svg>
+            Exit
           </button>
-        )}
-      </div>
-
-      <nav className="flex-1 overflow-y-auto p-4">
-        <ul className="space-y-1">
-          {navItems.map((item) => (
-            <li key={item.name}>
-              <Link 
-                href={item.href}
-                onClick={() => onClose && onClose()}
-                className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-yellow-500/40 transition-all group"
-              >
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  fill="none" 
-                  viewBox="0 0 24 24" 
-                  strokeWidth={2} 
-                  stroke="currentColor" 
-                  className="w-5 h-5 text-yellow-900/70 group-hover:text-yellow-950"
-                >
-                  {item.icon}
-                </svg>
-                <span className="text-sm font-bold">{item.name}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
-
-      <div className="p-4 px-6 border-t border-yellow-500/30">
-        <button
-          onClick={handleLogout}
-          className="flex w-full items-center gap-3 py-3 px-2 rounded-lg hover:bg-red-500 hover:text-white transition-all group font-bold text-sm text-left"
-        >
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            fill="none" 
-            viewBox="0 0 24 24" 
-            strokeWidth={2} 
-            stroke="currentColor" 
-            className="w-5 h-5"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
-          </svg>
-          Logout
-        </button>
+        </div>
       </div>
     </aside>
   );
