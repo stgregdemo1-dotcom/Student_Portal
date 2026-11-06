@@ -92,8 +92,8 @@ export default function Page() {
   const canEnroll = Boolean((evaluation?.allPassedAndCompleted || evaluation?.status === "Approved") && isStudentEnrolled);
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-5 bg-gray-50">
-      <div className="w-full max-w-3xl text-center">
+    <main className="flex min-h-screen flex-1 items-center justify-center bg-gray-50 p-5 md:min-h-0 md:overflow-hidden">
+      <div className="w-full max-w-3xl text-center md:max-h-full md:overflow-y-auto">
 
         {/* Main Content Card */}
         <div className="bg-white rounded-2xl p-10 shadow-sm border border-gray-200 text-left">
