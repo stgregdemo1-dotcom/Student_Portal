@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 
 type CalendarEvent = {
   _id?: string;
+  eventDate: string;
   title: string;
   color: string;
   startTime: string;
@@ -11,10 +12,15 @@ type CalendarEvent = {
 };
 
 type EventMap = Record<string, CalendarEvent[]>;
+type CalendarView = "calendar" | "history";
 
 export default function CalendarModule() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState<EventMap>({});
+  const [allEvents, setAllEvents] = useState<CalendarEvent[]>([]);
+  const [activeView, setActiveView] = useState<CalendarView>("calendar");
+  const [historySearch, setHistorySearch] = useState("");
+  const [historyYear, setHistoryYear] = useState("all");
   const [loading, setLoading] = useState(false);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [title, setTitle] = useState("");
@@ -25,6 +31,26 @@ export default function CalendarModule() {
   const [editEventId, setEditEventId] = useState<string | null>(null);
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
+  const today = new Date();
+  const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  const minCalendarDate = new Date(today.getFullYear() - 1, today.getMonth(), 1);
+  const maxCalendarDate = new Date(today.getFullYear() + 1, today.getMonth(), 1);
+  const displayedMonth = new Date(year, month, 1);
+  const canGoPrevious = displayedMonth > minCalendarDate;
+  const canGoNext = displayedMonth < maxCalendarDate;
+  const pastEvents = allEvents
+    .filter((event) => event.eventDate < todayKey)
+    .sort((a, b) => b.eventDate.localeCompare(a.eventDate));
+  const historyYears = [...new Set(pastEvents.map((event) => event.eventDate.slice(0, 4)))].sort(
+    (a, b) => b.localeCompare(a)
+  );
+  const filteredPastEvents = pastEvents.filter((event) => {
+    const matchesYear = historyYear === "all" || event.eventDate.startsWith(`${historyYear}-`);
+    const matchesSearch = `${event.title} ${event.eventDate} ${event.startTime} ${event.endTime}`
+      .toLowerCase()
+      .includes(historySearch.trim().toLowerCase());
+    return matchesYear && matchesSearch;
+  });
 
   const monthNames = [
     "January", "February", "March", "April", "May", "June",
@@ -48,21 +74,26 @@ export default function CalendarModule() {
       const rawData = await response.json();
 
       const mappedEvents: EventMap = {};
+      const eventRecords: CalendarEvent[] = [];
       rawData.forEach((item: any) => {
         const dateKey = item.event_date;
-        if (!mappedEvents[dateKey]) {
-          mappedEvents[dateKey] = [];
-        }
-        mappedEvents[dateKey].push({
+        const eventRecord = {
           _id: item._id,
+          eventDate: dateKey,
           title: item.title,
           color: item.color,
           startTime: item.start_time,
           endTime: item.end_time,
-        });
+        };
+        eventRecords.push(eventRecord);
+        if (!mappedEvents[dateKey]) {
+          mappedEvents[dateKey] = [];
+        }
+        mappedEvents[dateKey].push(eventRecord);
       });
 
       setEvents(mappedEvents);
+      setAllEvents(eventRecords);
     } catch (err) {
       console.error("Error loading events:", err);
     } finally {
@@ -126,8 +157,10 @@ export default function CalendarModule() {
     setEditEventId(null);
   };
 
-  const changeMonth = (dir: number) => {
-    setCurrentDate(new Date(year, month + dir, 1));
+  const changeMonth = (dir: -1 | 1) => {
+    const nextMonth = new Date(year, month + dir, 1);
+    if (nextMonth < minCalendarDate || nextMonth > maxCalendarDate) return;
+    setCurrentDate(nextMonth);
   };
 
   const goToday = () => {
@@ -154,12 +187,13 @@ export default function CalendarModule() {
         cols.push(
           <td
             key={`${row}-${col}`}
-            className="border border-slate-100 h-32 bg-slate-50 w-[14.28%] min-w-0"
+            className="border border-blue-100 bg-blue-50/60 w-[14.28%] min-w-0"
           />
         );
       } else {
         const currentDay = day;
         const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+        const isToday = dateKey === todayKey;
 
         cols.push(
           <td
@@ -173,13 +207,20 @@ export default function CalendarModule() {
               setEndTime("08:00 AM");
               setColor("bg-blue-500");
             }}
-            className="border border-slate-100 h-32 align-top p-2 cursor-pointer hover:bg-slate-50 transition relative w-[14.28%] min-w-0 overflow-hidden"
+            aria-current={isToday ? "date" : undefined}
+            className={`relative w-[14.28%] min-w-0 cursor-pointer overflow-hidden border border-blue-100 p-1 align-top transition sm:p-2 ${
+              isToday
+                ? "bg-blue-100/70 shadow-[inset_0_0_0_2px_#2563eb] hover:bg-blue-100"
+                : "hover:bg-blue-50"
+            }`}
           >
-            <div className="text-sm font-bold text-slate-700 mb-2">
+            <div className={`mb-1 inline-flex min-h-6 items-center rounded-full px-1.5 text-xs font-bold sm:mb-2 sm:text-sm ${
+              isToday ? "bg-blue-700 text-white" : "text-blue-950"
+            }`}>
               {day}
             </div>
 
-            <div className="space-y-1 max-h-[80px] overflow-y-auto animate-fade-in">
+            <div className="space-y-1 max-h-[calc(100%-1.5rem)] overflow-y-auto animate-fade-in">
               {events[dateKey]?.map((event, index) => (
                 <div
                   key={event._id || index}
@@ -220,53 +261,77 @@ export default function CalendarModule() {
       }
     }
 
-    cells.push(<tr key={row}>{cols}</tr>);
+    cells.push(<tr key={row} className="h-[16.666%]">{cols}</tr>);
   }
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-        <h3 className="text-sm md:text-lg font-black text-slate-800 tracking-tight">
-          {monthNames[month]}{" "}
-          <span className="text-slate-300 font-light">
-            {year}
-          </span>
-          {loading && <span className="ml-2 text-xs text-blue-500 animate-pulse">Loading...</span>}
-        </h3>
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-sm">
+      <div className="admin-calendar-toolbar flex shrink-0 items-center justify-between gap-3 border-b border-blue-100 bg-[#F7FAFF] px-3 py-2 sm:px-5 sm:py-3">
+        <div className="flex min-w-0 items-center gap-3 sm:gap-5">
+        {activeView === "calendar" && (
+        <button
+          onClick={goToday}
+          className="calendar-today-button rounded-full border border-slate-400 bg-white px-5 py-2 text-sm font-medium text-slate-900 transition-colors hover:bg-blue-50"
+        >
+          Today
+        </button>
+        )}
 
-        <div className="flex bg-slate-100 p-1 rounded-xl">
-          <button
-            onClick={() => changeMonth(-1)}
-            className="px-3 py-1 text-[10px] font-bold text-slate-500 hover:text-black"
-          >
-            Prev
-          </button>
+        {activeView === "calendar" && (
+        <div className="flex items-center gap-4 sm:gap-6">
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => changeMonth(-1)}
+              disabled={!canGoPrevious}
+              aria-label="Previous month"
+              className="calendar-month-button rounded-full p-1 text-slate-700 transition-colors hover:bg-blue-100 disabled:opacity-40"
+            >
+              <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="m12 4-6 6 6 6" />
+              </svg>
+            </button>
+            <button
+              onClick={() => changeMonth(1)}
+              disabled={!canGoNext}
+              aria-label="Next month"
+              className="calendar-month-button rounded-full p-1 text-slate-700 transition-colors hover:bg-blue-100 disabled:opacity-40"
+            >
+              <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="m8 4 6 6-6 6" />
+              </svg>
+            </button>
+          </div>
 
-          <button
-            onClick={goToday}
-            className="px-3 py-1 text-[10px] font-black uppercase bg-white text-blue-600 shadow-sm rounded-lg mx-1"
-          >
-            Today
-          </button>
-
-          <button
-            onClick={() => changeMonth(1)}
-            className="px-3 py-1 text-[10px] font-bold text-slate-500 hover:text-black"
-          >
-            Next
-          </button>
+          <h3 className="whitespace-nowrap text-xl font-normal tracking-tight text-blue-950 sm:text-2xl">
+            {monthNames[month]} {year}
+          </h3>
         </div>
+        )}
+
+        {loading && (
+          <span className="text-xs text-blue-600 animate-pulse">
+            Loading...
+          </span>
+        )}
+        </div>
+
+        <button
+          onClick={() => setActiveView((view) => view === "calendar" ? "history" : "calendar")}
+          className="admin-calendar-toolbar-action shrink-0 rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-900 transition-colors hover:bg-blue-50 sm:text-sm"
+        >
+          {activeView === "calendar" ? "Event History" : "Calendar"}
+        </button>
       </div>
 
-      <div className="p-4 md:p-6 overflow-x-auto">
-        {/* 🚀 FIXED: Added table-fixed & w-full layout */}
-        <table className="w-full table-fixed border-collapse rounded-xl overflow-hidden shadow-[0_0_0_1px_rgba(241,245,249,1)]">
+      {activeView === "calendar" ? (
+      <div className="min-h-0 flex-1 overflow-hidden p-2 sm:p-3">
+        <table className="h-full w-full table-fixed border-collapse overflow-hidden rounded-lg shadow-[0_0_0_1px_rgba(219,234,254,1)]">
           <thead>
-            <tr className="bg-slate-50/50">
+            <tr className="h-8 bg-[#0B3763]">
               {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
                 <th
                   key={d}
-                  className="p-2 md:p-3 text-[9px] font-black text-slate-400 uppercase tracking-widest border border-slate-100 w-[14.28%] min-w-0"
+                  className="p-2 md:p-3 text-[9px] font-black text-white uppercase tracking-widest border border-blue-800 w-[14.28%] min-w-0"
                 >
                   {d}
                 </th>
@@ -274,14 +339,83 @@ export default function CalendarModule() {
             </tr>
           </thead>
 
-          <tbody>{cells}</tbody>
+          <tbody className="h-full">{cells}</tbody>
         </table>
       </div>
+      ) : (
+        <section aria-label="Past event history" className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
+          <div className="w-full">
+            <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+              <h3 className="text-lg font-bold text-blue-950">Past Event History</h3>
+              <p className="mt-1 text-sm text-slate-500">Previously scheduled events, with the most recent dates first.</p>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <label className="sr-only" htmlFor="event-history-search">Search past events</label>
+                <input
+                  id="event-history-search"
+                  type="search"
+                  value={historySearch}
+                  onChange={(event) => setHistorySearch(event.target.value)}
+                  placeholder="Search events..."
+                  className="w-full rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 sm:w-56"
+                />
+                <label className="sr-only" htmlFor="event-history-year">Filter past events by year</label>
+                <select
+                  id="event-history-year"
+                  value={historyYear}
+                  onChange={(event) => setHistoryYear(event.target.value)}
+                  className="rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                >
+                  <option value="all">All years</option>
+                  {historyYears.map((eventYear) => (
+                    <option key={eventYear} value={eventYear}>{eventYear}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            {pastEvents.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-blue-200 bg-blue-50/50 px-5 py-10 text-center">
+                <p className="font-semibold text-blue-950">No past events yet</p>
+                <p className="mt-1 text-sm text-slate-500">Events will appear here after their scheduled date has passed.</p>
+              </div>
+            ) : filteredPastEvents.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-blue-200 bg-blue-50/50 px-5 py-10 text-center">
+                <p className="font-semibold text-blue-950">No matching events</p>
+                <p className="mt-1 text-sm text-slate-500">Try another search term or year.</p>
+              </div>
+            ) : (
+              <ol className="space-y-3">
+                {filteredPastEvents.map((event, index) => {
+                  const [eventYear, eventMonth, eventDay] = event.eventDate.split("-").map(Number);
+                  const formattedDate = new Date(eventYear, eventMonth - 1, eventDay).toLocaleDateString(
+                    undefined,
+                    { year: "numeric", month: "long", day: "numeric" }
+                  );
+                  return (
+                    <li
+                      key={event._id || `${event.eventDate}-${event.title}-${index}`}
+                      className="flex items-start gap-3 rounded-xl border border-blue-100 bg-white p-4 shadow-sm"
+                    >
+                      <span className={`mt-1.5 size-3 shrink-0 rounded-full ${event.color || "bg-blue-500"}`} aria-hidden="true" />
+                      <div className="min-w-0 flex-1">
+                        <h4 className="truncate font-semibold text-slate-900">{event.title}</h4>
+                        <p className="mt-1 text-sm text-slate-600">{formattedDate}</p>
+                        <p className="mt-0.5 text-xs text-slate-500">{event.startTime} – {event.endTime}</p>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
+          </div>
+        </section>
+      )}
 
       {selectedDay && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white p-5 rounded-2xl w-80 shadow-xl border border-slate-100">
-            <h2 className="font-bold mb-3 text-slate-800">
+          <div className="bg-white p-5 rounded-2xl w-80 shadow-xl border border-blue-100">
+            <h2 className="font-bold mb-3 text-blue-950">
               {editEventId !== null ? "Edit Event" : "Add Event"}{" "}
               — {monthNames[month]} {selectedDay}, {year}
             </h2>
@@ -333,7 +467,7 @@ export default function CalendarModule() {
                 <button
                   key={c}
                   onClick={() => setColor(c)}
-                  className={`w-7 h-7 rounded-full ${c} ${color === c ? "ring-2 ring-black" : ""
+                  className={`admin-color-swatch w-7 h-7 rounded-full ${c} ${color === c ? "ring-2 ring-blue-950 ring-offset-2" : ""
                     }`}
                 />
               ))}
@@ -341,14 +475,14 @@ export default function CalendarModule() {
 
             <button
               onClick={saveEvent}
-              className="bg-blue-500 hover:bg-blue-600 transition text-white w-full py-2 rounded-xl font-semibold"
+              className="admin-save-event-button w-full rounded-xl border border-[#0B3763] bg-[#0B3763] py-2 font-semibold text-white transition-colors hover:bg-[#06264A]"
             >
               {editEventId !== null ? "Update Event" : "Add Event"}
             </button>
 
             <button
               onClick={closeModal}
-              className="mt-2 text-sm text-slate-500 w-full hover:text-slate-800 transition text-center"
+              className="admin-cancel-event-button mt-2 w-full rounded-lg border border-transparent bg-transparent py-2 text-center text-sm text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
             >
               Cancel
             </button>
