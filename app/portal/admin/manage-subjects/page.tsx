@@ -36,7 +36,7 @@ interface SubjectModalProps {
   isOpen: boolean;
   subject: Subject | null;
   onClose: () => void;
-  onSave: (subject: Subject) => void;
+  onSave: (subject: Subject) => Promise<string | null>;
   dbTeachers: TeacherOption[];
 }
 
@@ -62,7 +62,7 @@ function SubjectModalContent({
 }: {
   subject: Subject | null;
   onClose: () => void;
-  onSave: (subject: Subject) => void;
+  onSave: (subject: Subject) => Promise<string | null>;
   dbTeachers: TeacherOption[];
 }) {
   const isEditMode = !!subject;
@@ -144,7 +144,7 @@ function SubjectModalContent({
     return hours * 60 + minutes;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setTimeError(null);
 
@@ -156,7 +156,12 @@ function SubjectModalContent({
       return;
     }
 
-    onSave(formData);
+    const saveError = await onSave(formData);
+    if (saveError) {
+      setTimeError(saveError);
+      return;
+    }
+
     onClose();
   };
 
@@ -167,7 +172,14 @@ function SubjectModalContent({
           <h3 className="text-xl font-semibold text-gray-800">
             {isEditMode ? "Edit Subject Details" : "Add New Subject"}
           </h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close dialog"
+            className="admin-modal-close text-gray-400 hover:text-gray-600"
+          >
+            ✕
+          </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -355,7 +367,7 @@ function SubjectModalContent({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
+              className="admin-cancel-button rounded-lg border border-gray-200 bg-transparent px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
             >
               Cancel
             </button>
@@ -510,7 +522,7 @@ export default function ManageSubjects() {
     setSelectedSubject(null);
   };
 
-  const handleSaveSubject = async (savedSubject: Subject) => {
+  const handleSaveSubject = async (savedSubject: Subject): Promise<string | null> => {
     const isEditMode = subjects.some((t) => t.subject_id === savedSubject.subject_id);
     const url = "/api/portal/admin?table=subjects";
     const method = isEditMode ? "PUT" : "POST";
@@ -526,12 +538,14 @@ export default function ManageSubjects() {
         await fetchSubjects();
         setIsModalOpen(false);
         setSelectedSubject(null);
+        return null;
       } else {
         const errData = await res.json();
-        alert(errData.message || "Could not commit subject record changes.");
+        return errData.message || "Could not commit subject record changes.";
       }
     } catch (error) {
       console.error("Transaction save error:", error);
+      return "Could not save the schedule because of a network or server error.";
     }
   };
 
