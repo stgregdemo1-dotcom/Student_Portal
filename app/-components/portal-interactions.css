@@ -1,3 +1,13 @@
+html:has(.portal-modal-backdrop),
+body:has(.portal-modal-backdrop) {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+.portal-modal-backdrop {
+  overscroll-behavior: contain;
+}
+
 :is(.student-portal, .teacher-portal, .admin-portal, .registrar-portal)
   :where(
     button:not(:disabled),
