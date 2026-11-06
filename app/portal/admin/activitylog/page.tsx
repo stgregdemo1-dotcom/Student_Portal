@@ -58,7 +58,7 @@ export default function AdminAuditLogsPage() {
 
   return (
     <div className="p-6 min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto space-y-4">
+      <div className="w-full space-y-4">
 
         {/* Banner Section Contextual Header */}
         <div className="p-4 bg-white flex flex-col md:flex-row justify-between items-start md:items-center shadow-sm rounded-xl border border-gray-100 gap-4">
