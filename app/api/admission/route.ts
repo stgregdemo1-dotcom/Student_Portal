@@ -135,6 +135,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (typeof fields.lrn !== "string" || !/^\d{12}$/.test(fields.lrn.trim())) {
+      return NextResponse.json(
+        { message: "LRN must contain exactly 12 digits." },
+        { status: 400 }
+      );
+    }
+
     const textFields = [
       { key: "firstName", label: "First name", required: true },
       { key: "middleName", label: "Middle name", required: false },
