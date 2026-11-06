@@ -77,7 +77,7 @@ async function findScheduleConflict(
     return { message: "A valid day, semester, and start/end time are required.", status: 400 };
   }
 
-  const existingSchedules = await Subject.find({ semester: candidate.semester })
+  const existingSchedules = await Subject.find({ semester: candidate.semester, archived: { $ne: true } })
     .select("subject_id sched_code subject_day class_time teacher_id room subject_year_section")
     .lean();
 
@@ -434,7 +434,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     if (!username.toUpperCase().startsWith("ADM")) {
-      return NextResponse.json({ message: "Admin authentication is required to delete this record." }, { status: 403 });
+      return NextResponse.json({ message: "Admin authentication is required for this action." }, { status: 403 });
     }
 
     const credential = await Credentials.findOne({ username }).select("username password user_type").lean();
@@ -443,13 +443,17 @@ export async function DELETE(request: NextRequest) {
     }
 
     if (tableName === "subjects") {
-      const deletedSubject = await Subject.findOneAndDelete({ subject_id: subjectId }).lean();
-      if (!deletedSubject) {
+      const archivedSubject = await Subject.findOneAndUpdate(
+        { subject_id: subjectId, archived: { $ne: true } },
+        { $set: { archived: true } },
+        { new: true }
+      ).lean();
+      if (!archivedSubject) {
         return NextResponse.json({ message: "Subject schedule was not found." }, { status: 404 });
       }
 
-      await createAuditLog(username, `Deleted subject schedule ${deletedSubject.sched_code || subjectId} (${deletedSubject.subject_name || "Unknown subject"}).`);
-      return NextResponse.json({ message: "Subject schedule deleted successfully." }, { status: 200 });
+      await createAuditLog(username, `Archived subject schedule ${archivedSubject.sched_code || subjectId} (${archivedSubject.subject_name || "Unknown subject"}).`);
+      return NextResponse.json({ message: "Subject schedule archived successfully.", data: archivedSubject }, { status: 200 });
     }
 
     if (!mongoose.Types.ObjectId.isValid(eventId)) {
@@ -466,6 +470,60 @@ export async function DELETE(request: NextRequest) {
   } catch (err) {
     console.error("Admin record deletion error:", err);
     return NextResponse.json({ message: "Failed to delete record." }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    await connectDB();
+    if (request.nextUrl.searchParams.get("table") !== "subjects") {
+      return NextResponse.json({ message: "Only subject schedules can be restored here." }, { status: 400 });
+    }
+
+    const body = await request.json();
+    const subjectId = typeof body.subject_id === "string" ? body.subject_id.trim() : "";
+    const username = typeof body.username === "string" ? body.username.trim() : "";
+    const password = typeof body.password === "string" ? body.password : "";
+    if (!subjectId || !username || !password) {
+      return NextResponse.json({ message: "Subject ID and admin credentials are required." }, { status: 400 });
+    }
+    if (!username.toUpperCase().startsWith("ADM")) {
+      return NextResponse.json({ message: "Admin authentication is required to restore a subject schedule." }, { status: 403 });
+    }
+
+    const credential = await Credentials.findOne({ username }).select("username password user_type").lean();
+    if (!credential || credential.password !== password || credential.user_type === "archive") {
+      return NextResponse.json({ message: "Invalid admin username or password." }, { status: 401 });
+    }
+
+    const restoredSubject = await Subject.findOneAndUpdate(
+      { subject_id: subjectId, archived: true },
+      { $set: { archived: false } },
+      { new: false }
+    ).lean();
+    if (!restoredSubject) {
+      return NextResponse.json({ message: "Archived subject schedule was not found." }, { status: 404 });
+    }
+
+    const conflict = await findScheduleConflict(restoredSubject as ScheduleData, subjectId);
+    if (conflict) {
+      return NextResponse.json({ message: `Cannot restore this schedule: ${conflict.message}` }, { status: conflict.status });
+    }
+
+    const activeSubject = await Subject.findOneAndUpdate(
+      { subject_id: subjectId, archived: true },
+      { $set: { archived: false } },
+      { new: true }
+    ).lean();
+    if (!activeSubject) {
+      return NextResponse.json({ message: "Archived subject schedule was not found." }, { status: 404 });
+    }
+
+    await createAuditLog(username, `Restored subject schedule ${activeSubject.sched_code || subjectId} (${activeSubject.subject_name || "Unknown subject"}).`);
+    return NextResponse.json({ message: "Subject schedule restored successfully.", data: activeSubject }, { status: 200 });
+  } catch (err) {
+    console.error("Subject schedule restoration error:", err);
+    return NextResponse.json({ message: "Failed to restore subject schedule." }, { status: 500 });
   }
 }
 
