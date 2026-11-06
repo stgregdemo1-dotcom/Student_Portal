@@ -13,7 +13,7 @@ interface SubjectSchedule {
   class_time: {
     start: string;
     end: string;
-  };
+  } | string;
 }
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"] as const;
@@ -57,10 +57,10 @@ function getSpecificationStyle(subject_specification?: string) {
       };
     default:
       return {
-        card: "bg-yellow-50/95 border-gray-200 hover:bg-gray-100/60",
-        border: "border-l-4 border-l-gray-400",
-        text: "text-gray-900",
-        tag: "bg-gray-500 text-white"
+        card: "bg-slate-100/95 border-slate-200 hover:bg-blue-100/70",
+        border: "border-l-4 border-l-[#FFB900]",
+        text: "text-[#06264A]",
+        tag: "bg-[#0B3763] text-white"
       };
   }
 }
@@ -117,11 +117,11 @@ export default function TeacherSchedulePage() {
   };
 
   const getTimeRowIndex = (timeString: string): number => {
-    if (!timeString) return 1;
+    if (!timeString) return 2;
     const cleanTime = timeString.trim().toUpperCase();
 
     const match = cleanTime.match(/^(\d+):/);
-    if (!match) return 1;
+    if (!match) return 2;
 
     const hour = parseInt(match[1]);
     const isPM = cleanTime.includes("PM");
@@ -131,7 +131,7 @@ export default function TeacherSchedulePage() {
     if (!isPM && hour === 12) militaryHour = 0;
 
     const baseHour = 7;
-    return (militaryHour - baseHour) + 1;
+    return Math.max(2, Math.min((militaryHour - baseHour) + 2, HOURS.length + 1));
   };
 
   const filteredSchedules = schedules.filter((subject) => {
@@ -141,32 +141,34 @@ export default function TeacherSchedulePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-100 font-bold text-gray-500">
-        Syncing schedule matrices with backend data portal...
+      <div className="flex min-h-[50vh] items-center justify-center p-6">
+        <div role="status" className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-5 py-4 text-sm font-semibold text-slate-600 shadow-sm">
+          <span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-[#FFB900]" aria-hidden="true" />
+          Loading your class schedule…
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-300 p-4 font-sans">
-      <div className="w-full max-w-7xl bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-200">
-
-        {/* Banner Controls */}
-        <div className="bg-black text-white p-5 border-b border-gray-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="text-center md:text-left">
-            <h1 className="text-xl md:text-2xl font-black uppercase tracking-[0.2em]">Academic Matrix</h1>
-            <p className="text-[9px] font-bold opacity-50 mt-1 uppercase tracking-[0.4em]">
-              Teacher Schedule: {teacherId || "Guest Mode"}
+    <div className="flex h-full min-h-0 w-full flex-col items-center justify-start font-sans">
+      <div className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
+        <div className="flex shrink-0 flex-col justify-between gap-2 border-b-4 border-[#FFB900] bg-[linear-gradient(100deg,#DCEAF5_0%,#F2F7FB_58%,#FFFFFF_100%)] px-4 py-2 text-[#06264A] sm:flex-row sm:items-center sm:px-5 sm:py-2.5">
+          <div>
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#0B3763] sm:text-[11px]">Schedule</p>
+            <h1 className="mt-0.5 text-lg font-extrabold tracking-tight sm:text-xl">Weekly Class Timetable</h1>
+            <p className="mt-0.5 text-[11px] font-semibold text-slate-700 sm:text-xs">
+              {teacherId ? `Teacher ID: ${teacherId}` : "Guest mode"}
             </p>
           </div>
 
-          <div className="flex justify-center items-center gap-2">
-            <label htmlFor="semester-select" className="text-xs font-black uppercase tracking-wider opacity-70 text-white">Semester:</label>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <label htmlFor="teacher-semester-select" className="text-xs font-extrabold uppercase tracking-wider text-[#06264A]">Semester</label>
             <select
-              id="semester-select"
+              id="teacher-semester-select"
               value={selectedSemester}
               onChange={(e) => setSelectedSemester(e.target.value)}
-              className="bg-gray-900 border border-gray-700 text-white text-xs font-bold rounded-lg p-2.5 outline-none focus:ring-1 focus:ring-gray-500 cursor-pointer min-w-[160px]"
+              className="min-h-10 min-w-[150px] cursor-pointer rounded-lg border border-[#FFB900] bg-white px-3 text-sm font-bold text-[#06264A] shadow-sm outline-none transition hover:border-[#0B3763] hover:shadow-md focus-visible:ring-2 focus-visible:ring-[#FFB900] focus-visible:ring-offset-2 sm:min-h-11 sm:min-w-[170px]"
             >
               <option value="1st Semester">1st Semester</option>
               <option value="2nd Semester">2nd Semester</option>
@@ -174,120 +176,109 @@ export default function TeacherSchedulePage() {
           </div>
         </div>
 
-        {/* Grid View */}
-        <div className="p-4 md:p-6 overflow-x-auto">
-          <div className="relative min-w-[900px]">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-1 sm:p-1.5">
+          <div
+            className="grid min-h-0 min-w-0 flex-1 overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm"
+            style={{
+              height: "100%",
+              gap: 0,
+              gridTemplateColumns: "clamp(72px, 10vw, 128px) repeat(5, minmax(0, 1fr))",
+              gridTemplateRows: "36px repeat(12, minmax(clamp(24px, calc((100dvh - 360px) / 12), 52px), 1fr))"
+            }}
+          >
+            <div className="flex min-w-0 items-center justify-center border-b border-r border-[#D1A000] bg-[#0B3763] p-1 text-center text-xs font-extrabold uppercase tracking-wide text-white sm:p-2">Time</div>
+            {DAYS.map((day) => (
+              <div key={day} className="flex min-w-0 items-center justify-center border-b border-r border-[#D1A000] bg-[#0B3763] p-1 text-center text-xs font-extrabold uppercase tracking-wide text-white last:border-r-0 sm:p-2">
+                <span className="sm:hidden">{day.slice(0, 3)}</span>
+                <span className="hidden sm:inline">{day}</span>
+              </div>
+            ))}
 
-            {/* BACKGROUND TABLE LAYOUT */}
-            <table className="w-full border-collapse text-sm table-fixed">
-              <thead>
-                <tr>
-                  <th className="bg-black text-white p-3 text-center font-black border border-gray-800 uppercase text-[9px] w-[140px]">
-                    Time
-                  </th>
-                  {DAYS.map((day) => (
-                    <th key={day} className="bg-black text-white p-3 text-center font-black border border-gray-800 uppercase text-[9px] tracking-widest">
-                      {day}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {HOURS.slice(0, -1).map((hourLabel, index) => (
-                  <tr key={hourLabel} style={{ height: "5rem" }} className="even:bg-gray-50/40">
-                    <td className="bg-gray-50 font-black text-gray-500 p-2 text-center border border-gray-100 text-[10px] font-mono whitespace-nowrap align-top pt-2">
-                      {hourLabel} - {HOURS[index + 1]}
-                    </td>
-                    {DAYS.map((day) => (
-                      <td key={day} className="border border-gray-100/70 p-0 bg-transparent" />
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            {DAYS.flatMap((day, dayIndex) =>
+              HOURS.slice(0, -1).map((hour, timeIndex) => (
+                <div
+                  key={`${day}-${hour}`}
+                  aria-hidden="true"
+                  style={{
+                    gridColumnStart: dayIndex + 2,
+                    gridRowStart: timeIndex + 2,
+                  }}
+                  className={`border-b border-r border-slate-300 last:border-r-0 ${timeIndex % 2 === 0 ? "bg-white" : "bg-slate-50/70"}`}
+                />
+              )),
+            )}
 
-            {/* DYNAMIC ABSOLUTE GRID OVERLAY */}
-            <div
-              className="absolute inset-0 pointer-events-none p-0 z-10"
-              style={{
-                display: "grid",
-                gridTemplateColumns: "140px repeat(5, 1fr)",
-                paddingTop: "2.75rem",
-                gridTemplateRows: `repeat(${HOURS.length - 1}, 5rem)`
-              }}
-            >
-              {filteredSchedules.map((subj) => {
-                let startTimeStr = "";
-                let endTimeStr = "";
+            {HOURS.slice(0, -1).map((hour, index) => (
+              <div
+                key={hour}
+                style={{
+                  gridColumnStart: 1,
+                  gridRowStart: index + 2,
+                }}
+                className="flex min-w-0 flex-col items-center justify-center border-b border-r border-slate-300 bg-slate-50 p-0.5 text-center font-mono text-[10px] font-extrabold leading-tight text-[#06264A] sm:p-1 sm:text-xs"
+              >
+                <span>{hour}</span>
+              </div>
+            ))}
 
-                if (subj.class_time && typeof subj.class_time === "object") {
-                  startTimeStr = subj.class_time.start || "";
-                  endTimeStr = subj.class_time.end || "";
-                } else if (typeof subj.class_time === "string") {
-                  const timeParts = (subj.class_time as string).split("-");
-                  startTimeStr = timeParts[0]?.trim() || "";
-                  endTimeStr = timeParts[1]?.trim() || "";
-                }
+            {filteredSchedules.map((subject, index) => {
+              const startTime = typeof subject.class_time === "string"
+                ? subject.class_time.split("-")[0]?.trim() || ""
+                : subject.class_time?.start || "";
+              const endTime = typeof subject.class_time === "string"
+                ? subject.class_time.split("-")[1]?.trim() || ""
+                : subject.class_time?.end || "";
+              const rowStart = getTimeRowIndex(startTime);
+              const rowEnd = Math.max(rowStart + 1, getTimeRowIndex(endTime));
+              const styles = getSpecificationStyle(subject.subject_specification);
+              const singleHour = rowEnd - rowStart === 1;
 
-                const colStart = getColumnIndex(subj.subject_day);
-                const rowStart = getTimeRowIndex(startTimeStr);
-                const rowEnd = getTimeRowIndex(endTimeStr);
-                const styles = getSpecificationStyle(subj.subject_specification);
-
-                return (
-                  <div
-                    key={subj.sched_code}
-                    className="pointer-events-auto p-1 h-full w-full"
-                    style={{
-                      gridColumnStart: colStart,
-                      gridRow: `${rowStart} / ${rowEnd}`
-                    }}
-                  >
-                    <div className={`border rounded-xl p-2.5 text-left shadow-sm hover:shadow-md cursor-pointer transition-all h-full flex flex-col justify-between overflow-hidden ${styles.card} ${styles.border}`}>
-                      <div>
-                        <div className="flex justify-between items-start gap-1">
-                          <div className={`font-black text-[11px] leading-tight uppercase tracking-tight break-words ${styles.text}`}>
-                            {subj.subject_name || subj.subject_id}
-                          </div>
-
-                          {subj.subject_specification && (
-                            <span className={`text-[7px] font-black uppercase px-1.5 py-0.5 rounded-md tracking-wider shrink-0 ${styles.tag}`}>
-                              {subj.subject_specification.replace('_', ' ')}
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="text-[8px] text-gray-400 font-bold mt-1 tracking-wider uppercase">
-                          Code: {subj.sched_code}
-                        </div>
-                      </div>
-
-                      <div className="text-[8px] text-indigo-500 font-mono font-black mt-1 pt-1 border-t border-gray-100/50 flex justify-between items-center uppercase">
-                        <span>📍 {subj.room || "TBA"}</span>
-                        <span>⏱️ {startTimeStr} - {endTimeStr}</span>
-                      </div>
-                    </div>
+              return (
+                <div
+                  key={`${subject.sched_code}-${index}`}
+                  className={`m-0.5 flex min-w-0 flex-col justify-center gap-0.5 overflow-hidden rounded-md border border-slate-300 p-1 shadow-sm transition-colors sm:m-1 sm:gap-1 sm:rounded-lg sm:p-1.5 ${styles.card} ${styles.border}`}
+                  style={{
+                    gridColumnStart: getColumnIndex(subject.subject_day),
+                    gridRowStart: rowStart,
+                    gridRowEnd: rowEnd,
+                  }}
+                >
+                  <div className={`line-clamp-2 text-center text-[10px] font-extrabold uppercase leading-tight tracking-tight sm:text-xs ${styles.text}`}>
+                    {subject.subject_name || subject.subject_id}
                   </div>
-                );
-              })}
-            </div>
-
+                  {singleHour ? (
+                    <div className="truncate border-t border-slate-300/70 pt-0.5 text-center text-[9px] font-bold text-slate-800 sm:text-[11px]">
+                      {subject.room || "Room TBA"} · {startTime}–{endTime}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-px border-t border-slate-300/70 pt-0.5 text-left sm:gap-0.5 sm:pt-1">
+                      <div className="truncate text-[8px] font-bold text-slate-700 sm:text-[10px]">Room: {subject.room || "—"}</div>
+                      <div className="truncate font-mono text-[8px] font-bold text-[#0B3763] sm:text-[10px]">Code: {subject.sched_code || "—"}</div>
+                      <div className="truncate font-mono text-[8px] font-bold text-emerald-800 sm:text-[10px]">{startTime} - {endTime}</div>
+                    </div>
+                  )}
+                  {subject.subject_specification && (
+                    <span className={`self-center rounded-md px-1.5 py-0.5 text-[7px] font-black uppercase tracking-wider ${styles.tag}`}>
+                      {subject.subject_specification.replace("_", " ")}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        {/* Legend */}
-        <div className="flex flex-wrap justify-center gap-6 p-4 text-[8px] font-black uppercase tracking-[0.2em] border-t bg-gray-50/50">
-          {['Core', 'Applied', 'Specialized', 'Other Subjects'].map((name, idx) => {
-            const bgClasses = ['bg-blue-500', 'bg-teal-500', 'bg-purple-500', 'bg-orange-500'];
+        <div className="flex shrink-0 flex-wrap justify-center gap-x-4 gap-y-1 border-t border-slate-200 bg-slate-50 px-3 py-1.5 text-[9px] font-extrabold uppercase tracking-wide sm:gap-x-6 sm:gap-y-1 sm:px-5 sm:py-2 sm:text-[10px]">
+          {['Core Tracks', 'Applied Modules', 'Specialized Paths', 'Other Subjects'].map((name, idx) => {
+            const colors = ['bg-blue-500', 'bg-teal-500', 'bg-purple-500', 'bg-orange-500'];
             return (
               <div key={name} className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${bgClasses[idx]} border border-gray-200`}></div>
-                <span className="text-gray-400">{name}</span>
+                <div className={`h-2.5 w-2.5 rounded-full ${colors[idx]} ring-2 ring-white`} />
+                <span className="text-slate-600">{name}</span>
               </div>
             );
           })}
         </div>
-
       </div>
     </div>
   );
