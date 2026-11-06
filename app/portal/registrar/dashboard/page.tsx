@@ -367,23 +367,21 @@ function StatusPieChart({
     );
   }
 
-  let cumulativeAngle = 0;
-
   return (
-    <div className="flex min-h-0 flex-1 items-center justify-center gap-1 overflow-hidden sm:gap-2">
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-start gap-3 overflow-y-auto py-1">
       <div className="relative flex items-center justify-center">
-      <svg viewBox="-1 -1 2 2" className="size-16 shrink-0 -rotate-90 transform overflow-visible sm:size-20 md:size-24">
-          {data.map((item) => {
+      <svg viewBox="-1 -1 2 2" className="size-32 shrink-0 -rotate-90 transform overflow-visible sm:size-36 md:size-32 lg:size-36">
+          {data.map((item, index) => {
             const percentage = item.count / total;
             const sliceAngle = percentage * 2 * Math.PI;
+            const startAngle = data
+              .slice(0, index)
+              .reduce((angle, previousItem) => angle + (previousItem.count / total) * 2 * Math.PI, 0);
 
-            const startX = Math.cos(cumulativeAngle);
-            const startY = Math.sin(cumulativeAngle);
-
-            cumulativeAngle += sliceAngle;
-
-            const endX = Math.cos(cumulativeAngle);
-            const endY = Math.sin(cumulativeAngle);
+            const startX = Math.cos(startAngle);
+            const startY = Math.sin(startAngle);
+            const endX = Math.cos(startAngle + sliceAngle);
+            const endY = Math.sin(startAngle + sliceAngle);
 
             const largeArcFlag = sliceAngle > Math.PI ? 1 : 0;
             const pathData = `M 0 0 L ${startX} ${startY} A 1 1 0 ${largeArcFlag} 1 ${endX} ${endY} Z`;
@@ -411,7 +409,7 @@ function StatusPieChart({
         </div>
       </div>
 
-      <div className="max-h-full min-w-0 flex-1 space-y-1 overflow-hidden">
+      <div className="grid w-full shrink-0 grid-cols-2 gap-x-2 gap-y-1">
         {data.map((item) => {
           const percent = ((item.count / total) * 100).toFixed(1);
           const color = COLOR_PALETTE[item.status] || DEFAULT_COLOR;
@@ -420,7 +418,7 @@ function StatusPieChart({
             <div 
               key={item.status} 
               onClick={() => onSliceClick && onSliceClick(item.status)}
-              className={`flex cursor-pointer items-center justify-between gap-1 rounded px-1 py-0.5 text-[9px] transition-colors hover:bg-blue-50 hover:text-blue-900 sm:text-[10px] ${
+              className={`flex min-w-0 cursor-pointer items-center justify-between gap-1 rounded px-1 py-1 text-[9px] transition-colors hover:bg-blue-50 hover:text-blue-900 sm:text-[10px] ${
                 onSliceClick ? "cursor-pointer hover:bg-slate-50 p-1 rounded transition-colors" : ""
               }`}
             >
