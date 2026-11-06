@@ -238,7 +238,7 @@ export default function StudentSchedulePage() {
                   type="button"
                   aria-label={`${sub.subject_name || sub.subject_id}, ${sub["subject-day"]}, ${sub.class_time?.start} to ${sub.class_time?.end}. Tap for details.`}
                   onClick={() => setSelectedSubject(sub)}
-                  className={`m-0.5 flex min-w-0 cursor-pointer flex-col justify-center gap-px overflow-visible rounded-md border border-slate-300 text-left shadow-sm transition-colors hover:brightness-95 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#d99a00] sm:m-1 sm:gap-1 sm:rounded-lg ${isSingleHour ? "p-0.5 sm:p-1" : "p-1 sm:p-1.5"} ${colorStyle}`}
+                  className={`m-0.5 flex min-h-0 min-w-0 cursor-pointer flex-col overflow-auto overscroll-contain rounded-md border border-slate-300 text-left shadow-sm transition-colors hover:brightness-95 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#d99a00] sm:m-1 sm:rounded-lg ${isSingleHour ? "items-center justify-center gap-0.5 p-0.5 sm:gap-1 sm:p-1" : "items-stretch justify-start gap-1 p-1 sm:gap-1.5 sm:p-1.5"} ${colorStyle}`}
                   style={{
                     gridColumnStart: colStart,
                     gridRowStart: startTrack,
@@ -249,14 +249,20 @@ export default function StudentSchedulePage() {
                     {sub.subject_name || sub.subject_id}
                   </div>
 
-                  <div className={`flex min-w-0 shrink-0 flex-col gap-px border-t border-slate-300/70 pt-0.5 text-left sm:gap-0.5 sm:pt-1 ${isSingleHour ? "text-[7px] sm:text-[8px]" : "text-[8px] sm:text-[10px]"}`}>
-                    <div className="truncate font-bold text-slate-700">
-                      Room: {sub.room || "Room TBA"}
+                  {isSingleHour ? (
+                    <div className="w-full shrink-0 whitespace-normal break-words text-center text-[7px] font-semibold leading-tight text-slate-700 sm:text-[8px]">
+                      {sub.room || "Room TBA"} · {sub.class_time?.start}–{sub.class_time?.end}
                     </div>
-                    <div className="truncate font-mono font-bold text-emerald-800">
-                      Time: {sub.class_time?.start} - {sub.class_time?.end}
+                  ) : (
+                    <div className="flex min-w-0 shrink-0 flex-col gap-0.5 border-t border-slate-300/70 pt-1 text-left text-[8px] sm:gap-1 sm:text-[10px]">
+                      <div className="whitespace-normal break-words font-bold text-slate-700">
+                        Room: {sub.room || "Room TBA"}
+                      </div>
+                      <div className="whitespace-normal break-words font-mono font-bold text-emerald-800">
+                        Time: {sub.class_time?.start}–{sub.class_time?.end}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </button>
               );
             })}
