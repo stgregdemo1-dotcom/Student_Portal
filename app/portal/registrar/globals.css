@@ -1,1 +1,35 @@
 @import "tailwindcss";
+@import "../../-components/portal-interactions.css";
+
+.registrar-portal main button {
+  background-color: #06264a !important;
+  border-color: #06264a !important;
+  color: #fff !important;
+}
+
+.registrar-portal main button:hover:not(:disabled) {
+  background-color: #0b315d !important;
+  border-color: #0b315d !important;
+}
+
+.registrar-portal button.registrar-exit-button {
+  background-color: #e64b1b !important;
+  border-color: #c2410c !important;
+  color: #fff !important;
+}
+
+.registrar-portal button.registrar-exit-button:hover:not(:disabled) {
+  background-color: #ff9100 !important;
+  border-color: #ff9100 !important;
+}
+
+.registrar-portal main button.registrar-search-clear,
+.registrar-portal main button.registrar-search-clear:hover:not(:disabled) {
+  background-color: transparent !important;
+  border-color: transparent !important;
+  color: #94a3b8 !important;
+}
+
+.registrar-portal main button.registrar-search-clear:hover:not(:disabled) {
+  color: #334155 !important;
+}
