@@ -674,6 +674,11 @@ export default function Dashboard() {
                             <span className="text-gray-600 font-medium">Failed:</span>
                             <span className="font-bold text-red-500">{failed}</span>
                           </div>
+                          <div className="flex items-center space-x-2">
+                            <span className="w-3 h-3 bg-slate-300 rounded-full inline-block"></span>
+                            <span className="text-gray-600 font-medium">Pending:</span>
+                            <span className="font-bold text-slate-600">{ungraded}</span>
+                          </div>
                         </div>
                       </div>
                     )}
