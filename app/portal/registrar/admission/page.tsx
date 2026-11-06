@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import RegistrarSearchInput from "@/app/-components/RegistrarSearchInput";
 
 interface AdmissionRequest {
   _id: string;
@@ -49,7 +50,7 @@ function EnrollmentContent() {
     setIsLoading(true);
     setLoadError(null);
     try {
-      const res = await fetch("/api/admission?table=admissions_applications", {
+      const res = await fetch("/api/portal/registrar?table=admissions_applications", {
         cache: "no-store",
       });
       const jsonResponse = await res.json();
@@ -79,11 +80,6 @@ function EnrollmentContent() {
   useEffect(() => {
     fetchAdmissions();
   }, []);
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-    setCurrentPage(1);
-  };
 
   const handleStatusFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setStatusFilter(e.target.value);
@@ -163,7 +159,7 @@ function EnrollmentContent() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="w-full">
       <div className="bg-white rounded-xl shadow overflow-hidden border border-gray-100 flex flex-col justify-between">
 
         <div>
@@ -176,29 +172,15 @@ function EnrollmentContent() {
                 Admission Requests
               </h3>
 
-              <div className="relative w-full sm:w-64">
-                <input
-                  type="text"
-                  placeholder="Search student name..."
-                  value={searchTerm}
-                  onChange={handleSearchChange}
-                  className="w-full pl-9 pr-3 py-1.5 bg-gray-50 border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
-                />
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
-                  🔍
-                </span>
-                {searchTerm && (
-                  <button
-                    onClick={() => {
-                      setSearchTerm("");
-                      setCurrentPage(1);
-                    }}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs font-bold"
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
+              <RegistrarSearchInput
+                value={searchTerm}
+                onChange={(value) => {
+                  setSearchTerm(value);
+                  setCurrentPage(1);
+                }}
+                placeholder="Search student name..."
+                ariaLabel="Search admission requests by student name"
+              />
             </div>
 
             {/* Filter and Refresh Action Controls */}
