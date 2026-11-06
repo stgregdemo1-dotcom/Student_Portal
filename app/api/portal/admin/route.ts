@@ -419,17 +419,21 @@ export async function DELETE(request: NextRequest) {
     await connectDB();
 
     const tableName = request.nextUrl.searchParams.get("table");
-    if (tableName !== "subjects" && tableName !== "events") {
-      return NextResponse.json({ message: "Only subject schedules and events can be deleted here." }, { status: 400 });
+    if (tableName !== "subjects" && tableName !== "teachers" && tableName !== "events") {
+      return NextResponse.json({ message: "Only subject schedules, teachers, and events can be changed here." }, { status: 400 });
     }
 
     const body = await request.json();
     const subjectId = typeof body.subject_id === "string" ? body.subject_id.trim() : "";
+    const teacherId = typeof body.teacher_id === "string" ? body.teacher_id.trim() : "";
     const eventId = typeof body.event_id === "string" ? body.event_id.trim() : "";
     const username = typeof body.username === "string" ? body.username.trim() : "";
     const password = typeof body.password === "string" ? body.password : "";
 
-    if (!username || !password || (tableName === "subjects" && !subjectId) || (tableName === "events" && !eventId)) {
+    if (!username || !password ||
+      (tableName === "subjects" && !subjectId) ||
+      (tableName === "teachers" && !teacherId) ||
+      (tableName === "events" && !eventId)) {
       return NextResponse.json({ message: "Record ID, admin username, and password are required." }, { status: 400 });
     }
 
@@ -456,6 +460,21 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ message: "Subject schedule archived successfully.", data: archivedSubject }, { status: 200 });
     }
 
+    if (tableName === "teachers") {
+      const archivedTeacher = await Teacher.findOneAndUpdate(
+        { teacher_id: teacherId, archived: { $ne: true } },
+        { $set: { archived: true } },
+        { new: true }
+      ).lean();
+      if (!archivedTeacher) {
+        return NextResponse.json({ message: "Teacher was not found." }, { status: 404 });
+      }
+
+      const teacherName = `${archivedTeacher.first_name || ""} ${archivedTeacher.last_name || ""}`.trim();
+      await createAuditLog(username, `Archived teacher ${teacherId}${teacherName ? ` (${teacherName})` : ""}.`);
+      return NextResponse.json({ message: "Teacher archived successfully.", data: archivedTeacher }, { status: 200 });
+    }
+
     if (!mongoose.Types.ObjectId.isValid(eventId)) {
       return NextResponse.json({ message: "Invalid event ID." }, { status: 400 });
     }
@@ -476,24 +495,41 @@ export async function DELETE(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     await connectDB();
-    if (request.nextUrl.searchParams.get("table") !== "subjects") {
-      return NextResponse.json({ message: "Only subject schedules can be restored here." }, { status: 400 });
+    const tableName = request.nextUrl.searchParams.get("table");
+    if (tableName !== "subjects" && tableName !== "teachers") {
+      return NextResponse.json({ message: "Only subject schedules and teachers can be restored here." }, { status: 400 });
     }
 
     const body = await request.json();
     const subjectId = typeof body.subject_id === "string" ? body.subject_id.trim() : "";
+    const teacherId = typeof body.teacher_id === "string" ? body.teacher_id.trim() : "";
     const username = typeof body.username === "string" ? body.username.trim() : "";
     const password = typeof body.password === "string" ? body.password : "";
-    if (!subjectId || !username || !password) {
-      return NextResponse.json({ message: "Subject ID and admin credentials are required." }, { status: 400 });
+    if (!(tableName === "subjects" ? subjectId : teacherId) || !username || !password) {
+      return NextResponse.json({ message: "Record ID and admin credentials are required." }, { status: 400 });
     }
     if (!username.toUpperCase().startsWith("ADM")) {
-      return NextResponse.json({ message: "Admin authentication is required to restore a subject schedule." }, { status: 403 });
+      return NextResponse.json({ message: "Admin authentication is required to restore this record." }, { status: 403 });
     }
 
     const credential = await Credentials.findOne({ username }).select("username password user_type").lean();
     if (!credential || credential.password !== password || credential.user_type === "archive") {
       return NextResponse.json({ message: "Invalid admin username or password." }, { status: 401 });
+    }
+
+    if (tableName === "teachers") {
+      const restoredTeacher = await Teacher.findOneAndUpdate(
+        { teacher_id: teacherId, archived: true },
+        { $set: { archived: false } },
+        { new: true }
+      ).lean();
+      if (!restoredTeacher) {
+        return NextResponse.json({ message: "Archived teacher was not found." }, { status: 404 });
+      }
+
+      const teacherName = `${restoredTeacher.first_name || ""} ${restoredTeacher.last_name || ""}`.trim();
+      await createAuditLog(username, `Restored teacher ${teacherId}${teacherName ? ` (${teacherName})` : ""}.`);
+      return NextResponse.json({ message: "Teacher restored successfully.", data: restoredTeacher }, { status: 200 });
     }
 
     const restoredSubject = await Subject.findOneAndUpdate(
