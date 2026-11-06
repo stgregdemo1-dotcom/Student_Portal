@@ -135,6 +135,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const textFields = [
+      { key: "firstName", label: "First name", required: true },
+      { key: "middleName", label: "Middle name", required: false },
+      { key: "lastName", label: "Last name", required: true },
+      { key: "nationality", label: "Nationality", required: true },
+    ];
+    for (const { key, label, required } of textFields) {
+      const value = typeof fields[key] === "string" ? fields[key].trim() : "";
+      if ((!value && required) || (value && !/^[\p{L}\p{M}][\p{L}\p{M} '\u2019-]*$/u.test(value))) {
+        return NextResponse.json(
+          { message: `${label} can contain letters, spaces, apostrophes, or hyphens only.` },
+          { status: 400 }
+        );
+      }
+      if (value) fields[key] = value;
+    }
+
     // ==========================================
     // Duplicate Application Check
     // ==========================================
