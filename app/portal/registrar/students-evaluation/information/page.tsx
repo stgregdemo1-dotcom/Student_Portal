@@ -142,7 +142,7 @@ function AdminStudentDetailsContent() {
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-8">
-      <div className="max-w-6xl mx-auto space-y-6">
+      <div className="w-full space-y-6">
 
         {/* Header Action Control Row */}
         <div className="flex justify-between items-center">
