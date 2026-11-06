@@ -159,10 +159,10 @@ export default function StudentSchedulePage() {
             Swipe sideways to view the week. Tap a class for details.
           </p>
           <div
-            className="min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain rounded-xl border border-slate-300 bg-white shadow-sm lg:overflow-hidden"
+            className="min-h-0 min-w-0 flex-1 overflow-x-auto overflow-y-hidden overscroll-x-contain rounded-xl border border-slate-300 bg-white shadow-sm lg:overflow-hidden"
           >
             <div
-            className="grid h-full min-h-[1404px] min-w-[1004px] overflow-visible bg-white [--schedule-day-min:184px] [--schedule-row-min:120px] [--schedule-lunch-row:48px] lg:min-h-0 lg:min-w-0 lg:overflow-hidden lg:[--schedule-day-min:120px] lg:[--schedule-row-min:0px] lg:[--schedule-lunch-row:48px]"
+            className="grid h-full min-h-0 min-w-[1004px] overflow-visible bg-white [--schedule-day-min:184px] [--schedule-row-min:0px] [--schedule-lunch-row:36px] lg:min-w-0 lg:overflow-hidden lg:[--schedule-day-min:120px] lg:[--schedule-lunch-row:48px]"
             style={{
               gap: 0,
               gridTemplateColumns: "84px repeat(5, minmax(var(--schedule-day-min), 1fr))",
