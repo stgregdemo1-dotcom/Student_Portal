@@ -32,6 +32,85 @@ const ALLOWED_TABLES: Record<string, { model: mongoose.Model<any>; idKey: string
 
 const CONFIG_DOC_ID = "6a3805c56bb871d76758fe12";
 
+type ScheduleData = {
+  subject_id?: unknown;
+  sched_code?: unknown;
+  semester?: unknown;
+  subject_day?: unknown;
+  subject_year_section?: unknown;
+  teacher_id?: unknown;
+  room?: unknown;
+  class_time?: {
+    start?: unknown;
+    end?: unknown;
+  };
+};
+
+function normalizeScheduleValue(value: unknown): string {
+  return typeof value === "string" ? value.trim().toLowerCase() : "";
+}
+
+function scheduleTimeInMinutes(value: unknown): number | null {
+  if (typeof value !== "string") return null;
+  const match = value.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!match) return null;
+
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  if (hour < 1 || hour > 12 || minute > 59) return null;
+
+  const hour24 = (hour % 12) + (match[3].toUpperCase() === "PM" ? 12 : 0);
+  return hour24 * 60 + minute;
+}
+
+async function findScheduleConflict(
+  candidate: ScheduleData,
+  excludeSubjectId?: string
+): Promise<{ message: string; status: 400 | 409 } | null> {
+  const start = scheduleTimeInMinutes(candidate.class_time?.start);
+  const end = scheduleTimeInMinutes(candidate.class_time?.end);
+  const day = normalizeScheduleValue(candidate.subject_day);
+  const semester = normalizeScheduleValue(candidate.semester);
+
+  if (start === null || end === null || start >= end || !day || !semester) {
+    return { message: "A valid day, semester, and start/end time are required.", status: 400 };
+  }
+
+  const existingSchedules = await Subject.find({ semester: candidate.semester })
+    .select("subject_id sched_code subject_day class_time teacher_id room subject_year_section")
+    .lean();
+
+  const candidateYear = String(candidate.sched_code || "").match(/^\d{4}/)?.[0];
+  const candidateRoom = normalizeScheduleValue(candidate.room);
+  const candidateTeacher = normalizeScheduleValue(candidate.teacher_id);
+  const candidateSection = normalizeScheduleValue(candidate.subject_year_section);
+
+  for (const existing of existingSchedules) {
+    if (excludeSubjectId && existing.subject_id === excludeSubjectId) continue;
+    if (normalizeScheduleValue(existing.subject_day) !== day) continue;
+
+    const existingYear = String(existing.sched_code || "").match(/^\d{4}/)?.[0];
+    if (candidateYear && existingYear && candidateYear !== existingYear) continue;
+
+    const existingStart = scheduleTimeInMinutes(existing.class_time?.start);
+    const existingEnd = scheduleTimeInMinutes(existing.class_time?.end);
+    if (existingStart === null || existingEnd === null || start >= existingEnd || end <= existingStart) continue;
+
+    const sameRoom = candidateRoom && candidateRoom === normalizeScheduleValue(existing.room);
+    const sameTeacher = candidateTeacher && candidateTeacher === normalizeScheduleValue(existing.teacher_id);
+    const sameSection = candidateSection && candidateSection === normalizeScheduleValue(existing.subject_year_section);
+    if (!sameRoom && !sameTeacher && !sameSection) continue;
+
+    const resource = sameRoom ? "room" : sameTeacher ? "teacher" : "section";
+    return {
+      message: `Schedule overlaps with ${existing.sched_code || existing.subject_id} on the same ${resource} and day.`,
+      status: 409,
+    };
+  }
+
+  return null;
+}
+
 function getAuditUser(request: NextRequest): string {
   const auditUserCookie = request.cookies.get("audit_user");
   return auditUserCookie ? decodeURIComponent(auditUserCookie.value) : "SYSTEM";
@@ -235,6 +314,11 @@ export async function POST(request: NextRequest) {
         ...bodyData,
         subject_id: structuralId
       };
+
+      const conflict = await findScheduleConflict(bodyData);
+      if (conflict) {
+        return NextResponse.json({ message: conflict.message }, { status: conflict.status });
+      }
     }
 
     const newRecord = new TargetModel(bodyData);
@@ -292,6 +376,21 @@ export async function PUT(request: NextRequest) {
     const cleanUpdatePayload = Object.fromEntries(
       Object.entries(updatePayload).filter(([_, value]) => value !== undefined && value !== null)
     );
+
+    if (tableName === "subjects") {
+      const currentRecord = await TargetModel.findOne(filter).lean();
+      if (!currentRecord) {
+        return NextResponse.json({ message: "Record not found to update." }, { status: 404 });
+      }
+
+      const conflict = await findScheduleConflict(
+        { ...currentRecord, ...cleanUpdatePayload } as ScheduleData,
+        String(recordIdentifier)
+      );
+      if (conflict) {
+        return NextResponse.json({ message: conflict.message }, { status: conflict.status });
+      }
+    }
 
     const updatedRecord = await TargetModel.findOneAndUpdate(
       filter,
