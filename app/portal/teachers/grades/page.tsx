@@ -236,7 +236,7 @@ const GradingSheet = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 py-10 px-4 font-sans relative">
-      <div className="mx-auto w-full max-w-4xl">
+      <div className="mx-auto w-full max-w-none">
 
         {/* Header Section */}
         <div className="bg-white border-t-4 border-[#FFD700] p-6 rounded-xl shadow-md mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
