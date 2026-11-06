@@ -503,7 +503,7 @@ export default function DashboardPage() {
               return (
                 <div
                   key={dateKey || `date-${index}`}
-                  className={`min-h-0 overflow-hidden border-b border-r border-slate-300 p-1 sm:p-1.5 ${
+                  className={`flex min-h-0 flex-col overflow-hidden border-b border-r border-slate-300 p-1 sm:p-1.5 ${
                     isToday ? "bg-[#eaf2ff] shadow-[inset_0_0_0_1px_#1967d2]" : "bg-white"
                   }`}
                 >
@@ -517,8 +517,11 @@ export default function DashboardPage() {
                     <span>{date.getDate()}</span>
                     {showMonthLabel && <span>{MONTHS[date.getMonth()].slice(0, 3)}</span>}
                   </span>
-                  <div className="mt-1 space-y-0.5">
-                    {dayEvents.slice(0, 3).map((event, eventIndex) => (
+                  <div
+                    aria-label={`Events on ${dateKey}`}
+                    className="mt-1 min-h-0 flex-1 space-y-0.5 overflow-y-auto overscroll-contain pr-0.5"
+                  >
+                    {dayEvents.map((event, eventIndex) => (
                       <button
                         type="button"
                         key={event._id || `${dateKey}-${eventIndex}`}
@@ -533,9 +536,6 @@ export default function DashboardPage() {
                         <span className="truncate">{event.title}</span>
                       </button>
                     ))}
-                    {dayEvents.length > 3 && (
-                      <p className="truncate px-1 text-[9px] font-medium text-slate-500">+{dayEvents.length - 3} more</p>
-                    )}
                   </div>
                 </div>
               );
@@ -558,7 +558,7 @@ export default function DashboardPage() {
 
       {selectedEvent && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-[2px]"
+          className="portal-modal-backdrop fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-[2px]"
           onMouseDown={(mouseEvent) => {
             if (mouseEvent.target === mouseEvent.currentTarget) setSelectedEvent(null);
           }}
