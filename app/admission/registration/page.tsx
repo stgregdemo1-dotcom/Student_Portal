@@ -246,6 +246,8 @@ function AdmissionFormContent() {
     type: "success" | "error" | "";
     message: string;
   }>({ type: "", message: "" });
+  const [canViewSubmittedApplication, setCanViewSubmittedApplication] =
+    useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [enrollmentType, setEnrollmentType] = useState<string>("New Student");
   const [gradeLevel, setGradeLevel] = useState<string>("Grade 11");
@@ -461,9 +463,46 @@ function AdmissionFormContent() {
       const data = await res.json();
 
       if (res.ok) {
+        setCanViewSubmittedApplication(false);
+        let portalReady = false;
+        const applicantId = data.data?.applicant_id;
+        if (typeof applicantId !== "string" || !applicantId) {
+          setStatus({
+            type: "error",
+            message:
+              "Your application was submitted, but the portal could not be prepared. Please contact the admissions office.",
+          });
+          return;
+        }
+
+        const applicationFields = Object.fromEntries(
+          Array.from(formData.entries())
+            .filter((entry): entry is [string, string] => typeof entry[1] === "string")
+            .map(([key, value]) => [key, value]),
+        );
+        try {
+            sessionStorage.removeItem("admission_portal_application");
+            sessionStorage.setItem(
+              "admission_portal_application",
+              JSON.stringify({
+                ...applicationFields,
+                applicant_id: applicantId,
+                status: data.data.status || "Pending",
+                submittedAt: data.data.submittedAt,
+                attachments: selectedFiles.profile.concat(
+                  selectedFiles.reportCard,
+                  selectedFiles.birthCertificate,
+                ).map((file) => file.name),
+              }),
+            );
+            portalReady = true;
+            setCanViewSubmittedApplication(true);
+        } catch (error) {
+            console.error("Unable to prepare the admission portal session:", error);
+        }
         setStatus({
-          type: "success",
-          message: "Application submitted successfully!",
+            type: "success",
+            message: `Application submitted successfully! Your control number is ${applicantId}.${portalReady ? "" : " The portal could not store your details in this browser session."}`,
         });
         (e.target as HTMLFormElement).reset();
         fileInputRefs.current.forEach((input) => {
@@ -674,14 +713,16 @@ function AdmissionFormContent() {
                 onChange={(e) => setGradeLevel(e.target.value)}
               />
               <InputField
-                label="LRN"
+                label="LRN *"
                 name="lrn"
                 placeholder="12-digit LRN"
                 inputMode="numeric"
+                maxLength={12}
+                pattern="[0-9]{12}"
                 onChange={(e) => {
                   e.currentTarget.value = e.currentTarget.value.replace(
                     /\D/g,
-                    ""
+                    "",
                   );
                 }}
               />
@@ -1019,7 +1060,15 @@ function AdmissionFormContent() {
               : "border-red-200 bg-red-50 text-red-700"
           }`}
         >
-          <span>{status.message}</span>
+          <span className="min-w-0 flex-1">{status.message}</span>
+          {status.type === "success" && canViewSubmittedApplication && (
+            <Link
+              href="/portal/admission"
+              className="shrink-0 whitespace-nowrap rounded px-2 py-1 text-xs font-bold underline underline-offset-2 hover:bg-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current"
+            >
+              View in Admission Portal
+            </Link>
+          )}
           <button
             type="button"
             onClick={() => setStatus({ type: "", message: "" })}
