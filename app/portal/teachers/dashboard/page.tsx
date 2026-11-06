@@ -116,6 +116,7 @@ export default function Dashboard() {
   const [calendarView, setCalendarView] = useState<TeacherCalendarView>("calendar");
   const [eventListDate, setEventListDate] = useState<string | null>(null);
   const [eventPeriod, setEventPeriod] = useState<TeacherEventPeriod>("upcoming");
+  const [pastEventYear, setPastEventYear] = useState("all");
   const [isEventPeriodMenuOpen, setIsEventPeriodMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -260,6 +261,8 @@ export default function Dashboard() {
   const eventDates = new Set(eventsByDate.keys());
   const upcomingEvents = orderedEvents.filter((event) => event.event_date >= todayKey);
   const pastEvents = orderedEvents.filter((event) => event.event_date < todayKey);
+  const pastEventYears = [...new Set(pastEvents.map((event) => event.event_date.slice(0, 4)))]
+    .sort((a, b) => b.localeCompare(a));
   const filteredSubjects = subjects.filter((subject) =>
     [
       subject.subject_name,
@@ -274,9 +277,12 @@ export default function Dashboard() {
       .includes(subjectFilter.trim().toLowerCase())
   );
   const activeDateKey = selectedCalendarDate || todayKey;
-  const visibleEvents = eventListDate
+  const selectedEvents = eventListDate
     ? eventsByDate.get(eventListDate) || []
     : eventPeriod === "upcoming" ? upcomingEvents : pastEvents;
+  const visibleEvents = !eventListDate && eventPeriod === "past" && pastEventYear !== "all"
+    ? selectedEvents.filter((event) => event.event_date.startsWith(`${pastEventYear}-`))
+    : selectedEvents;
   const selectCalendarDate = (dateKey: string) => {
     setSelectedCalendarDate(dateKey);
     if (eventsByDate.has(dateKey)) {
@@ -469,6 +475,7 @@ export default function Dashboard() {
                         aria-current={eventPeriod === period ? "true" : undefined}
                         onClick={() => {
                           setEventPeriod(period);
+                          if (period !== "past") setPastEventYear("all");
                           setIsEventPeriodMenuOpen(false);
                         }}
                         className={`block w-full cursor-pointer rounded-md px-3 py-2 text-left text-xs font-bold transition-colors hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-600 ${
@@ -483,9 +490,25 @@ export default function Dashboard() {
               </>
             )}
           </div>
-          <span className="text-xs font-medium text-slate-500">
-            {isEventsLoading ? "Loading…" : `${visibleEvents.length} event${visibleEvents.length === 1 ? "" : "s"}`}
-          </span>
+          <div className="flex shrink-0 items-center gap-2">
+            {!eventListDate && eventPeriod === "past" && (
+              <div className="flex items-center gap-1.5">
+                <label htmlFor="teacher-past-event-year" className="sr-only">Filter past events by year</label>
+                <select
+                  id="teacher-past-event-year"
+                  value={pastEventYear}
+                  onChange={(event) => setPastEventYear(event.target.value)}
+                  className="max-w-32 cursor-pointer rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-slate-700 outline-none transition hover:border-emerald-300 focus-visible:ring-2 focus-visible:ring-emerald-600 sm:max-w-40 sm:px-3"
+                >
+                  <option value="all">All years</option>
+                  {pastEventYears.map((year) => <option key={year} value={year}>{year}</option>)}
+                </select>
+              </div>
+            )}
+            <span className="text-xs font-medium text-slate-500">
+              {isEventsLoading ? "Loading…" : `${visibleEvents.length} event${visibleEvents.length === 1 ? "" : "s"}`}
+            </span>
+          </div>
         </header>
         {eventListDate && (
           <button
