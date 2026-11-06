@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import Link from "next/link";
 
 interface Teacher {
   id: string;
@@ -126,7 +125,14 @@ function FacultyModalContent({
           <h3 className="text-xl font-semibold text-gray-800">
             {isEditMode ? "Edit Faculty Details" : "Add New Faculty"}
           </h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close dialog"
+            className="admin-modal-close text-gray-400 hover:text-gray-600"
+          >
+            ✕
+          </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -262,7 +268,7 @@ function FacultyModalContent({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
+              className="admin-cancel-button rounded-lg border border-gray-200 bg-transparent px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
             >
               Cancel
             </button>
@@ -287,6 +293,10 @@ export default function ManageTeachers() {
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [passwordRequestingId, setPasswordRequestingId] = useState<string | null>(null);
+  const [teacherToSendPassword, setTeacherToSendPassword] = useState<Teacher | null>(null);
+  const [adminUsername, setAdminUsername] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [passwordRequestError, setPasswordRequestError] = useState("");
   const [sortField, setSortField] = useState<keyof Teacher | "faculty_name">("teacher_id");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
@@ -329,37 +339,52 @@ export default function ManageTeachers() {
     setCurrentPage(1);
   };
 
-  const handleSetPasswordClick = useCallback(async (teacher: Teacher) => {
-    if (!confirm(`Send a secure password setup link to ${teacher.prefix} ${teacher.last_name}?`)) {
-      return;
-    }
+  const handleSetPasswordClick = useCallback((teacher: Teacher) => {
+    setTeacherToSendPassword(teacher);
+    setAdminUsername("");
+    setAdminPassword("");
+    setPasswordRequestError("");
+  }, []);
 
-    setPasswordRequestingId(teacher.teacher_id);
+  const closePasswordConfirmation = useCallback(() => {
+    if (passwordRequestingId) return;
+    setTeacherToSendPassword(null);
+    setAdminUsername("");
+    setAdminPassword("");
+    setPasswordRequestError("");
+  }, [passwordRequestingId]);
+
+  const handlePasswordConfirmation = useCallback(async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!teacherToSendPassword) return;
+    setPasswordRequestingId(teacherToSendPassword.teacher_id);
     try {
       const res = await fetch("/api/portal/admin/send-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          teacher_id: teacher.teacher_id,
-          email_address: teacher.email_address,
-          faculty_name: `${teacher.prefix} ${teacher.first_name} ${teacher.last_name}`,
-          id: teacher.id
+          teacher_id: teacherToSendPassword.teacher_id,
+          username: adminUsername.trim(),
+          password: adminPassword,
         }),
       });
 
       if (res.ok) {
         alert("The secure initialization setup password email has been sent successfully!");
+        setTeacherToSendPassword(null);
+        setAdminUsername("");
+        setAdminPassword("");
       } else {
         const errData = await res.json();
-        alert(errData.message || "Failed to trigger email system dispatch protocols.");
+        setPasswordRequestError(errData.message || "Failed to send the password setup email.");
       }
     } catch (error) {
       console.error("Password link dispatch error:", error);
-      alert("A system error isolated network pipeline routines.");
+      setPasswordRequestError("Could not send the setup email because of a network or server error.");
     } finally {
       setPasswordRequestingId(null);
     }
-  }, []);
+  }, [teacherToSendPassword, adminUsername, adminPassword]);
 
   const handleSort = useCallback((field: keyof Teacher | "faculty_name") => {
     setCurrentPage(1); 
@@ -566,7 +591,7 @@ export default function ManageTeachers() {
                         <button
                           disabled={passwordRequestingId !== null}
                           onClick={() => handleSetPasswordClick(teacher)}
-                          className="text-indigo-600 hover:text-indigo-900 text-sm font-medium disabled:opacity-40 transition-colors"
+                          className="teacher-action-button"
                         >
                           {passwordRequestingId === teacher.teacher_id ? "Sending..." : "Set Password"}
                         </button>
@@ -574,7 +599,7 @@ export default function ManageTeachers() {
                         <button
                           disabled={passwordRequestingId !== null}
                           onClick={() => handleEditClick(teacher)}
-                          className="text-blue-600 hover:text-blue-800 text-sm font-medium disabled:opacity-40 transition-colors"
+                          className="teacher-action-button"
                         >
                           Edit
                         </button>
@@ -649,6 +674,81 @@ export default function ManageTeachers() {
         onClose={handleCloseModal}
         onSave={handleSaveTeacher}
       />
+      {teacherToSendPassword && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) closePasswordConfirmation();
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="confirm-teacher-password-title"
+            className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
+          >
+            <h2 id="confirm-teacher-password-title" className="text-lg font-bold text-slate-900">
+              Confirm it’s you
+            </h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Verify your admin account to send a password setup link to{" "}
+              <span className="font-semibold text-slate-900">
+                {teacherToSendPassword.prefix} {teacherToSendPassword.first_name} {teacherToSendPassword.last_name}
+              </span>.
+            </p>
+            <form onSubmit={handlePasswordConfirmation} className="mt-5 space-y-4">
+              <div>
+                <label htmlFor="teacher-action-admin-username" className="mb-1 block text-sm font-medium text-slate-700">
+                  Admin username
+                </label>
+                <input
+                  id="teacher-action-admin-username"
+                  type="text"
+                  autoComplete="username"
+                  required
+                  value={adminUsername}
+                  onChange={(event) => setAdminUsername(event.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-blue-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label htmlFor="teacher-action-admin-password" className="mb-1 block text-sm font-medium text-slate-700">
+                  Admin password
+                </label>
+                <input
+                  id="teacher-action-admin-password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={adminPassword}
+                  onChange={(event) => setAdminPassword(event.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-blue-500 focus:outline-none"
+                />
+              </div>
+              {passwordRequestError && (
+                <p role="alert" className="text-sm font-medium text-red-700">{passwordRequestError}</p>
+              )}
+              <div className="flex justify-end gap-3 border-t border-slate-200 pt-4">
+                <button
+                  type="button"
+                  disabled={passwordRequestingId !== null}
+                  onClick={closePasswordConfirmation}
+                  className="admin-cancel-button rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={passwordRequestingId !== null}
+                  className="rounded-lg bg-[#0B3763] px-4 py-2 text-sm font-semibold text-white hover:bg-[#06264A] disabled:opacity-50"
+                >
+                  {passwordRequestingId ? "Sending…" : "Verify & send link"}
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      )}
     </div>
   );
 }
