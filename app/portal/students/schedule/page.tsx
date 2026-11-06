@@ -143,7 +143,7 @@ export default function StudentSchedulePage() {
           </div>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-1 sm:p-1.5">
+        <div className="flex min-h-0 flex-1 flex-col overflow-visible p-1 sm:p-1.5 lg:overflow-hidden">
           <p className="mb-1 px-1 text-[11px] font-semibold text-slate-500 md:hidden">
             Swipe sideways to view the week. Tap a class for details.
           </p>
@@ -151,7 +151,7 @@ export default function StudentSchedulePage() {
             className="min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain rounded-xl border border-slate-300 bg-white shadow-sm"
           >
             <div
-            className="grid h-full min-h-[948px] min-w-[760px] overflow-hidden bg-white [--schedule-row-min:76px] lg:min-h-[900px] lg:min-w-0 lg:[--schedule-row-min:72px]"
+            className="grid h-full min-h-[948px] min-w-[760px] overflow-visible bg-white [--schedule-row-min:76px] lg:min-h-[900px] lg:min-w-0 lg:overflow-hidden lg:[--schedule-row-min:72px]"
             style={{
               gap: 0,
               gridTemplateColumns: "84px repeat(5, minmax(120px, 1fr))",
@@ -159,9 +159,9 @@ export default function StudentSchedulePage() {
             }}
           >
 
-            <div className="sticky left-0 z-20 flex min-w-0 items-center justify-center border-b border-r border-amber-400 bg-[#ffe8a3] p-1 text-center text-xs font-extrabold uppercase tracking-wide text-[#082b49] sm:p-2">Time</div>
+            <div className="sticky left-0 top-0 z-40 flex min-w-0 items-center justify-center border-b border-r border-amber-400 bg-[#ffe8a3] p-1 text-center text-xs font-extrabold uppercase tracking-wide text-[#082b49] sm:p-2 lg:static">Time</div>
             {DAYS.map((day) => (
-              <div key={day} className="flex min-w-0 items-center justify-center border-b border-r border-amber-400 bg-[#ffe8a3] p-1 text-center text-xs font-extrabold uppercase tracking-wide text-[#082b49] last:border-r-0 sm:p-2">
+              <div key={day} className="sticky top-0 z-30 flex min-w-0 items-center justify-center border-b border-r border-amber-400 bg-[#ffe8a3] p-1 text-center text-xs font-extrabold uppercase tracking-wide text-[#082b49] last:border-r-0 sm:p-2 lg:static">
                 <span className="sm:hidden">{day.slice(0, 3)}</span>
                 <span className="hidden sm:inline">{day}</span>
               </div>
@@ -192,7 +192,7 @@ export default function StudentSchedulePage() {
                     gridColumnStart: 1,
                     gridRowStart: rowStart,
                   }}
-                  className={`sticky left-0 z-10 flex min-w-0 flex-col items-center justify-center border-b border-r border-slate-300 p-0.5 text-center font-mono text-[13px] font-extrabold leading-tight text-slate-900 sm:p-1 ${block.isLunch ? "bg-amber-50 text-amber-900" : "bg-slate-50"
+                  className={`sticky left-0 z-20 flex min-w-0 flex-col items-center justify-center border-b border-r border-slate-300 p-0.5 text-center font-mono text-[13px] font-extrabold leading-tight text-slate-900 sm:p-1 ${block.isLunch ? "bg-amber-50 text-amber-900" : "bg-slate-50"
                     }`}
                 >
                   <span>{block.start}</span>
@@ -238,7 +238,7 @@ export default function StudentSchedulePage() {
                   type="button"
                   aria-label={`${sub.subject_name || sub.subject_id}, ${sub["subject-day"]}, ${sub.class_time?.start} to ${sub.class_time?.end}. Tap for details.`}
                   onClick={() => setSelectedSubject(sub)}
-                  className={`m-0.5 flex min-h-0 min-w-0 cursor-pointer flex-col overflow-auto overscroll-contain rounded-md border border-slate-300 text-left shadow-sm transition-colors hover:brightness-95 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#d99a00] sm:m-1 sm:rounded-lg ${isSingleHour ? "items-center justify-center gap-1 p-2" : "items-stretch justify-start gap-1.5 p-2 sm:gap-2 sm:p-2.5"} ${colorStyle}`}
+                  className={`m-0.5 flex min-h-0 min-w-0 cursor-pointer flex-col overflow-visible rounded-md border border-slate-300 text-left shadow-sm transition-colors hover:brightness-95 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#d99a00] sm:m-1 sm:rounded-lg ${isSingleHour ? "items-center justify-center gap-1 p-2" : "items-stretch justify-start gap-1.5 p-2 sm:gap-2 sm:p-2.5"} ${colorStyle}`}
                   style={{
                     gridColumnStart: colStart,
                     gridRowStart: startTrack,
