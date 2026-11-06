@@ -79,6 +79,46 @@
   opacity: 0.55;
 }
 
+.admin-portal main button.teacher-action-button:not(:disabled) {
+  display: inline-flex !important;
+  min-height: 2rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #0b3763 !important;
+  border-radius: 0.375rem;
+  padding: 0.375rem 0.625rem !important;
+  background-color: #0b3763 !important;
+  color: #fff !important;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1rem;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: none !important;
+}
+
+.admin-portal main button.teacher-action-button:not(:disabled):hover {
+  border-color: #ffb900 !important;
+  background-color: #ffb900 !important;
+  color: #06264a !important;
+  filter: none;
+}
+
+.admin-portal main button.teacher-action-button:disabled {
+  display: inline-flex !important;
+  min-height: 2rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 0.375rem;
+  padding: 0.375rem 0.625rem !important;
+  background-color: #f1f5f9 !important;
+  color: #64748b !important;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1rem;
+}
+
 .admin-portal .admin-calendar-toolbar button.calendar-today-button {
   border-color: #94a3b8 !important;
   background-color: #fff !important;
