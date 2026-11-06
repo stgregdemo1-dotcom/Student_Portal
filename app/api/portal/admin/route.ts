@@ -418,21 +418,23 @@ export async function DELETE(request: NextRequest) {
   try {
     await connectDB();
 
-    if (request.nextUrl.searchParams.get("table") !== "subjects") {
-      return NextResponse.json({ message: "Only subject schedule records can be deleted here." }, { status: 400 });
+    const tableName = request.nextUrl.searchParams.get("table");
+    if (tableName !== "subjects" && tableName !== "events") {
+      return NextResponse.json({ message: "Only subject schedules and events can be deleted here." }, { status: 400 });
     }
 
     const body = await request.json();
     const subjectId = typeof body.subject_id === "string" ? body.subject_id.trim() : "";
+    const eventId = typeof body.event_id === "string" ? body.event_id.trim() : "";
     const username = typeof body.username === "string" ? body.username.trim() : "";
     const password = typeof body.password === "string" ? body.password : "";
 
-    if (!subjectId || !username || !password) {
-      return NextResponse.json({ message: "Subject ID, admin username, and password are required." }, { status: 400 });
+    if (!username || !password || (tableName === "subjects" && !subjectId) || (tableName === "events" && !eventId)) {
+      return NextResponse.json({ message: "Record ID, admin username, and password are required." }, { status: 400 });
     }
 
     if (!username.toUpperCase().startsWith("ADM")) {
-      return NextResponse.json({ message: "Admin authentication is required to delete a subject schedule." }, { status: 403 });
+      return NextResponse.json({ message: "Admin authentication is required to delete this record." }, { status: 403 });
     }
 
     const credential = await Credentials.findOne({ username }).select("username password user_type").lean();
@@ -440,17 +442,30 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ message: "Invalid admin username or password." }, { status: 401 });
     }
 
-    const deletedSubject = await Subject.findOneAndDelete({ subject_id: subjectId }).lean();
-    if (!deletedSubject) {
-      return NextResponse.json({ message: "Subject schedule was not found." }, { status: 404 });
+    if (tableName === "subjects") {
+      const deletedSubject = await Subject.findOneAndDelete({ subject_id: subjectId }).lean();
+      if (!deletedSubject) {
+        return NextResponse.json({ message: "Subject schedule was not found." }, { status: 404 });
+      }
+
+      await createAuditLog(username, `Deleted subject schedule ${deletedSubject.sched_code || subjectId} (${deletedSubject.subject_name || "Unknown subject"}).`);
+      return NextResponse.json({ message: "Subject schedule deleted successfully." }, { status: 200 });
     }
 
-    await createAuditLog(username, `Deleted subject schedule ${deletedSubject.sched_code || subjectId} (${deletedSubject.subject_name || "Unknown subject"}).`);
+    if (!mongoose.Types.ObjectId.isValid(eventId)) {
+      return NextResponse.json({ message: "Invalid event ID." }, { status: 400 });
+    }
 
-    return NextResponse.json({ message: "Subject schedule deleted successfully." }, { status: 200 });
+    const deletedEvent = await Events.findByIdAndDelete(eventId).lean();
+    if (!deletedEvent) {
+      return NextResponse.json({ message: "Event was not found." }, { status: 404 });
+    }
+
+    await createAuditLog(username, `Deleted event "${deletedEvent.title || "Untitled event"}" scheduled for ${deletedEvent.event_date || "unknown date"}.`);
+    return NextResponse.json({ message: "Event deleted successfully." }, { status: 200 });
   } catch (err) {
-    console.error("Subject schedule deletion error:", err);
-    return NextResponse.json({ message: "Failed to delete subject schedule." }, { status: 500 });
+    console.error("Admin record deletion error:", err);
+    return NextResponse.json({ message: "Failed to delete record." }, { status: 500 });
   }
 }
 
