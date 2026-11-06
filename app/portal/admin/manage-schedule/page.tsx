@@ -562,16 +562,10 @@ export default function ClassSchedule() {
 
       {/* Shared Subject Information Modal */}
       {activeModalSubject && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="portal-modal-backdrop fixed inset-0 overscroll-contain bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl border border-gray-100 max-w-sm w-full overflow-hidden">
             <div className="bg-blue-600 px-4 py-3 flex items-center justify-between">
               <h3 className="text-white font-bold text-sm">Subject Details</h3>
-              <button
-                onClick={() => setActiveModalSubject(null)}
-                className="text-white/80 hover:text-white p-1 text-xs font-bold font-mono outline-none"
-              >
-                ✕
-              </button>
             </div>
 
             <div className="p-4 flex flex-col gap-3 text-xs">
