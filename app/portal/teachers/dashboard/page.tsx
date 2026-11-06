@@ -210,7 +210,7 @@ export default function Dashboard() {
 
   return (
     <>
-    <div className="flex min-h-0 w-full flex-1 flex-col gap-3 overflow-visible md:h-full md:overflow-y-auto md:overscroll-contain">
+    <div className="flex w-full flex-col gap-3 overflow-visible md:h-full md:min-h-0 md:flex-1 md:overflow-y-auto">
       <div className="portal-dashboard-heading shrink-0 px-1 py-1">
         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-700">Teacher Portal</p>
         <h2 className="mt-0.5 text-xl font-bold tracking-tight text-[#06264A] md:text-2xl">Dashboard</h2>
@@ -338,7 +338,7 @@ export default function Dashboard() {
 
       <section
         aria-label="School events"
-        className={`${calendarView === "events" ? "flex" : "hidden"} min-h-[420px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4 md:h-[440px] md:min-h-0 md:shrink-0`}
+        className={`${calendarView === "events" ? "flex" : "hidden"} min-h-[420px] flex-col overflow-visible rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4 md:h-auto md:min-h-[440px] md:shrink-0`}
       >
         <header className="mb-3 flex shrink-0 items-center justify-between gap-3 border-b border-slate-100 pb-3">
           <div className="relative min-w-0">
@@ -408,7 +408,7 @@ export default function Dashboard() {
             {eventListDate ? "No events scheduled for this date." : "No school events are scheduled."}
           </p>
         ) : (
-          <ul className="min-h-0 flex-1 space-y-1 overflow-visible md:overflow-y-auto md:overscroll-contain">
+          <ul className="space-y-1">
             {visibleEvents.map((event, index) => (
               <li key={`all-${event._id || `${event.event_date}-${event.title}-${index}`}`}>
                 <button
@@ -440,7 +440,7 @@ export default function Dashboard() {
       </div>
 
       {/* Assigned Subjects Section */}
-      <section aria-label="Assigned classes and analytics" className="flex min-h-[420px] flex-col overflow-visible rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4 md:min-h-[420px] md:shrink-0 md:overflow-hidden">
+      <section aria-label="Assigned classes and analytics" className="flex min-h-[420px] flex-col overflow-visible rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4 md:min-h-[420px] md:shrink-0">
         <div className="mb-3 flex shrink-0 flex-col gap-1 border-b border-slate-100 pb-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-700">Teaching Overview</p>
@@ -477,7 +477,7 @@ export default function Dashboard() {
         ) : filteredSubjects.length === 0 ? (
           <p className="py-4 text-sm text-gray-500">No classes match “{subjectFilter}”.</p>
         ) : (
-          <div className="min-h-0 flex-1 overflow-visible pr-2 md:overflow-y-auto md:overscroll-contain md:[scrollbar-color:#94a3b8_transparent] md:[scrollbar-width:thin]">
+          <div className="overflow-visible pr-2">
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:gap-4">
             {filteredSubjects.map((subject: any, index: number) => {
               const total = subject.totalStudents || 0;
