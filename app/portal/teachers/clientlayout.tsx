@@ -40,6 +40,7 @@ export default function TeacherClientLayout({
       <TSidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
+        isDashboardPage={isDashboardPage}
       />
 
       <div className={`flex min-w-0 flex-1 flex-col ${isDashboardPage ? "overflow-visible" : isSchedulePage ? "overflow-hidden" : "overflow-y-auto"}`}>
