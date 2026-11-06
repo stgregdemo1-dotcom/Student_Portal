@@ -1,0 +1,58 @@
+:is(.student-portal, .teacher-portal, .admin-portal, .registrar-portal)
+  :where(
+    button:not(:disabled),
+    a[href],
+    [role="button"],
+    [role="link"],
+    summary,
+    select:not(:disabled),
+    input[type="checkbox"]:not(:disabled),
+    input[type="radio"]:not(:disabled)
+  ) {
+  cursor: pointer;
+}
+
+:is(.student-portal, .teacher-portal, .admin-portal, .registrar-portal)
+  :where(button:not(:disabled), a[href], [role="button"], [role="link"], summary) {
+  transition:
+    filter 150ms ease,
+    box-shadow 150ms ease,
+    outline-color 150ms ease;
+}
+
+:is(.student-portal, .teacher-portal, .admin-portal, .registrar-portal)
+  :where(button:not(:disabled), a[href], [role="button"], [role="link"], summary):hover {
+  filter: brightness(0.96);
+}
+
+:is(.student-portal, .teacher-portal, .admin-portal, .registrar-portal)
+  :where(button:not(:disabled), a[href], [role="button"], [role="link"], summary):focus-visible {
+  outline: 2px solid #ffb900;
+  outline-offset: 2px;
+}
+
+:is(.student-portal, .teacher-portal, .admin-portal, .registrar-portal)
+  :where(button:not(:disabled), [role="button"], summary):active {
+  filter: brightness(0.92);
+}
+
+:is(.student-portal, .teacher-portal, .admin-portal, .registrar-portal)
+  :where(button:disabled, select:disabled, input:disabled) {
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(.student-portal, .teacher-portal, .admin-portal, .registrar-portal)
+    :where(button, a[href], [role="button"], [role="link"], summary) {
+    transition: none;
+  }
+}
+
+.portal-dashboard-heading,
+.portal-dashboard-heading :where(p, h1, h2) {
+  font-family: Arial, Helvetica, sans-serif !important;
+}
+
+.portal-footer {
+  font-family: Arial, Helvetica, sans-serif !important;
+}
