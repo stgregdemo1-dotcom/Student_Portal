@@ -14,14 +14,15 @@ const navItems = [
 interface SidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
+  isDashboardPage?: boolean;
 }
 
-export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
+export default function Sidebar({ isOpen = false, onClose, isDashboardPage = false }: SidebarProps) {
   const pathname = usePathname();
 
   return (
     <aside 
-      className={`fixed left-0 top-0 z-50 isolate h-dvh w-64 shrink-0 overflow-hidden border-r border-white/10 bg-[#06264A] text-white shadow-[3px_0_10px_rgba(2,12,27,0.12)] transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:static md:h-full md:translate-x-0`}
+      className={`fixed left-0 top-0 z-50 isolate h-dvh w-64 min-w-[16rem] shrink-0 overflow-hidden border-r border-white/10 bg-[#06264A] text-white shadow-[3px_0_10px_rgba(2,12,27,0.12)] transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 ${isDashboardPage ? 'md:sticky md:top-0 md:h-dvh' : 'md:static md:h-full'}`}
       style={{
         fontFamily: 'Arial, sans-serif',
         backgroundImage: 'linear-gradient(180deg, #06264A 0%, #0B3763 50%, #06264A 100%)',
