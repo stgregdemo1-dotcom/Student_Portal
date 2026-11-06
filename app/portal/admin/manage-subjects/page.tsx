@@ -166,7 +166,7 @@ function SubjectModalContent({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div className="portal-modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl max-h-[90vh] overflow-y-auto">
         <div className="mb-4 flex items-center justify-between border-b pb-3">
           <h3 className="text-xl font-semibold text-gray-800">
@@ -710,22 +710,25 @@ export default function ManageSubjects() {
                     <td className="py-4 font-semibold">{subject.subject_day}</td>
                     <td className="py-4 font-semibold">{subject.room}</td>
                     <td className="py-4 text-right">
-                      <button
-                        onClick={() => handleEditClick(subject)}
-                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSubjectToDelete(subject);
-                          setDeleteError("");
-                        }}
-                        className="ml-3 text-red-600 hover:text-red-800 text-sm font-medium"
-                      >
-                        Delete
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleEditClick(subject)}
+                          className="admin-subject-edit-button"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSubjectToDelete(subject);
+                            setDeleteError("");
+                          }}
+                          className="admin-subject-delete-button"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -786,7 +789,7 @@ export default function ManageSubjects() {
       />
       {subjectToDelete && (
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
+          className="portal-modal-backdrop fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) closeDeleteDialog();
           }}
