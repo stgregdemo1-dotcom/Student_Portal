@@ -310,17 +310,26 @@ export default function StudentSchedulePage() {
           </div>
           <dl className="mt-4 space-y-3 text-sm">
             <div>
-              <dt className="font-semibold text-slate-500">Day and time</dt>
+              <dt className="flex items-center gap-2 font-semibold text-slate-500">
+                <i className="fa-solid fa-calendar-days text-amber-600" aria-hidden="true" />
+                Day and time
+              </dt>
               <dd className="font-bold text-slate-800">
                 {selectedSubject["subject-day"]}, {selectedSubject.class_time.start}–{selectedSubject.class_time.end}
               </dd>
             </div>
             <div>
-              <dt className="font-semibold text-slate-500">Room</dt>
+              <dt className="flex items-center gap-2 font-semibold text-slate-500">
+                <i className="fa-solid fa-location-dot text-amber-600" aria-hidden="true" />
+                Room
+              </dt>
               <dd className="font-bold text-slate-800">{selectedSubject.room || "Room TBA"}</dd>
             </div>
             <div>
-              <dt className="font-semibold text-slate-500">Schedule code</dt>
+              <dt className="flex items-center gap-2 font-semibold text-slate-500">
+                <i className="fa-solid fa-hashtag text-amber-600" aria-hidden="true" />
+                Schedule code
+              </dt>
               <dd className="font-mono font-bold text-slate-800">{selectedSubject.sched_code || "—"}</dd>
             </div>
           </dl>
