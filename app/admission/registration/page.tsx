@@ -44,6 +44,10 @@ const fieldClassName =
   "h-12 w-full rounded-lg border border-[#DCE4ED] bg-white px-3.5 text-sm text-[#183B56] outline-none transition focus:border-[#183B56] focus:ring-2 focus:ring-[#183B56]/15 placeholder:text-slate-400";
 const labelClassName = "ml-0.5 text-xs font-semibold text-[#334155]";
 
+const handleLettersOnlyChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  event.currentTarget.value = event.currentTarget.value.replace(/[^\p{L}\p{M} '\u2019-]/gu, "");
+};
+
 const documentUploads: DocumentUpload[] = [
   {
     id: "profile",
@@ -570,16 +574,23 @@ function AdmissionFormContent() {
               subtitle="Provide your basic personal details."
             />
             <div className="grid grid-cols-1 gap-x-5 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
-              <InputField label="First Name *" name="firstName" placeholder="Juan" />
+              <InputField
+                label="First Name *"
+                name="firstName"
+                placeholder="Juan"
+                onChange={handleLettersOnlyChange}
+              />
               <InputField
                 label="Middle Name"
                 name="middleName"
                 placeholder="Protacio"
+                onChange={handleLettersOnlyChange}
               />
               <InputField
                 label="Last Name *"
                 name="lastName"
                 placeholder="Dela Cruz"
+                onChange={handleLettersOnlyChange}
               />
               <SelectField
                 label="Suffix"
@@ -628,6 +639,7 @@ function AdmissionFormContent() {
                 label="Nationality *"
                 name="nationality"
                 placeholder="Filipino"
+                onChange={handleLettersOnlyChange}
               />
             </div>
           </section>
