@@ -56,6 +56,7 @@ export default function StudentSchedulePage() {
   const [studentId, setStudentId] = useState<string>("");
   const [schedules, setSchedules] = useState<SubjectSchedule[]>([]);
   const [selectedSemester, setSelectedSemester] = useState<string>("1st Semester");
+  const [selectedSubject, setSelectedSubject] = useState<SubjectSchedule | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
   const getCookie = (name: string): string => {
@@ -104,51 +105,6 @@ export default function StudentSchedulePage() {
     return String(subject.semester).trim() === dbTargetCode;
   });
 
-  const scheduleLanes = new Map<number, { lane: number; laneCount: number }>();
-
-  DAYS.forEach((day) => {
-    const daySchedules = filteredSchedules
-      .map((subject, index) => ({
-        index,
-        start: getTimeGridLine(subject.class_time?.start),
-        end: getTimeGridLine(subject.class_time?.end),
-      }))
-      .filter(({ index }) => filteredSchedules[index]["subject-day"] === day)
-      .sort((a, b) => a.start - b.start || a.end - b.end);
-
-    let overlappingGroup: typeof daySchedules = [];
-    let groupEnd = -1;
-
-    const assignLanes = () => {
-      const laneEnds: number[] = [];
-      const assignments: Array<{ index: number; lane: number }> = [];
-
-      overlappingGroup.forEach((schedule) => {
-        let lane = laneEnds.findIndex((end) => end <= schedule.start);
-        if (lane === -1) lane = laneEnds.length;
-        laneEnds[lane] = schedule.end;
-        assignments.push({ index: schedule.index, lane });
-      });
-
-      assignments.forEach(({ index, lane }) => {
-        scheduleLanes.set(index, { lane, laneCount: laneEnds.length });
-      });
-    };
-
-    daySchedules.forEach((schedule) => {
-      if (overlappingGroup.length > 0 && schedule.start >= groupEnd) {
-        assignLanes();
-        overlappingGroup = [];
-        groupEnd = -1;
-      }
-
-      overlappingGroup.push(schedule);
-      groupEnd = Math.max(groupEnd, schedule.end);
-    });
-
-    if (overlappingGroup.length > 0) assignLanes();
-  });
-
   if (loading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center p-6">
@@ -161,6 +117,7 @@ export default function StudentSchedulePage() {
   }
 
   return (
+    <>
     <div className="flex h-full min-h-0 w-full flex-col items-center justify-start font-sans">
     <div className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
       <div className="flex shrink-0 flex-col justify-between gap-2 border-b-4 border-[#f2b600] bg-[linear-gradient(100deg,#fff1bd_0%,#fff8dc_58%,#ffffff_100%)] px-4 py-2 text-[#082b49] sm:flex-row sm:items-center sm:px-5 sm:py-2.5">
@@ -187,17 +144,22 @@ export default function StudentSchedulePage() {
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-1 sm:p-1.5">
+          <p className="mb-1 px-1 text-[11px] font-semibold text-slate-500 md:hidden">
+            Swipe sideways to view the week. Tap a class for details.
+          </p>
           <div
-            className="grid min-h-0 min-w-0 flex-1 overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm"
+            className="min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain rounded-xl border border-slate-300 bg-white shadow-sm"
+          >
+            <div
+            className="grid h-full min-h-[516px] min-w-[760px] overflow-hidden bg-white lg:min-w-0"
             style={{
-              height: "100%",
               gap: 0,
-              gridTemplateColumns: "clamp(72px, 10vw, 128px) repeat(5, minmax(0, 1fr))",
-              gridTemplateRows: "32px repeat(12, minmax(clamp(28px, calc((100dvh - 300px) / 12), 50px), 1fr))"
+              gridTemplateColumns: "84px repeat(5, minmax(120px, 1fr))",
+              gridTemplateRows: "36px repeat(12, minmax(40px, 1fr))"
             }}
           >
 
-            <div className="flex min-w-0 items-center justify-center border-b border-r border-amber-400 bg-[#ffe8a3] p-1 text-center text-xs font-extrabold uppercase tracking-wide text-[#082b49] sm:p-2">Time</div>
+            <div className="sticky left-0 z-20 flex min-w-0 items-center justify-center border-b border-r border-amber-400 bg-[#ffe8a3] p-1 text-center text-xs font-extrabold uppercase tracking-wide text-[#082b49] sm:p-2">Time</div>
             {DAYS.map((day) => (
               <div key={day} className="flex min-w-0 items-center justify-center border-b border-r border-amber-400 bg-[#ffe8a3] p-1 text-center text-xs font-extrabold uppercase tracking-wide text-[#082b49] last:border-r-0 sm:p-2">
                 <span className="sm:hidden">{day.slice(0, 3)}</span>
@@ -230,7 +192,7 @@ export default function StudentSchedulePage() {
                     gridColumnStart: 1,
                     gridRowStart: rowStart,
                   }}
-                  className={`flex min-w-0 flex-col items-center justify-center border-b border-r border-slate-300 p-0.5 text-center font-mono text-xs font-extrabold leading-tight text-slate-900 sm:p-1 ${block.isLunch ? "bg-amber-50 text-amber-900" : "bg-slate-50"
+                  className={`sticky left-0 z-10 flex min-w-0 flex-col items-center justify-center border-b border-r border-slate-300 p-0.5 text-center font-mono text-xs font-extrabold leading-tight text-slate-900 sm:p-1 ${block.isLunch ? "bg-amber-50 text-amber-900" : "bg-slate-50"
                     }`}
                 >
                   <span>{block.start}</span>
@@ -250,8 +212,6 @@ export default function StudentSchedulePage() {
               const startTrack = getTimeGridLine(sub.class_time?.start);
               const endTrack = getTimeGridLine(sub.class_time?.end);
               const isSingleHour = endTrack - startTrack === 1;
-              const { lane, laneCount } = scheduleLanes.get(index) ?? { lane: 0, laneCount: 1 };
-              const laneWidth = 100 / laneCount;
 
               const spec = sub.subject_specification?.toLowerCase().trim() || "";
               let colorStyle = "border-l-4 border-l-slate-400 bg-slate-100 text-slate-900 hover:bg-slate-200";
@@ -273,16 +233,16 @@ export default function StudentSchedulePage() {
               }
 
               return (
-                <div
+                <button
                   key={index}
-                  className={`my-0.5 flex min-w-0 flex-col justify-center gap-0.5 overflow-hidden rounded-md border border-slate-300 p-1 shadow-sm transition-colors sm:my-1 sm:gap-1 sm:rounded-lg sm:p-1.5 ${colorStyle}`}
+                  type="button"
+                  aria-label={`${sub.subject_name || sub.subject_id}, ${sub["subject-day"]}, ${sub.class_time?.start} to ${sub.class_time?.end}. Tap for details.`}
+                  onClick={() => setSelectedSubject(sub)}
+                  className={`m-0.5 flex min-w-0 cursor-pointer flex-col justify-center gap-0.5 overflow-hidden rounded-md border border-slate-300 p-1 text-left shadow-sm transition-colors hover:brightness-95 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#d99a00] sm:m-1 sm:gap-1 sm:rounded-lg sm:p-1.5 ${colorStyle}`}
                   style={{
                     gridColumnStart: colStart,
                     gridRowStart: startTrack,
                     gridRowEnd: endTrack,
-                    width: `calc(${laneWidth}% - 0.5rem)`,
-                    marginLeft: `calc(${lane * laneWidth}% + 0.25rem)`,
-                    marginRight: "0.25rem",
                   }}
                 >
                   <div className="line-clamp-2 text-center text-[10px] font-extrabold uppercase leading-tight tracking-tight sm:text-xs">
@@ -306,10 +266,11 @@ export default function StudentSchedulePage() {
                       </div>
                     </div>
                   )}
-                </div>
+                </button>
               );
             })}
 
+          </div>
           </div>
         </div>
 
@@ -327,5 +288,53 @@ export default function StudentSchedulePage() {
 
       </div>
     </div>
+    {selectedSubject && (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4"
+        onClick={() => setSelectedSubject(null)}
+      >
+        <section
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="schedule-subject-title"
+          className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-amber-700">Class details</p>
+              <h2 id="schedule-subject-title" className="mt-1 text-lg font-extrabold text-[#082b49]">
+                {selectedSubject.subject_name || selectedSubject.subject_id}
+              </h2>
+            </div>
+            <button
+              type="button"
+              aria-label="Close class details"
+              onClick={() => setSelectedSubject(null)}
+              className="rounded-lg px-2 py-1 text-xl font-bold text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+            >
+              ×
+            </button>
+          </div>
+          <dl className="mt-4 space-y-3 text-sm">
+            <div>
+              <dt className="font-semibold text-slate-500">Day and time</dt>
+              <dd className="font-bold text-slate-800">
+                {selectedSubject["subject-day"]}, {selectedSubject.class_time.start}–{selectedSubject.class_time.end}
+              </dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-slate-500">Room</dt>
+              <dd className="font-bold text-slate-800">{selectedSubject.room || "Room TBA"}</dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-slate-500">Schedule code</dt>
+              <dd className="font-mono font-bold text-slate-800">{selectedSubject.sched_code || "—"}</dd>
+            </div>
+          </dl>
+        </section>
+      </div>
+    )}
+    </>
   );
 }
