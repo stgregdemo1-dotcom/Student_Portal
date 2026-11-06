@@ -8,6 +8,7 @@ import { Subject }      from "@/models/Schema";
 import { Student }      from "@/models/Schema";
 import { Config }       from "@/models/Schema";
 import { Events }       from "@/models/Schema";
+import { Credentials }  from "@/models/Schema";
 
 declare global {
   var _mongooseConnPromise: Promise<typeof mongoose> | undefined;
@@ -410,6 +411,46 @@ export async function PUT(request: NextRequest) {
   } catch (err: any) {
     console.error("Dynamic PUT execution error:", err);
     return NextResponse.json({ message: err.message || "Failed to update record." }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    await connectDB();
+
+    if (request.nextUrl.searchParams.get("table") !== "subjects") {
+      return NextResponse.json({ message: "Only subject schedule records can be deleted here." }, { status: 400 });
+    }
+
+    const body = await request.json();
+    const subjectId = typeof body.subject_id === "string" ? body.subject_id.trim() : "";
+    const username = typeof body.username === "string" ? body.username.trim() : "";
+    const password = typeof body.password === "string" ? body.password : "";
+
+    if (!subjectId || !username || !password) {
+      return NextResponse.json({ message: "Subject ID, admin username, and password are required." }, { status: 400 });
+    }
+
+    if (!username.toUpperCase().startsWith("ADM")) {
+      return NextResponse.json({ message: "Admin authentication is required to delete a subject schedule." }, { status: 403 });
+    }
+
+    const credential = await Credentials.findOne({ username }).select("username password user_type").lean();
+    if (!credential || credential.password !== password || credential.user_type === "archive") {
+      return NextResponse.json({ message: "Invalid admin username or password." }, { status: 401 });
+    }
+
+    const deletedSubject = await Subject.findOneAndDelete({ subject_id: subjectId }).lean();
+    if (!deletedSubject) {
+      return NextResponse.json({ message: "Subject schedule was not found." }, { status: 404 });
+    }
+
+    await createAuditLog(username, `Deleted subject schedule ${deletedSubject.sched_code || subjectId} (${deletedSubject.subject_name || "Unknown subject"}).`);
+
+    return NextResponse.json({ message: "Subject schedule deleted successfully." }, { status: 200 });
+  } catch (err) {
+    console.error("Subject schedule deletion error:", err);
+    return NextResponse.json({ message: "Failed to delete subject schedule." }, { status: 500 });
   }
 }
 
