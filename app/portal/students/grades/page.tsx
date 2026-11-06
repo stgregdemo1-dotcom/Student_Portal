@@ -66,7 +66,7 @@ export default function GradesPage() {
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(e.target.value)}
-                className="border border-gray-300 rounded-lg px-4 h-12 focus:outline-none focus:ring-2 focus:ring-indigo-400 w-full bg-white text-sm font-medium text-gray-800"
+                className="h-12 w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-gray-800 transition-all hover:border-[#d99a00] hover:shadow-sm focus:outline-none focus:border-[#d99a00] focus:ring-2 focus:ring-[#d99a00]/40"
                 required
               >
                 <option value="">Select School Year</option>
@@ -81,7 +81,7 @@ export default function GradesPage() {
               <select
                 value={selectedSemester}
                 onChange={(e) => setSelectedSemester(e.target.value)}
-                className="border border-gray-300 rounded-lg px-4 h-12 focus:outline-none focus:ring-2 focus:ring-indigo-400 w-full bg-white text-sm font-medium text-gray-800"
+                className="h-12 w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-gray-800 transition-all hover:border-[#d99a00] hover:shadow-sm focus:outline-none focus:border-[#d99a00] focus:ring-2 focus:ring-[#d99a00]/40"
                 required
               >
                 <option value="">Select Semester</option>
@@ -94,7 +94,7 @@ export default function GradesPage() {
           <button
             onClick={handleFetchGrades}
             disabled={loading}
-            className="w-full md:w-auto px-8 h-12 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap"
+            className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#082b49] px-8 font-bold text-white shadow-md transition-all hover:bg-[#0b3b62] hover:shadow-lg active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#082b49] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-400 disabled:shadow-sm md:w-auto whitespace-nowrap"
           >
             {loading ? "Loading..." : "Show Grades"}
           </button>
@@ -109,14 +109,14 @@ export default function GradesPage() {
 
       <h3 className="text-lg font-semibold text-gray-800 mb-4">Student Grades</h3>
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200 text-left border border-gray-100 rounded-lg overflow-hidden">
-          <thead className="bg-gray-50 text-gray-500 text-xs font-semibold uppercase tracking-wider">
+        <table className="min-w-full divide-y divide-slate-200 overflow-hidden rounded-lg border border-slate-200 text-left">
+          <thead className="bg-[#fff8e4] text-xs font-semibold uppercase tracking-wider text-[#425466]">
             <tr>
               <th className="px-6 py-3">Subjects</th>
               <th className="px-6 py-3">Teacher</th>
               <th className="px-4 py-3 text-center">1st</th>
               <th className="px-4 py-3 text-center">2nd</th>
-              <th className="px-4 py-3 text-center text-indigo-700 bg-indigo-50/50">Average</th>
+              <th className="bg-[#fff0c2] px-4 py-3 text-center text-[#805600]">Average</th>
               <th className="px-6 py-3 text-center">Remarks</th>
               <th className="px-6 py-3 text-center">Status</th>
             </tr>
@@ -124,12 +124,12 @@ export default function GradesPage() {
           <tbody className="divide-y divide-gray-200 text-sm">
             {grades.length > 0 ? (
               grades.map((g, idx) => (
-                <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                <tr key={idx} className="transition-colors hover:bg-[#fffaf0]">
                   <td className="px-6 py-4 font-medium text-gray-900">{g.course}</td>
                   <td className="px-6 py-4 text-gray-600">{g.Teacher}</td>
                   <td className="px-4 py-4 text-center font-mono font-medium text-gray-700">{g.grade_1}</td>
                   <td className="px-4 py-4 text-center font-mono font-medium text-gray-700">{g.grade_2}</td>
-                  <td className="px-4 py-4 text-center bg-indigo-50/20 font-black text-indigo-600">
+                  <td className="bg-amber-50/50 px-4 py-4 text-center font-black text-[#805600]">
                     <span className={`px-2 py-0.5 rounded ${g.grade === "—" ? "text-gray-400" : ""}`}>
                       {g.grade}
                     </span>
@@ -163,8 +163,8 @@ export default function GradesPage() {
         </table>
       </div>
 
-      <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
-        <h4 className="font-semibold text-blue-900">General Average: {generalAvg}</h4>
+      <div className="mt-6 rounded-lg border border-amber-200 bg-[#fff8e4] p-4">
+        <h4 className="font-semibold text-[#082b49]">General Average: {generalAvg}</h4>
       </div>
     </div>
   );
