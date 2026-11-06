@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 
 interface HeaderProps {
   onToggleSidebar?: () => void;
+  title?: string;
 }
 
-export default function Header({ onToggleSidebar }: HeaderProps) {
+export default function Header({ onToggleSidebar, title = "Student Portal" }: HeaderProps) {
   const [welcomeText, setWelcomeText] = useState<string>("Welcome, Guest");
   const [userInitial, setUserInitial] = useState<string>("U");
 
@@ -26,7 +27,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
 
       if (upperUsername.startsWith("ST")) {
         // Fetch the student's first and last name from your API route
-        fetch("/api/portal/student?getStudentName=true") // Update path if your route is nested differently (e.g., /api/student)
+        fetch("/api/portal/student?getStudentName=true") // Update path if your API route is nested differently (e.g., /api/student)
           .then((res) => res.json())
           .then((data) => {
             if (data && data.success && data.firstName && data.lastName) {
@@ -60,7 +61,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
         {/* Mobile Hamburger Toggle Button */}
         <button
           onClick={onToggleSidebar}
-          className="p-2 rounded-lg text-slate-600 hover:bg-slate-100 md:hidden focus:outline-none transition-colors"
+          className="cursor-pointer rounded-lg border border-transparent p-2 text-slate-700 transition-all hover:border-amber-300 hover:bg-amber-50 hover:shadow-sm focus:outline-none md:hidden"
           aria-label="Toggle navigation drawer"
         >
           <svg
@@ -80,7 +81,7 @@ export default function Header({ onToggleSidebar }: HeaderProps) {
         </button>
 
         <h2 className="text-lg md:text-xl font-semibold text-gray-800">
-          Overview
+          {title}
         </h2>
       </div>
 
