@@ -44,7 +44,7 @@ export default function EnrolleeDetailsPage() {
       <div className="min-h-screen flex items-center justify-center bg-white p-4">
         <div className="text-center space-y-4">
           <p className="text-red-500 font-semibold">{error || "Access Denied"}</p>
-          <button onClick={() => router.push("/login")} className="px-4 py-2 bg-slate-800 text-white rounded-xl text-xs font-bold">
+          <button onClick={() => router.push("/login")} className="cursor-pointer rounded-xl bg-[#082b49] px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-[#0b3b62] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d99a00] focus-visible:ring-offset-2 active:scale-[0.98]">
             Go to Login Portal
           </button>
         </div>
