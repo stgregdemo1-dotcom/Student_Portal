@@ -151,11 +151,11 @@ export default function StudentSchedulePage() {
             className="min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain rounded-xl border border-slate-300 bg-white shadow-sm"
           >
             <div
-            className="grid h-full min-h-[516px] min-w-[760px] overflow-hidden bg-white lg:min-w-0"
+            className="grid h-full min-h-[660px] min-w-[760px] overflow-hidden bg-white [--schedule-row-min:52px] lg:min-h-[612px] lg:min-w-0 lg:[--schedule-row-min:48px]"
             style={{
               gap: 0,
               gridTemplateColumns: "84px repeat(5, minmax(120px, 1fr))",
-              gridTemplateRows: "36px repeat(12, minmax(40px, 1fr))"
+              gridTemplateRows: "36px repeat(12, minmax(var(--schedule-row-min), 1fr))"
             }}
           >
 
@@ -238,7 +238,7 @@ export default function StudentSchedulePage() {
                   type="button"
                   aria-label={`${sub.subject_name || sub.subject_id}, ${sub["subject-day"]}, ${sub.class_time?.start} to ${sub.class_time?.end}. Tap for details.`}
                   onClick={() => setSelectedSubject(sub)}
-                  className={`m-0.5 flex min-w-0 cursor-pointer flex-col justify-center gap-0.5 overflow-hidden rounded-md border border-slate-300 p-1 text-left shadow-sm transition-colors hover:brightness-95 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#d99a00] sm:m-1 sm:gap-1 sm:rounded-lg sm:p-1.5 ${colorStyle}`}
+                  className={`m-0.5 flex min-w-0 cursor-pointer flex-col justify-center gap-0.5 overflow-hidden rounded-md border border-slate-300 text-left shadow-sm transition-colors hover:brightness-95 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#d99a00] sm:m-1 sm:gap-1 sm:rounded-lg ${isSingleHour ? "p-0.5 sm:p-1" : "p-1 sm:p-1.5"} ${colorStyle}`}
                   style={{
                     gridColumnStart: colStart,
                     gridRowStart: startTrack,
@@ -249,19 +249,14 @@ export default function StudentSchedulePage() {
                     {sub.subject_name || sub.subject_id}
                   </div>
 
-                  {!isSingleHour && (
-                    <div className="flex flex-col gap-px border-t border-slate-300/70 pt-0.5 text-left sm:gap-0.5 sm:pt-1">
-                      <div className="truncate text-[8px] font-bold text-slate-700 sm:text-[10px]">
-                        Room: {sub.room || "—"}
-                      </div>
-                      <div className="truncate font-mono text-[8px] font-bold text-indigo-800 sm:text-[10px]">
-                        Code: {sub.sched_code || "—"}
-                      </div>
-                      <div className="truncate font-mono text-[8px] font-bold text-emerald-800 sm:text-[10px]">
-                        {sub.class_time?.start} - {sub.class_time?.end}
-                      </div>
+                  <div className={`flex min-w-0 flex-col gap-px border-t border-slate-300/70 pt-0.5 text-left sm:gap-0.5 sm:pt-1 ${isSingleHour ? "text-[8px] sm:text-[9px]" : "text-[8px] sm:text-[10px]"}`}>
+                    <div className="truncate font-bold text-slate-700">
+                      Room: {sub.room || "Room TBA"}
                     </div>
-                  )}
+                    <div className="truncate font-mono font-bold text-emerald-800">
+                      Time: {sub.class_time?.start} - {sub.class_time?.end}
+                    </div>
+                  </div>
                 </button>
               );
             })}
