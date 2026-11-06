@@ -78,6 +78,14 @@ const GradingSheet = () => {
     fetchSchedules();
   }, [teacherId]);
 
+  useEffect(() => {
+    if (selectedCode || typeof window === "undefined") return;
+    const requestedScheduleCode = new URLSearchParams(window.location.search).get("sched_code");
+    if (requestedScheduleCode && schedules.some((schedule) => schedule.sched_code === requestedScheduleCode)) {
+      setSelectedCode(requestedScheduleCode);
+    }
+  }, [schedules, selectedCode]);
+
   const activeClass = schedules.find(s => s.sched_code === selectedCode);
 
   useEffect(() => {
