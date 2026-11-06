@@ -15,14 +15,17 @@ export default function SettingsPage() {
             <p className="text-sm text-gray-500">Receive weekly academic summaries</p>
           </div>
           <button
+            type="button"
+            aria-label="Email Notifications"
+            aria-pressed={notifications}
             onClick={() => setNotifications(!notifications)}
-            className={`w-12 h-6 rounded-full transition-colors ${notifications ? 'bg-blue-600' : 'bg-gray-300'}`}
+            className={`h-7 w-14 cursor-pointer rounded-full border border-transparent shadow-inner transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d99a00] focus-visible:ring-offset-2 ${notifications ? 'bg-[#d99a00]' : 'bg-slate-400'}`}
           >
-            <div className={`w-4 h-4 bg-white rounded-full transition-transform transform ${notifications ? 'translate-x-7' : 'translate-x-1'}`} />
+            <div className={`h-5 w-5 rounded-full bg-white shadow transition-transform ${notifications ? 'translate-x-7' : 'translate-x-1'}`} />
           </button>
         </div>
 
-        <button className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors">
+        <button type="button" className="cursor-pointer rounded-lg bg-[#082b49] px-6 py-2 font-semibold text-white shadow-sm transition-all hover:bg-[#0b3b62] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d99a00] focus-visible:ring-offset-2 active:scale-[0.98]">
           Save Changes
         </button>
       </div>
