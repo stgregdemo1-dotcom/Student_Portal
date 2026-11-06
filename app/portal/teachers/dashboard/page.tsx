@@ -409,8 +409,11 @@ export default function Dashboard() {
                   {hasEvent && <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-amber-500" />}
                 </button>
                 {hasEvent && (
-                  <div className="min-h-0 space-y-0.5 overflow-hidden px-0.5 pb-0.5">
-                    {dayEvents.slice(0, 2).map((event, eventIndex) => (
+                  <div
+                    aria-label={`Events on ${dateKey}`}
+                    className="min-h-0 flex-1 space-y-0.5 overflow-y-auto overscroll-contain px-0.5 pb-0.5"
+                  >
+                    {dayEvents.map((event, eventIndex) => (
                       <button
                         key={event._id || `${dateKey}-${event.title}-${eventIndex}`}
                         type="button"
@@ -421,15 +424,6 @@ export default function Dashboard() {
                         {event.title}
                       </button>
                     ))}
-                    {dayEvents.length > 2 && (
-                      <button
-                        type="button"
-                        onClick={() => selectCalendarDate(dateKey)}
-                        className="block w-full cursor-pointer truncate px-1 text-left text-[8px] font-bold text-[#0B3763] hover:underline sm:text-[9px]"
-                      >
-                        +{dayEvents.length - 2} more
-                      </button>
-                    )}
                   </div>
                 )}
               </div>
@@ -746,7 +740,7 @@ export default function Dashboard() {
     </div>
     {selectedEvent && (
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4"
+        className="portal-modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4"
         onClick={() => setSelectedEvent(null)}
       >
         <section
