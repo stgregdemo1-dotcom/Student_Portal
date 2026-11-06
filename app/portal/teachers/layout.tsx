@@ -1,6 +1,5 @@
 import "./globals.css";
-import TSidebar from '../../-components/TSidebar';
-import THeader from '../../-components/THeader';
+import TeacherClientLayout from "./clientlayout";
 import { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 
@@ -25,13 +24,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.className} bg-gray-100`}>
-        <div className="flex h-screen overflow-hidden">
-          <TSidebar />
-          <div className="flex-1 flex flex-col overflow-y-auto">
-            <THeader />
-            <main className="p-6">{children}</main>
-          </div>
-        </div>
+        <TeacherClientLayout>{children}</TeacherClientLayout>
       </body>
     </html>
   );
