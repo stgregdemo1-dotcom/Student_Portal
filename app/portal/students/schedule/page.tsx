@@ -238,18 +238,18 @@ export default function StudentSchedulePage() {
                   type="button"
                   aria-label={`${sub.subject_name || sub.subject_id}, ${sub["subject-day"]}, ${sub.class_time?.start} to ${sub.class_time?.end}. Tap for details.`}
                   onClick={() => setSelectedSubject(sub)}
-                  className={`m-0.5 flex min-w-0 cursor-pointer flex-col justify-center gap-0.5 overflow-hidden rounded-md border border-slate-300 text-left shadow-sm transition-colors hover:brightness-95 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#d99a00] sm:m-1 sm:gap-1 sm:rounded-lg ${isSingleHour ? "p-0.5 sm:p-1" : "p-1 sm:p-1.5"} ${colorStyle}`}
+                  className={`m-0.5 flex min-w-0 cursor-pointer flex-col justify-center gap-px overflow-visible rounded-md border border-slate-300 text-left shadow-sm transition-colors hover:brightness-95 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#d99a00] sm:m-1 sm:gap-1 sm:rounded-lg ${isSingleHour ? "p-0.5 sm:p-1" : "p-1 sm:p-1.5"} ${colorStyle}`}
                   style={{
                     gridColumnStart: colStart,
                     gridRowStart: startTrack,
                     gridRowEnd: endTrack,
                   }}
                 >
-                  <div className={`${isSingleHour ? "line-clamp-1 sm:line-clamp-2" : "line-clamp-2"} text-center text-[10px] font-extrabold uppercase leading-tight tracking-tight sm:text-xs`}>
+                  <div className={`w-full shrink-0 whitespace-normal break-words text-center font-extrabold uppercase leading-tight tracking-tight ${isSingleHour ? "text-[9px] sm:text-[10px]" : "text-[10px] sm:text-xs"}`}>
                     {sub.subject_name || sub.subject_id}
                   </div>
 
-                  <div className={`flex min-w-0 flex-col gap-px border-t border-slate-300/70 pt-0.5 text-left sm:gap-0.5 sm:pt-1 ${isSingleHour ? "text-[8px] sm:text-[9px]" : "text-[8px] sm:text-[10px]"}`}>
+                  <div className={`flex min-w-0 shrink-0 flex-col gap-px border-t border-slate-300/70 pt-0.5 text-left sm:gap-0.5 sm:pt-1 ${isSingleHour ? "text-[7px] sm:text-[8px]" : "text-[8px] sm:text-[10px]"}`}>
                     <div className="truncate font-bold text-slate-700">
                       Room: {sub.room || "Room TBA"}
                     </div>
