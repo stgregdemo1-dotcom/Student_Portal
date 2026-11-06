@@ -159,20 +159,23 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="space-y-8">
-      {/* Header bar showing sync status */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-slate-800">System Overview</h2>
+    <div className="flex min-h-0 w-full flex-1 flex-col gap-2 overflow-visible md:h-full md:overflow-hidden md:gap-3">
+      <div className="flex shrink-0 flex-col gap-2 px-1 py-1 sm:flex-row sm:items-center sm:justify-between">
+        <div className="portal-dashboard-heading">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-700">Registrar Portal</p>
+          <h2 className="mt-0.5 text-xl font-bold tracking-tight text-[#06264A] md:text-2xl">Dashboard</h2>
+          <p className="mt-0.5 hidden text-xs text-slate-500 sm:block">Admissions, enrollment, and student status at a glance.</p>
+        </div>
         <div className="flex items-center gap-3">
           {lastUpdated && (
-            <span className="text-xs font-medium text-slate-400">
-              Auto-updating (Last: {lastUpdated.toLocaleTimeString()})
+            <span className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-500">
+              Updated {lastUpdated.toLocaleTimeString()}
             </span>
           )}
           <button
             onClick={() => fetchMetrics()}
             disabled={isFetching}
-            className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
+            className="rounded-lg border border-amber-300/60 bg-amber-300 p-2 text-[#06264A] transition hover:bg-amber-200 disabled:opacity-50"
             title="Refresh statistics now"
           >
             <svg
@@ -181,7 +184,7 @@ export default function DashboardPage() {
               viewBox="0 0 24 24"
               strokeWidth={1.5}
               stroke="currentColor"
-              className={`size-4 ${isFetching ? "animate-spin text-blue-600" : ""}`}
+              className={`size-4 ${isFetching ? "animate-spin" : ""}`}
             >
               <path
                 strokeLinecap="round"
@@ -194,59 +197,64 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid shrink-0 grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3 md:grid-cols-3">
         {stats.map((stat) => (
           <Link
             key={stat.label}
             href={stat.href}
-            className="group block rounded-2xl bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md cursor-pointer"
+            className="group block cursor-pointer rounded-xl border border-slate-200 bg-white p-2.5 shadow-sm transition-all hover:-translate-y-1 hover:border-amber-400 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0B3763] focus-visible:ring-offset-2 sm:rounded-2xl sm:p-4"
           >
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm font-medium text-slate-500">{stat.label}</p>
-                <p className="mt-2 text-3xl font-bold text-slate-900">{stat.value}</p>
+                <p className="mt-1 text-xl font-bold text-slate-900 sm:text-2xl">{stat.value}</p>
               </div>
-              <div className={`rounded-xl p-3 ${stat.bg} ${stat.color}`}>
+              <div className={`rounded-lg p-2 ${stat.bg} ${stat.color} sm:rounded-xl sm:p-2.5`}>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"
                   strokeWidth={1.5}
                   stroke="currentColor"
-                  className="size-6"
+                  className="size-4 sm:size-5"
                 >
                   {stat.svg}
                 </svg>
               </div>
             </div>
             <div
-              className={`mt-4 flex items-center text-xs font-semibold ${
+              className={`mt-2 flex items-center justify-between gap-1 truncate text-[10px] font-semibold sm:text-xs ${
                 stat.up ? "text-emerald-500" : "text-amber-500"
               }`}
             >
-              {stat.up && (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={2}
-                  stroke="currentColor"
-                  className="mr-1 size-3"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
-                </svg>
-              )}
-              {stat.trend}
+              <span className="flex min-w-0 items-center truncate">
+                {stat.up && (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2}
+                    stroke="currentColor"
+                    className="mr-1 size-3 shrink-0"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
+                  </svg>
+                )}
+                <span className="truncate">{stat.trend}</span>
+              </span>
+              <span className="shrink-0 font-bold text-[#0B3763] transition group-hover:text-amber-700">
+                View
+              </span>
             </div>
           </Link>
         ))}
       </div>
 
       {/* Charts Grid: Admission Status, Student Status, & Failed Remarks Breakdown */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 overflow-visible md:min-h-0 md:flex-1 md:grid-cols-3 md:overflow-hidden md:gap-3">
         {/* Admission Applications Status Pie Chart */}
-        <div className="rounded-2xl bg-white p-6 shadow-sm">
-          <h3 className="mb-4 text-lg font-bold text-slate-800">
+        <div className="flex flex-col rounded-xl border border-slate-200 bg-white p-2 shadow-sm sm:rounded-2xl sm:p-3 md:min-h-0 md:overflow-hidden">
+          <h3 className="mb-2 shrink-0 text-xs font-bold text-slate-800 sm:text-sm">
             Admission Status
           </h3>
           <StatusPieChart 
@@ -258,8 +266,8 @@ export default function DashboardPage() {
         </div>
 
         {/* Student Collection Status Pie Chart - NOW CLICKABLE */}
-        <div className="rounded-2xl bg-white p-6 shadow-sm">
-          <h3 className="mb-4 text-lg font-bold text-slate-800">
+        <div className="flex flex-col rounded-xl border border-slate-200 bg-white p-2 shadow-sm sm:rounded-2xl sm:p-3 md:min-h-0 md:overflow-hidden">
+          <h3 className="mb-2 shrink-0 text-xs font-bold text-slate-800 sm:text-sm">
             Student Status
           </h3>
           <StatusPieChart 
@@ -271,9 +279,9 @@ export default function DashboardPage() {
         </div>
 
         {/* Failed Remarks Breakdown Pie Chart */}
-        <div className="rounded-2xl bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-slate-800">
+        <div className="flex flex-col rounded-xl border border-slate-200 bg-white p-2 shadow-sm sm:rounded-2xl sm:p-3 md:min-h-0 md:overflow-hidden">
+          <div className="mb-2 flex shrink-0 items-center justify-between gap-1">
+            <h3 className="text-xs font-bold text-slate-800 sm:text-sm">
               Failed Remarks Analysis
             </h3>
             {currentConfigYear && (
@@ -287,9 +295,9 @@ export default function DashboardPage() {
       </div>
 
       {/* Recent Activity */}
-      <div className="rounded-2xl bg-white p-6 shadow-sm">
-        <h3 className="mb-6 text-lg font-bold text-slate-800">Recent System Activity</h3>
-        <div className="space-y-6">
+      <div className="shrink-0 rounded-xl border border-slate-200 bg-white p-2.5 shadow-sm sm:rounded-2xl sm:p-3">
+        <h3 className="mb-2 text-sm font-bold text-slate-800 sm:text-base">Recent System Activity</h3>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4">
           <ActivityItem
             svgPath={
               <path
@@ -362,9 +370,9 @@ function StatusPieChart({
   let cumulativeAngle = 0;
 
   return (
-    <div className="flex flex-col items-center justify-between gap-4">
+    <div className="flex min-h-0 flex-1 items-center justify-center gap-1 overflow-hidden sm:gap-2">
       <div className="relative flex items-center justify-center">
-        <svg viewBox="-1 -1 2 2" className="size-40 -rotate-90 transform overflow-visible">
+      <svg viewBox="-1 -1 2 2" className="size-16 shrink-0 -rotate-90 transform overflow-visible sm:size-20 md:size-24">
           {data.map((item) => {
             const percentage = item.count / total;
             const sliceAngle = percentage * 2 * Math.PI;
@@ -403,7 +411,7 @@ function StatusPieChart({
         </div>
       </div>
 
-      <div className="w-full space-y-2">
+      <div className="max-h-full min-w-0 flex-1 space-y-1 overflow-hidden">
         {data.map((item) => {
           const percent = ((item.count / total) * 100).toFixed(1);
           const color = COLOR_PALETTE[item.status] || DEFAULT_COLOR;
@@ -412,13 +420,13 @@ function StatusPieChart({
             <div 
               key={item.status} 
               onClick={() => onSliceClick && onSliceClick(item.status)}
-              className={`flex items-center justify-between text-xs ${
+              className={`flex cursor-pointer items-center justify-between gap-1 rounded px-1 py-0.5 text-[9px] transition-colors hover:bg-blue-50 hover:text-blue-900 sm:text-[10px] ${
                 onSliceClick ? "cursor-pointer hover:bg-slate-50 p-1 rounded transition-colors" : ""
               }`}
             >
-              <div className="flex items-center gap-2">
-                <span className={`size-2.5 rounded-full ${color.bg}`} />
-                <span className="font-semibold text-slate-700">{item.status}</span>
+              <div className="flex min-w-0 items-center gap-1">
+                <span className={`size-2 shrink-0 rounded-full ${color.bg}`} />
+                <span className="truncate font-semibold text-slate-700">{item.status}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="font-bold text-slate-900">{percent}%</span>
