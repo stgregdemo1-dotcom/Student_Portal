@@ -243,7 +243,7 @@ const GradingSheet = () => {
           <div>
             <h1 className="text-3xl font-black text-[#856404] tracking-tight">Grading Management</h1>
             <p className="text-gray-500 font-medium italic">School Year 2026-2027</p>
-            <p className="text-xs text-[#28a745] font-bold mt-1">Logged in as: {teacherId}</p>
+            <p className="text-xs text-[#0B3763] font-bold mt-1">Logged in as: {teacherId}</p>
           </div>
 
           <div className="flex items-center gap-3">
@@ -274,7 +274,7 @@ const GradingSheet = () => {
                   isEvaluating
                     ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none"
                     : isEditing
-                      ? "bg-[#28a745] hover:bg-[#218838]"
+                      ? "bg-[#0B3763] hover:bg-[#06264A]"
                       : "bg-[#FFD700] hover:bg-[#e6c200] text-[#856404]"
                 }`}
               >
@@ -294,26 +294,12 @@ const GradingSheet = () => {
               </div>
             )}
 
-            <div className="bg-[#FFF9C4] p-5 rounded-xl border border-[#FBC02D] flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">📄</span>
-                <div>
-                  <h3 className="font-bold text-[#856404]">Grading Sheet Record</h3>
-                </div>
-              </div>
-              <input
-                type="file"
-                disabled={isEvaluating}
-                className="text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-[#28a745] file:text-white hover:file:bg-[#218838] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              />
-            </div>
-
             <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
-              <div className="bg-[#28a745] p-4 flex justify-between items-center">
+              <div className="bg-[#0B3763] p-4 flex justify-between items-center">
                 <h2 className="text-white font-bold text-lg">
                   {activeClass.subject_id} — {activeClass.sched_code}
                 </h2>
-                <span className="bg-white text-[#28a745] text-xs font-black px-3 py-1 rounded-full uppercase">
+                <span className="bg-white text-[#0B3763] text-xs font-black px-3 py-1 rounded-full uppercase">
                   {rosterList.length} Enrolled
                 </span>
               </div>
@@ -357,7 +343,7 @@ const GradingSheet = () => {
                                   onBlur={(e) => validateMin(currentStudentId, colIndex, e)}
                                   min="60"
                                   max="100"
-                                  className="w-20 bg-white border-2 border-[#FFD700] text-gray-900 text-center text-sm rounded-lg focus:ring-2 focus:ring-[#28a745] p-2 outline-none font-bold"
+                                  className="w-20 bg-white border-2 border-[#FFD700] text-gray-900 text-center text-sm rounded-lg focus:ring-2 focus:ring-[#0B3763] p-2 outline-none font-bold"
                                 />
                               ) : (
                                 <span className={`inline-block min-w-[40px] py-1 px-2 rounded-md font-black ${
@@ -388,7 +374,7 @@ const GradingSheet = () => {
                               <select
                                 value={currentRemarks}
                                 onChange={(e) => updateGradeState(currentStudentId, 2, e.target.value)}
-                                className="w-32 bg-white border-2 border-[#FFD700] text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-[#28a745] p-2 outline-none font-bold cursor-pointer"
+                                className="w-32 bg-white border-2 border-[#FFD700] text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-[#0B3763] p-2 outline-none font-bold cursor-pointer"
                               >
                                 <option value="">Select Option</option>
                                 <option value="Passed">Passed</option>
@@ -426,7 +412,7 @@ const GradingSheet = () => {
                   className={`w-full md:w-auto px-10 py-3.5 rounded-xl font-black text-white tracking-wide shadow-lg transition-all transform active:scale-95 ${
                     isEditing || !selectedCode || !allStudentsHaveRemarks || !isSubjectActive || isEvaluating
                       ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none"
-                      : "bg-[#856404] hover:bg-[#6c5103]"
+                      : "bg-[#0B3763] hover:bg-[#06264A]"
                   }`}
                 >
                   Submit Final Grades
@@ -469,7 +455,7 @@ const GradingSheet = () => {
               <button
                 disabled={submitting}
                 onClick={() => executeFinalSubmission(true)}
-                className="flex-1 px-4 py-2.5 rounded-xl bg-[#28a745] hover:bg-[#218838] font-bold text-white transition-colors shadow-md disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-2.5 rounded-xl bg-[#0B3763] hover:bg-[#06264A] font-bold text-white transition-colors shadow-md disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {submitting ? "Submitting..." : "Confirm & Submit"}
               </button>
