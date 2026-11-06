@@ -46,6 +46,7 @@ const SubjectSchema = new mongoose.Schema(
     subject_day:            { type: String, required: true },
     room:                   { type: String, required: true },
     status:                 { type: String, required: true },
+    archived:               { type: Boolean, default: false },
   },
   { collection: "subjects" }
 );
