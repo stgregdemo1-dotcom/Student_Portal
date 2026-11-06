@@ -104,6 +104,51 @@ export default function StudentSchedulePage() {
     return String(subject.semester).trim() === dbTargetCode;
   });
 
+  const scheduleLanes = new Map<number, { lane: number; laneCount: number }>();
+
+  DAYS.forEach((day) => {
+    const daySchedules = filteredSchedules
+      .map((subject, index) => ({
+        index,
+        start: getTimeGridLine(subject.class_time?.start),
+        end: getTimeGridLine(subject.class_time?.end),
+      }))
+      .filter(({ index }) => filteredSchedules[index]["subject-day"] === day)
+      .sort((a, b) => a.start - b.start || a.end - b.end);
+
+    let overlappingGroup: typeof daySchedules = [];
+    let groupEnd = -1;
+
+    const assignLanes = () => {
+      const laneEnds: number[] = [];
+      const assignments: Array<{ index: number; lane: number }> = [];
+
+      overlappingGroup.forEach((schedule) => {
+        let lane = laneEnds.findIndex((end) => end <= schedule.start);
+        if (lane === -1) lane = laneEnds.length;
+        laneEnds[lane] = schedule.end;
+        assignments.push({ index: schedule.index, lane });
+      });
+
+      assignments.forEach(({ index, lane }) => {
+        scheduleLanes.set(index, { lane, laneCount: laneEnds.length });
+      });
+    };
+
+    daySchedules.forEach((schedule) => {
+      if (overlappingGroup.length > 0 && schedule.start >= groupEnd) {
+        assignLanes();
+        overlappingGroup = [];
+        groupEnd = -1;
+      }
+
+      overlappingGroup.push(schedule);
+      groupEnd = Math.max(groupEnd, schedule.end);
+    });
+
+    if (overlappingGroup.length > 0) assignLanes();
+  });
+
   if (loading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center p-6">
@@ -205,6 +250,8 @@ export default function StudentSchedulePage() {
               const startTrack = getTimeGridLine(sub.class_time?.start);
               const endTrack = getTimeGridLine(sub.class_time?.end);
               const isSingleHour = endTrack - startTrack === 1;
+              const { lane, laneCount } = scheduleLanes.get(index) ?? { lane: 0, laneCount: 1 };
+              const laneWidth = 100 / laneCount;
 
               const spec = sub.subject_specification?.toLowerCase().trim() || "";
               let colorStyle = "border-l-4 border-l-slate-400 bg-slate-100 text-slate-900 hover:bg-slate-200";
@@ -228,11 +275,14 @@ export default function StudentSchedulePage() {
               return (
                 <div
                   key={index}
-                  className={`m-0.5 flex min-w-0 flex-col justify-center gap-0.5 overflow-hidden rounded-md border border-slate-300 p-1 shadow-sm transition-colors sm:m-1 sm:gap-1 sm:rounded-lg sm:p-1.5 ${colorStyle}`}
+                  className={`my-0.5 flex min-w-0 flex-col justify-center gap-0.5 overflow-hidden rounded-md border border-slate-300 p-1 shadow-sm transition-colors sm:my-1 sm:gap-1 sm:rounded-lg sm:p-1.5 ${colorStyle}`}
                   style={{
                     gridColumnStart: colStart,
                     gridRowStart: startTrack,
                     gridRowEnd: endTrack,
+                    width: `calc(${laneWidth}% - 0.5rem)`,
+                    marginLeft: `calc(${lane * laneWidth}% + 0.25rem)`,
+                    marginRight: "0.25rem",
                   }}
                 >
                   <div className="line-clamp-2 text-center text-[10px] font-extrabold uppercase leading-tight tracking-tight sm:text-xs">
