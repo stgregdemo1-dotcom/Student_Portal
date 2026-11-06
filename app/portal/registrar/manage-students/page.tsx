@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import RegistrarSearchInput from "@/app/-components/RegistrarSearchInput";
 
 type SortableKeys = 'studentId' | 'firstName' | 'program' | 'status' | 'section' | 'semester';
 
@@ -187,20 +188,19 @@ export default function ManageStudents() {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="w-full">
       {/* Header Section */}
       <div className="p-4 bg-white flex flex-col md:flex-row justify-between items-center shadow rounded-t-xl border-b border-gray-100 gap-4">
         <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
           <h2 className="text-xl font-bold text-gray-800 whitespace-nowrap">Manage Students</h2>
 
           {/* Search Bar */}
-          <div className="relative w-full md:w-64">
-            <input
-              type="text"
-              placeholder="Search students..."
+          <div className="w-full md:w-64">
+            <RegistrarSearchInput
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-3 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              onChange={setSearchQuery}
+              placeholder="Search students..."
+              ariaLabel="Search enrolled students by name or student ID"
             />
           </div>
         </div>
