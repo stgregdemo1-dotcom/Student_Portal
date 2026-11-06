@@ -245,15 +245,11 @@ export default function StudentSchedulePage() {
                     gridRowEnd: endTrack,
                   }}
                 >
-                  <div className="line-clamp-2 text-center text-[10px] font-extrabold uppercase leading-tight tracking-tight sm:text-xs">
+                  <div className={`${isSingleHour ? "line-clamp-1 sm:line-clamp-2" : "line-clamp-2"} text-center text-[10px] font-extrabold uppercase leading-tight tracking-tight sm:text-xs`}>
                     {sub.subject_name || sub.subject_id}
                   </div>
 
-                  {isSingleHour ? (
-                    <div className="truncate border-t border-slate-300/70 pt-0.5 text-center text-[9px] font-bold text-slate-800 sm:text-[11px]">
-                      {sub.room || "Room TBA"} · {sub.class_time?.start}–{sub.class_time?.end}
-                    </div>
-                  ) : (
+                  {!isSingleHour && (
                     <div className="flex flex-col gap-px border-t border-slate-300/70 pt-0.5 text-left sm:gap-0.5 sm:pt-1">
                       <div className="truncate text-[8px] font-bold text-slate-700 sm:text-[10px]">
                         Room: {sub.room || "—"}
