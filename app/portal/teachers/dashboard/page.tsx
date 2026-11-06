@@ -14,6 +14,10 @@ interface TeacherEvent {
 
 type TeacherCalendarView = "calendar" | "events";
 type TeacherEventPeriod = "upcoming" | "past";
+type TeacherEventNotificationSnapshot = {
+  known: string[];
+  unread: string[];
+};
 
 const EVENT_COLORS: Record<string, string> = {
   "bg-blue-500": "bg-blue-500",
@@ -54,12 +58,56 @@ function getCookie(name: string): string | null {
   return match ? decodeURIComponent(match[2]) : null;
 }
 
+function getTeacherEventKey(event: TeacherEvent): string {
+  return event._id || `${event.event_date}|${event.title}|${event.start_time}|${event.end_time}`;
+}
+
+function getTeacherEventStorageKey(): string {
+  return `sgcst-teacher-calendar-notifications-v1:${getCookie("username") || "guest"}`;
+}
+
+function readTeacherEventSnapshot(storageKey: string): TeacherEventNotificationSnapshot | null {
+  try {
+    const stored = localStorage.getItem(storageKey);
+    if (!stored) return null;
+    const parsed: unknown = JSON.parse(stored);
+    if (
+      typeof parsed !== "object" ||
+      parsed === null ||
+      !("known" in parsed) ||
+      !("unread" in parsed) ||
+      !Array.isArray(parsed.known) ||
+      !Array.isArray(parsed.unread)
+    ) {
+      console.error("Stored teacher calendar notification data is invalid.");
+      return null;
+    }
+
+    return {
+      known: parsed.known.filter((key): key is string => typeof key === "string"),
+      unread: parsed.unread.filter((key): key is string => typeof key === "string"),
+    };
+  } catch (storageError) {
+    console.error("Failed to read teacher calendar notification data:", storageError);
+    return null;
+  }
+}
+
+function saveTeacherEventSnapshot(storageKey: string, snapshot: TeacherEventNotificationSnapshot): void {
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(snapshot));
+  } catch (storageError) {
+    console.error("Failed to save teacher calendar notification data:", storageError);
+  }
+}
+
 export default function Dashboard() {
   const [enrolledStudents, setEnrolledStudents] = useState<number>(0);
   const [classCount, setClassCount] = useState<number>(0);
   const [subjects, setSubjects] = useState<any[]>([]);
   const [subjectFilter, setSubjectFilter] = useState("");
   const [events, setEvents] = useState<TeacherEvent[]>([]);
+  const [unreadEventKeys, setUnreadEventKeys] = useState<string[]>([]);
   const [isEventsLoading, setIsEventsLoading] = useState(true);
   const [eventsError, setEventsError] = useState<string | null>(null);
   const [calendarMonth, setCalendarMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
@@ -92,27 +140,62 @@ export default function Dashboard() {
   }, [isEventPeriodMenuOpen]);
 
   useEffect(() => {
-    const getAnalytics = async () => {
-      const getSchoolEvents = async () => {
-        try {
-          const response = await fetch("/api/portal/teacher?action=events");
-          if (!response.ok) {
-            throw new Error(`Could not load school events (${response.status}).`);
-          }
-          const data = await response.json();
-          if (!Array.isArray(data.events)) {
-            throw new Error("The school events response is invalid.");
-          }
-          setEvents(data.events);
-        } catch (err) {
-          console.error("Could not fetch teacher events:", err);
-          setEventsError(err instanceof Error ? err.message : "Could not load school events.");
-        } finally {
-          setIsEventsLoading(false);
-        }
-      };
+    const controller = new AbortController();
+    const storageKey = getTeacherEventStorageKey();
+    let requestInProgress = false;
 
-      void getSchoolEvents();
+    const loadSchoolEvents = async () => {
+      if (requestInProgress) return;
+      requestInProgress = true;
+      try {
+        const response = await fetch("/api/portal/teacher?action=events", {
+          signal: controller.signal,
+        });
+        if (!response.ok) {
+          throw new Error(`Could not load school events (${response.status}).`);
+        }
+        const data = await response.json();
+        if (!Array.isArray(data.events)) {
+          throw new Error("The school events response is invalid.");
+        }
+
+        const loadedEvents = data.events as TeacherEvent[];
+        const currentKeys = loadedEvents.map(getTeacherEventKey);
+        const stored = readTeacherEventSnapshot(storageKey);
+        const snapshot = stored
+          ? {
+              known: [...new Set([...stored.known, ...currentKeys])],
+              unread: [...new Set([
+                ...stored.unread,
+                ...currentKeys.filter((key) => !stored.known.includes(key)),
+              ])],
+            }
+          : { known: currentKeys, unread: [] };
+
+        saveTeacherEventSnapshot(storageKey, snapshot);
+        setUnreadEventKeys(snapshot.unread);
+        setEvents(loadedEvents);
+        setEventsError(null);
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        console.error("Could not fetch teacher events:", error);
+        setEventsError(error instanceof Error ? error.message : "Could not load school events.");
+      } finally {
+        requestInProgress = false;
+        if (!controller.signal.aborted) setIsEventsLoading(false);
+      }
+    };
+
+    void loadSchoolEvents();
+    const intervalId = window.setInterval(() => void loadSchoolEvents(), 30_000);
+    return () => {
+      window.clearInterval(intervalId);
+      controller.abort();
+    };
+  }, []);
+
+  useEffect(() => {
+    const getAnalytics = async () => {
       try {
         const loggedInTeacherId = getCookie("username");
         const res = await fetch(
@@ -201,6 +284,19 @@ export default function Dashboard() {
       setCalendarView("events");
     }
   };
+  const openTeacherEvent = (event: TeacherEvent) => {
+    const eventKey = getTeacherEventKey(event);
+    const nextUnreadKeys = unreadEventKeys.filter((key) => key !== eventKey);
+    if (nextUnreadKeys.length !== unreadEventKeys.length) {
+      setUnreadEventKeys(nextUnreadKeys);
+      const snapshot = readTeacherEventSnapshot(getTeacherEventStorageKey());
+      saveTeacherEventSnapshot(getTeacherEventStorageKey(), {
+        known: [...new Set([...(snapshot?.known || events.map(getTeacherEventKey)), eventKey])],
+        unread: nextUnreadKeys,
+      });
+    }
+    setSelectedEvent(event);
+  };
   const moveCalendarMonth = (amount: number) => {
     const nextMonth = new Date(monthYear, monthIndex + amount, 1);
     if (nextMonth < minimumCalendarMonth || nextMonth > maximumCalendarMonth) return;
@@ -228,7 +324,7 @@ export default function Dashboard() {
               if (view === "events") setEventListDate(null);
             }}
             aria-pressed={calendarView === view}
-            className={`flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-700 ${
+            className={`flex min-h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-700 ${
               calendarView === view
                 ? "border-emerald-700 bg-[#0B3763] text-white shadow-sm"
                 : "border-transparent text-[#0B3763] hover:bg-emerald-100"
@@ -236,11 +332,12 @@ export default function Dashboard() {
           >
             <i className={`fa-solid ${view === "calendar" ? "fa-calendar" : "fa-calendar-days"}`} aria-hidden="true" />
             {view === "calendar" ? "Calendar" : "Events"}
-            {view === "events" && (
-              <span className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-extrabold ${
-                calendarView === view ? "bg-white/20 text-white" : "bg-white text-[#0B3763]"
-              }`}>
-                {normalizedEvents.length}
+            {view === "events" && unreadEventKeys.length > 0 && (
+              <span
+                aria-label={`${unreadEventKeys.length} new event${unreadEventKeys.length === 1 ? "" : "s"}`}
+                className="flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1.5 text-[10px] font-extrabold text-[#0B3763] shadow-sm"
+              >
+                {unreadEventKeys.length}
               </span>
             )}
           </button>
@@ -261,15 +358,15 @@ export default function Dashboard() {
                 setCalendarMonth(new Date(today.getFullYear(), today.getMonth(), 1));
                 setSelectedCalendarDate(getLocalDateKey(today));
               }}
-              className="rounded-md border border-emerald-200 px-2 py-1 text-xs font-semibold text-emerald-800 transition-colors hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
+              className="cursor-pointer rounded-md border border-emerald-200 px-2 py-1 text-xs font-semibold text-emerald-800 transition-colors hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
             >
               Today
             </button>
-            <button type="button" aria-label="Previous month" onClick={() => moveCalendarMonth(-1)} disabled={!canGoToPreviousMonth} className="rounded-md border border-slate-200 px-2 py-1 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 disabled:cursor-not-allowed disabled:opacity-40">‹</button>
+            <button type="button" aria-label="Previous month" onClick={() => moveCalendarMonth(-1)} disabled={!canGoToPreviousMonth} className="cursor-pointer rounded-md border border-slate-200 px-2 py-1 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 disabled:cursor-not-allowed disabled:opacity-40">‹</button>
             <span className="min-w-[7rem] text-center text-xs font-semibold text-slate-700 sm:text-sm">
               {calendarMonth.toLocaleDateString(undefined, { month: "long", year: "numeric" })}
             </span>
-            <button type="button" aria-label="Next month" onClick={() => moveCalendarMonth(1)} disabled={!canGoToNextMonth} className="rounded-md border border-slate-200 px-2 py-1 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 disabled:cursor-not-allowed disabled:opacity-40">›</button>
+            <button type="button" aria-label="Next month" onClick={() => moveCalendarMonth(1)} disabled={!canGoToNextMonth} className="cursor-pointer rounded-md border border-slate-200 px-2 py-1 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 disabled:cursor-not-allowed disabled:opacity-40">›</button>
           </div>
         </div>
 
@@ -298,7 +395,7 @@ export default function Dashboard() {
                   aria-label={`${dateKey}${hasEvent ? `, ${dayEvents.length} events` : ""}`}
                   aria-pressed={isSelected}
                   onClick={() => selectCalendarDate(dateKey)}
-                  className={`flex shrink-0 items-center justify-between px-1 py-0.5 text-left text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-600 sm:text-sm ${
+                  className={`flex shrink-0 cursor-pointer items-center justify-between px-1 py-0.5 text-left text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-600 sm:text-sm ${
                     isSelected ? "font-bold text-[#0B3763]" : dateKey === todayKey ? "font-bold text-emerald-800" : "text-slate-700"
                   }`}
                 >
@@ -312,8 +409,8 @@ export default function Dashboard() {
                         key={event._id || `${dateKey}-${event.title}-${eventIndex}`}
                         type="button"
                         title={event.title}
-                        onClick={() => setSelectedEvent(event)}
-                        className={`block w-full truncate rounded px-1 py-0.5 text-left text-[8px] font-semibold leading-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 sm:text-[9px] ${event.color === "bg-yellow-500" ? "text-slate-900" : "text-white"} ${EVENT_COLORS[event.color] || EVENT_COLORS["bg-blue-500"]}`}
+                        onClick={() => openTeacherEvent(event)}
+                        className={`block w-full cursor-pointer truncate rounded px-1 py-0.5 text-left text-[8px] font-semibold leading-tight transition hover:brightness-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 sm:text-[9px] ${event.color === "bg-yellow-500" ? "text-slate-900" : "text-white"} ${EVENT_COLORS[event.color] || EVENT_COLORS["bg-blue-500"]}`}
                       >
                         {event.title}
                       </button>
@@ -322,7 +419,7 @@ export default function Dashboard() {
                       <button
                         type="button"
                         onClick={() => selectCalendarDate(dateKey)}
-                        className="block w-full truncate px-1 text-left text-[8px] font-bold text-[#0B3763] hover:underline sm:text-[9px]"
+                        className="block w-full cursor-pointer truncate px-1 text-left text-[8px] font-bold text-[#0B3763] hover:underline sm:text-[9px]"
                       >
                         +{dayEvents.length - 2} more
                       </button>
@@ -355,7 +452,7 @@ export default function Dashboard() {
                     aria-haspopup="menu"
                     aria-expanded={isEventPeriodMenuOpen}
                     onClick={() => setIsEventPeriodMenuOpen((isOpen) => !isOpen)}
-                    className="flex max-w-full items-center gap-2 rounded-lg border border-transparent px-1 py-0.5 text-left text-base font-bold text-slate-900 transition-colors hover:border-emerald-200 hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 sm:text-lg"
+                    className="flex max-w-full cursor-pointer items-center gap-2 rounded-lg border border-transparent px-1 py-0.5 text-left text-base font-bold text-slate-900 transition-colors hover:border-emerald-200 hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 sm:text-lg"
                   >
                     <i className={`fa-solid ${eventPeriod === "upcoming" ? "fa-calendar-check" : "fa-clock-rotate-left"} shrink-0 text-emerald-700`} aria-hidden="true" />
                     <span>{eventPeriod === "upcoming" ? "Upcoming Events" : "Past Events"}</span>
@@ -374,7 +471,7 @@ export default function Dashboard() {
                           setEventPeriod(period);
                           setIsEventPeriodMenuOpen(false);
                         }}
-                        className={`block w-full rounded-md px-3 py-2 text-left text-xs font-bold transition-colors hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-600 ${
+                        className={`block w-full cursor-pointer rounded-md px-3 py-2 text-left text-xs font-bold transition-colors hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-600 ${
                           eventPeriod === period ? "bg-emerald-50 text-emerald-800" : "text-slate-700"
                         }`}
                       >
@@ -413,8 +510,8 @@ export default function Dashboard() {
               <li key={`all-${event._id || `${event.event_date}-${event.title}-${index}`}`}>
                 <button
                   type="button"
-                  onClick={() => setSelectedEvent(event)}
-                  className="flex w-full min-w-0 items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
+                  onClick={() => openTeacherEvent(event)}
+                  className="flex w-full min-w-0 cursor-pointer items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
                 >
                   <span className={`size-2.5 shrink-0 rounded-full ${EVENT_COLORS[event.color] || EVENT_COLORS["bg-blue-500"]}`} />
                   <span className="min-w-0 flex-1">
@@ -489,7 +586,13 @@ export default function Dashboard() {
               const failedPct = total > 0 ? (failed / total) * 100 : 0;
 
               return (
-                <div key={subject.subject_id || index} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-emerald-300 hover:shadow-md sm:p-5">
+                <Link
+                  key={subject.subject_id || index}
+                  href={`/portal/teachers/grades${subject.sched_code ? `?sched_code=${encodeURIComponent(subject.sched_code)}` : ""}`}
+                  aria-label={`View grades for ${subject.subject_name || "this class"}`}
+                  className="group block cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0B3763] focus-visible:ring-offset-2"
+                >
+                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[#0B3763]/50 hover:shadow-md sm:p-5">
                   <div className="mb-3 flex items-start justify-between gap-3">
                     <div>
                       <h4 className="font-semibold text-gray-800 text-lg">
@@ -599,7 +702,12 @@ export default function Dashboard() {
                       </div>
                     )}
                   </div>
+                  <div className="mt-3 flex items-center justify-end gap-2 border-t border-slate-100 pt-3 text-xs font-bold text-[#0B3763]">
+                    <span>View grades</span>
+                    <i className="fa-solid fa-arrow-right transition-transform group-hover:translate-x-1" aria-hidden="true" />
+                  </div>
                 </div>
+                </Link>
               );
             })}
           </div>
