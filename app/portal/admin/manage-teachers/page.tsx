@@ -644,7 +644,16 @@ export default function ManageTeachers() {
           </div>
         ) : (
           <>
-            <table className="w-full min-w-[1100px] border-separate border-spacing-0 text-left">
+            <table className="w-full min-w-[1100px] table-fixed border-separate border-spacing-0 text-left">
+              <colgroup>
+                <col className="w-[12%]" />
+                <col className="w-[22%]" />
+                <col className="w-[12%]" />
+                <col className="w-[14%]" />
+                <col className="w-[10%]" />
+                <col className="w-[12%]" />
+                <col className="w-[18%]" />
+              </colgroup>
               <thead>
                 <tr className="select-none bg-slate-50 text-xs uppercase text-gray-500">
                   <th className="border-b border-r border-slate-200 px-3 py-3 cursor-pointer hover:text-blue-600 transition" onClick={() => handleSort("teacher_id")}>
@@ -654,7 +663,7 @@ export default function ManageTeachers() {
                     Faculty Name {renderSortArrow("faculty_name")}
                   </th>
                   <th className="border-b border-r border-slate-200 px-3 py-3 cursor-pointer hover:text-blue-600 transition" onClick={() => handleSort("department_id")}>
-                    Department {renderSortArrow("department_id")}
+                    Dept. {renderSortArrow("department_id")}
                   </th>
                   <th className="border-b border-r border-slate-200 px-3 py-3 cursor-pointer hover:text-blue-600 transition" onClick={() => handleSort("contact_number")}>
                     Contact {renderSortArrow("contact_number")}
