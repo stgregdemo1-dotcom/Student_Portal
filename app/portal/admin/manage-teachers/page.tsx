@@ -644,44 +644,44 @@ export default function ManageTeachers() {
           </div>
         ) : (
           <>
-            <table className="w-full text-left border-collapse min-w-[900px]">
+            <table className="w-full min-w-[1100px] border-separate border-spacing-0 text-left">
               <thead>
-                <tr className="text-gray-500 uppercase text-xs border-b select-none">
-                  <th className="pb-4 cursor-pointer hover:text-blue-600 transition" onClick={() => handleSort("teacher_id")}>
+                <tr className="select-none bg-slate-50 text-xs uppercase text-gray-500">
+                  <th className="border-b border-r border-slate-200 px-3 py-3 cursor-pointer hover:text-blue-600 transition" onClick={() => handleSort("teacher_id")}>
                     Teacher ID {renderSortArrow("teacher_id")}
                   </th>
-                  <th className="pb-4 cursor-pointer hover:text-blue-600 transition" onClick={() => handleSort("faculty_name")}>
+                  <th className="border-b border-r border-slate-200 px-3 py-3 cursor-pointer hover:text-blue-600 transition" onClick={() => handleSort("faculty_name")}>
                     Faculty Name {renderSortArrow("faculty_name")}
                   </th>
-                  <th className="pb-4 cursor-pointer hover:text-blue-600 transition" onClick={() => handleSort("department_id")}>
+                  <th className="border-b border-r border-slate-200 px-3 py-3 cursor-pointer hover:text-blue-600 transition" onClick={() => handleSort("department_id")}>
                     Dept. {renderSortArrow("department_id")}
                   </th>
-                  <th className="pb-4 cursor-pointer hover:text-blue-600 transition" onClick={() => handleSort("contact_number")}>
+                  <th className="border-b border-r border-slate-200 px-3 py-3 cursor-pointer hover:text-blue-600 transition" onClick={() => handleSort("contact_number")}>
                     Contact {renderSortArrow("contact_number")}
                   </th>
-                  <th className="pb-4 cursor-pointer hover:text-blue-600 transition" onClick={() => handleSort("status")}>
+                  <th className="border-b border-r border-slate-200 px-3 py-3 cursor-pointer hover:text-blue-600 transition" onClick={() => handleSort("status")}>
                     Status {renderSortArrow("status")}
                   </th>
-                  <th className="pb-4 cursor-pointer hover:text-blue-600 transition" onClick={() => handleSort("role_id")}>
+                  <th className="border-b border-r border-slate-200 px-3 py-3 cursor-pointer hover:text-blue-600 transition" onClick={() => handleSort("role_id")}>
                     Role {renderSortArrow("role_id")}
                   </th>
-                  <th className="pb-4 text-right">Actions</th>
+                  <th className="border-b border-slate-200 px-3 py-3 text-right">Actions</th>
                 </tr>
               </thead>
 
-              <tbody className="divide-y">
+              <tbody>
                 {paginatedTeachers.map((teacher) => (
-                  <tr key={teacher.teacher_id} className="hover:bg-gray-50">
-                    <td className="py-4 font-mono text-gray-600">{teacher.teacher_id}</td>
-                    <td className="py-4">
+                  <tr key={teacher.teacher_id} className="transition-colors hover:bg-blue-50/50">
+                    <td className="border-b border-r border-slate-200 px-3 py-4 font-mono text-gray-600">{teacher.teacher_id}</td>
+                    <td className="border-b border-r border-slate-200 px-3 py-4">
                       <div className="font-semibold">
                         {teacher.prefix} {teacher.first_name} {teacher.last_name}
                       </div>
                       <div className="text-xs text-gray-500">{teacher.email_address}</div>
                     </td>
-                    <td className="py-4">{teacher.department_id}</td>
-                    <td className="py-4">{teacher.contact_number}</td>
-                    <td className="py-4">
+                    <td className="border-b border-r border-slate-200 px-3 py-4">{teacher.department_id}</td>
+                    <td className="border-b border-r border-slate-200 px-3 py-4">{teacher.contact_number}</td>
+                    <td className="border-b border-r border-slate-200 px-3 py-4">
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-medium ${
                           teacher.archived
@@ -696,8 +696,8 @@ export default function ManageTeachers() {
                         {teacher.archived ? "Archived" : teacher.status}
                       </span>
                     </td>
-                    <td className="py-4 font-semibold">{teacher.role_id}</td>
-                    <td className="py-4 text-right">
+                    <td className="border-b border-r border-slate-200 px-3 py-4 font-semibold">{teacher.role_id}</td>
+                    <td className="border-b border-slate-200 px-3 py-4 text-right">
                       <div className="flex justify-end gap-3 items-center">
                         {teacher.archived ? (
                           <button
