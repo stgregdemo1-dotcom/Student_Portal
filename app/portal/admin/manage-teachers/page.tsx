@@ -646,13 +646,13 @@ export default function ManageTeachers() {
           <>
             <table className="w-full min-w-[1100px] table-fixed border-separate border-spacing-0 text-left">
               <colgroup>
-                <col className="w-[11%]" />
-                <col className="w-[20%]" />
+                <col className="w-[10%]" />
+                <col className="w-[17%]" />
+                <col className="w-[18%]" />
                 <col className="w-[12%]" />
-                <col className="w-[13%]" />
-                <col className="w-[9%]" />
                 <col className="w-[8%]" />
-                <col className="w-[27%]" />
+                <col className="w-[10%]" />
+                <col className="w-[25%]" />
               </colgroup>
               <thead>
                 <tr className="select-none bg-slate-50 text-xs uppercase text-gray-500">
@@ -663,7 +663,7 @@ export default function ManageTeachers() {
                     Faculty Name {renderSortArrow("faculty_name")}
                   </th>
                   <th className="border-b border-r border-slate-200 px-3 py-3 cursor-pointer hover:text-blue-600 transition" onClick={() => handleSort("department_id")}>
-                    Dept. {renderSortArrow("department_id")}
+                    Department {renderSortArrow("department_id")}
                   </th>
                   <th className="border-b border-r border-slate-200 px-3 py-3 cursor-pointer hover:text-blue-600 transition" onClick={() => handleSort("contact_number")}>
                     Contact {renderSortArrow("contact_number")}
@@ -688,7 +688,7 @@ export default function ManageTeachers() {
                       </div>
                       <div className="text-xs text-gray-500">{teacher.email_address}</div>
                     </td>
-                    <td className="border-b border-r border-slate-200 px-3 py-4">{teacher.department_id}</td>
+                    <td className="border-b border-r border-slate-200 px-3 py-4 break-words">{teacher.department_id}</td>
                     <td className="border-b border-r border-slate-200 px-3 py-4">{teacher.contact_number}</td>
                     <td className="border-b border-r border-slate-200 px-3 py-4">
                       <span
