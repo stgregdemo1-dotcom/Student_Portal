@@ -507,16 +507,22 @@ export default function DashboardPage() {
                     isToday ? "bg-[#eaf2ff] shadow-[inset_0_0_0_1px_#1967d2]" : "bg-white"
                   }`}
                 >
-                  <span className={`inline-flex min-h-6 items-center gap-1 rounded-full px-1.5 text-[11px] font-bold sm:text-xs ${
-                    isToday
-                      ? "bg-[#1967d2] text-white"
-                      : isCurrentMonth
-                        ? "text-slate-800"
-                        : "text-slate-500"
-                  }`}>
-                    <span>{date.getDate()}</span>
-                    {showMonthLabel && <span>{MONTHS[date.getMonth()].slice(0, 3)}</span>}
-                  </span>
+                  <div className="flex min-h-6 items-center gap-1">
+                    <span className={`inline-flex h-6 min-w-6 shrink-0 items-center rounded-full text-[11px] font-bold sm:text-xs ${
+                      isToday
+                        ? "size-6 justify-center bg-[#1967d2] text-white"
+                        : isCurrentMonth
+                          ? "text-slate-800"
+                          : "text-slate-500"
+                    }`}>
+                      {date.getDate()}
+                    </span>
+                    {showMonthLabel && (
+                      <span className="text-[11px] font-bold text-slate-600 sm:text-xs">
+                        {MONTHS[date.getMonth()].slice(0, 3)}
+                      </span>
+                    )}
+                  </div>
                   <div
                     aria-label={`Events on ${dateKey}`}
                     className="mt-1 min-h-0 flex-1 space-y-0.5 overflow-y-auto overscroll-contain pr-0.5"
