@@ -662,56 +662,56 @@ export default function ManageSubjects() {
           </div>
         ) : (
           <>
-            <table className="w-full text-left border-collapse min-w-[900px]">
+            <table className="w-full min-w-[1100px] border-separate border-spacing-0 text-left">
               <thead>
-                <tr className="text-gray-500 uppercase text-xs border-b select-none">
-                  <th className="pb-4 cursor-pointer hover:text-blue-600 transition" onClick={() => handleSort("subject_id")}>
+                <tr className="select-none bg-slate-50 text-xs uppercase text-gray-500">
+                  <th className="border-b border-r border-slate-200 px-3 py-3 cursor-pointer hover:text-blue-600 transition" onClick={() => handleSort("subject_id")}>
                     Subject ID {renderSortArrow("subject_id")}
                   </th>
-                  <th className="pb-4 cursor-pointer hover:text-blue-600 transition" onClick={() => handleSort("composite_subject")}>
+                  <th className="border-b border-r border-slate-200 px-3 py-3 cursor-pointer hover:text-blue-600 transition" onClick={() => handleSort("composite_subject")}>
                     Subject {renderSortArrow("composite_subject")}
                   </th>
-                  <th className="pb-4 cursor-pointer hover:text-blue-600 transition" onClick={() => handleSort("subject_year_section")}>
+                  <th className="border-b border-r border-slate-200 px-3 py-3 cursor-pointer hover:text-blue-600 transition" onClick={() => handleSort("subject_year_section")}>
                     Year & Section {renderSortArrow("subject_year_section")}
                   </th>
-                  <th className="pb-4 cursor-pointer hover:text-blue-600 transition" onClick={() => handleSort("semester")}>
+                  <th className="border-b border-r border-slate-200 px-3 py-3 cursor-pointer hover:text-blue-600 transition" onClick={() => handleSort("semester")}>
                     Semester {renderSortArrow("semester")}
                   </th>
-                  <th className="pb-4 cursor-pointer hover:text-blue-600 transition" onClick={() => handleSort("teacher_id")}>
+                  <th className="border-b border-r border-slate-200 px-3 py-3 cursor-pointer hover:text-blue-600 transition" onClick={() => handleSort("teacher_id")}>
                     Teacher {renderSortArrow("teacher_id")}
                   </th>
-                  <th className="pb-4 cursor-pointer hover:text-blue-600 transition" onClick={() => handleSort("status")}>
+                  <th className="border-b border-r border-slate-200 px-3 py-3 cursor-pointer hover:text-blue-600 transition" onClick={() => handleSort("status")}>
                     Status {renderSortArrow("status")}
                   </th>
-                  <th className="pb-4">
+                  <th className="border-b border-r border-slate-200 px-3 py-3">
                     Class Time
                   </th>
-                  <th className="pb-4 cursor-pointer hover:text-blue-600 transition" onClick={() => handleSort("subject_day")}>
+                  <th className="border-b border-r border-slate-200 px-3 py-3 cursor-pointer hover:text-blue-600 transition" onClick={() => handleSort("subject_day")}>
                     Day {renderSortArrow("subject_day")}
                   </th>
-                  <th className="pb-4 cursor-pointer hover:text-blue-600 transition" onClick={() => handleSort("room")}>
+                  <th className="border-b border-r border-slate-200 px-3 py-3 cursor-pointer hover:text-blue-600 transition" onClick={() => handleSort("room")}>
                     Room {renderSortArrow("room")}
                   </th>
-                  <th className="pb-4 text-right">Actions</th>
+                  <th className="border-b border-slate-200 px-3 py-3 text-right">Actions</th>
                 </tr>
               </thead>
 
-              <tbody className="divide-y">
+              <tbody>
                 {paginatedSubjects.map((subject) => (
-                  <tr key={subject.subject_id} className="hover:bg-gray-50">
-                    <td className="py-4 font-mono text-gray-600">{subject.subject_id}</td>
-                    <td className="py-4">
+                  <tr key={subject.subject_id} className="transition-colors hover:bg-blue-50/50">
+                    <td className="border-b border-r border-slate-200 px-3 py-4 font-mono text-gray-600">{subject.subject_id}</td>
+                    <td className="border-b border-r border-slate-200 px-3 py-4">
                       <div className="font-semibold">
                         {subject.sched_code} {subject.subject_name}
                       </div>
                       <div className="text-xs text-gray-500">{subject.subject_specification}</div>
                     </td>
-                    <td className="py-4">{subject.subject_year_section}</td>
-                    <td className="py-4 font-medium text-gray-700">{subject.semester || "N/A"}</td>
-                    <td className="py-4 font-medium text-gray-700">
+                    <td className="border-b border-r border-slate-200 px-3 py-4">{subject.subject_year_section}</td>
+                    <td className="border-b border-r border-slate-200 px-3 py-4 font-medium text-gray-700">{subject.semester || "N/A"}</td>
+                    <td className="border-b border-r border-slate-200 px-3 py-4 font-medium text-gray-700">
                       {getTeacherFullName(subject.teacher_id)}
                     </td>
-                    <td className="py-4">
+                    <td className="border-b border-r border-slate-200 px-3 py-4">
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-medium ${subject.archived
                             ? "bg-slate-100 text-slate-700"
@@ -725,14 +725,14 @@ export default function ManageSubjects() {
                         {subject.archived ? "Archived" : subject.status}
                       </span>
                     </td>
-                    <td className="py-4 font-semibold">
+                    <td className="border-b border-r border-slate-200 px-3 py-4 font-semibold">
                       {subject.class_time?.start && subject.class_time?.end
                         ? `${subject.class_time.start} - ${subject.class_time.end}`
                         : "No Time Set"}
                     </td>
-                    <td className="py-4 font-semibold">{subject.subject_day}</td>
-                    <td className="py-4 font-semibold">{subject.room}</td>
-                    <td className="py-4 text-right">
+                    <td className="border-b border-r border-slate-200 px-3 py-4 font-semibold">{subject.subject_day}</td>
+                    <td className="border-b border-r border-slate-200 px-3 py-4 font-semibold">{subject.room}</td>
+                    <td className="border-b border-slate-200 px-3 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         {!subject.archived && (
                           <>
