@@ -654,7 +654,7 @@ export default function ManageTeachers() {
                     Faculty Name {renderSortArrow("faculty_name")}
                   </th>
                   <th className="border-b border-r border-slate-200 px-3 py-3 cursor-pointer hover:text-blue-600 transition" onClick={() => handleSort("department_id")}>
-                    Dept. {renderSortArrow("department_id")}
+                    Department {renderSortArrow("department_id")}
                   </th>
                   <th className="border-b border-r border-slate-200 px-3 py-3 cursor-pointer hover:text-blue-600 transition" onClick={() => handleSort("contact_number")}>
                     Contact {renderSortArrow("contact_number")}
