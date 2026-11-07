@@ -646,13 +646,13 @@ export default function ManageTeachers() {
           <>
             <table className="w-full min-w-[1100px] table-fixed border-separate border-spacing-0 text-left">
               <colgroup>
+                <col className="w-[11%]" />
+                <col className="w-[20%]" />
                 <col className="w-[12%]" />
-                <col className="w-[22%]" />
-                <col className="w-[12%]" />
-                <col className="w-[14%]" />
-                <col className="w-[10%]" />
-                <col className="w-[12%]" />
-                <col className="w-[18%]" />
+                <col className="w-[13%]" />
+                <col className="w-[9%]" />
+                <col className="w-[8%]" />
+                <col className="w-[27%]" />
               </colgroup>
               <thead>
                 <tr className="select-none bg-slate-50 text-xs uppercase text-gray-500">
@@ -705,9 +705,9 @@ export default function ManageTeachers() {
                         {teacher.archived ? "Archived" : teacher.status}
                       </span>
                     </td>
-                    <td className="border-b border-r border-slate-200 px-3 py-4 font-semibold">{teacher.role_id}</td>
+                    <td className="border-b border-r border-slate-200 px-3 py-4 font-semibold break-words">{teacher.role_id}</td>
                     <td className="border-b border-slate-200 px-3 py-4 text-right">
-                      <div className="flex justify-end gap-3 items-center">
+                      <div className="flex items-center justify-end gap-2 whitespace-nowrap">
                         {teacher.archived ? (
                           <button
                             type="button"
