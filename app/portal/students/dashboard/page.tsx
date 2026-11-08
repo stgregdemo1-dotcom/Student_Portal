@@ -1,6 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+// ==========================================
+// HOW TO APPLY TO OTHER PAGES (Step 1):
+// Import your custom useAuthGuard hook at the top.
+// Ensure the import path matches your project structure (e.g. "@/hooks/useAuthGuard").
+// ==========================================
+import { useAuthGuard } from "@/app/hooks/useAuthGuard";
 
 type CalendarEvent = {
   _id?: string;
@@ -242,9 +248,21 @@ function PastEventsPanel({
 }
 
 export default function DashboardPage() {
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 2):
+  // Call useAuthGuard at the top of your component body.
+  // - requiredPrefix: "ST" ensures only valid student IDs can access this dashboard.
+  // - redirectTo: Sends unauthorized users to the login screen.
+  // - Aliased username as usernameCookie to preserve your notification storage logic.
+  // ==========================================
+  const { username: usernameCookie, isAuthenticated, loading: authLoading } = useAuthGuard({
+    requiredPrefix: "ST",
+    redirectTo: "/portal/log-in",
+  });
+
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeView, setActiveView] = useState<DashboardView>("calendar");
   const [activeEventList, setActiveEventList] = useState<EventListView>("upcoming");
@@ -262,14 +280,12 @@ export default function DashboardPage() {
   const canGoNext = monthStart < latestMonth;
 
   useEffect(() => {
+    if (!isAuthenticated || !usernameCookie) return;
+
     const controller = new AbortController();
     let requestInProgress = false;
 
-    const usernameCookie = document.cookie
-      .split("; ")
-      .find((cookie) => cookie.startsWith("username="))
-      ?.slice("username=".length);
-    const storageKey = `sgcst-calendar-notifications-v1:${usernameCookie || "guest"}`;
+    const storageKey = `sgcst-calendar-notifications-v1:${usernameCookie}`;
 
     const loadEvents = async () => {
       if (requestInProgress) return;
@@ -310,7 +326,7 @@ export default function DashboardPage() {
         setError("Calendar events could not be loaded.");
       } finally {
         requestInProgress = false;
-        if (!controller.signal.aborted) setLoading(false);
+        if (!controller.signal.aborted) setDataLoading(false);
       }
     };
 
@@ -320,7 +336,7 @@ export default function DashboardPage() {
       window.clearInterval(intervalId);
       controller.abort();
     };
-  }, []);
+  }, [isAuthenticated, usernameCookie]);
 
   useEffect(() => {
     if (!selectedEvent) return;
@@ -381,10 +397,6 @@ export default function DashboardPage() {
     const nextUnreadKeys = unreadEventKeys.filter((key) => key !== eventKey);
     if (nextUnreadKeys.length !== unreadEventKeys.length) {
       setUnreadEventKeys(nextUnreadKeys);
-      const usernameCookie = document.cookie
-        .split("; ")
-        .find((cookie) => cookie.startsWith("username="))
-        ?.slice("username=".length);
       const storageKey = `sgcst-calendar-notifications-v1:${usernameCookie || "guest"}`;
       const snapshot = readNotificationSnapshot(storageKey);
       saveNotificationSnapshot(storageKey, {
@@ -395,6 +407,29 @@ export default function DashboardPage() {
     }
     setSelectedEvent(event);
   };
+
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 3):
+  // Render a clean loading screen while verifying credentials.
+  // ==========================================
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-100 font-sans">
+        <div className="text-center space-y-3">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-[#082b49] border-t-transparent"></div>
+          <p className="text-sm font-bold text-[#856404]">Verifying Security Credentials...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 4):
+  // Halt execution if unauthenticated to prevent content flashing.
+  // ==========================================
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-2 overflow-hidden text-slate-700 sm:gap-3">
@@ -471,7 +506,7 @@ export default function DashboardPage() {
               </h2>
             </div>
             <span className="text-[11px] font-medium text-slate-500" aria-live="polite">
-              {loading ? "Loading events…" : error ? "Events unavailable" : `${Object.keys(eventsByDate).length} event days`}
+              {dataLoading ? "Loading events…" : error ? "Events unavailable" : `${Object.keys(eventsByDate).length} event days`}
             </span>
           </header>
 
@@ -551,7 +586,7 @@ export default function DashboardPage() {
 
         <PastEventsPanel
           events={visibleEvents}
-          loading={loading}
+          loading={dataLoading}
           error={error}
           activeList={activeEventList}
           onChangeList={setActiveEventList}

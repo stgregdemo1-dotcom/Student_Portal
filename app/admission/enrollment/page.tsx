@@ -56,6 +56,7 @@ const InputField: React.FC<InputFieldProps> = ({
   readOnly,
   value,
   onChange,
+  disabled,
 }) => (
   <div className="flex flex-col gap-2">
     <label className="ml-0.5 text-xs font-semibold text-[#334155]">
@@ -68,10 +69,12 @@ const InputField: React.FC<InputFieldProps> = ({
       pattern={pattern}
       placeholder={placeholder}
       readOnly={readOnly}
+      disabled={disabled}
       value={value || ""}
       onChange={onChange}
-      className={`h-12 w-full rounded-lg border border-[#DCE4ED] bg-white px-3.5 text-sm text-[#183B56] outline-none transition placeholder:text-slate-400 focus:border-[#183B56] focus:ring-2 focus:ring-[#183B56]/15 ${readOnly ? "cursor-not-allowed bg-[#F1F6FC] font-semibold text-slate-500" : ""
-        }`}
+      className={`h-12 w-full rounded-lg border border-[#DCE4ED] bg-white px-3.5 text-sm text-[#183B56] outline-none transition placeholder:text-slate-400 focus:border-[#183B56] focus:ring-2 focus:ring-[#183B56]/15 ${
+        readOnly ? "cursor-not-allowed bg-[#F1F6FC] font-semibold text-slate-500" : ""
+      }`}
     />
   </div>
 );
@@ -91,6 +94,13 @@ export default function EnrollmentForm() {
   const [contactPerson, setContactPerson] = useState("");
   const [relationship, setRelationship] = useState("");
   const [contactNumber, setContactNumber] = useState("");
+
+  // Password validation checks
+  const hasMinLength = password.length >= 8;
+  const hasLowerAndUpper = /(?=.*[a-z])(?=.*[A-Z])/.test(password);
+  const hasAlphanumeric = /(?=.*[a-zA-Z])(?=.*\d)/.test(password);
+  const hasSpecialChar = /(?=.*[^A-Za-z0-9])/.test(password);
+  const passwordsMatch = password.length > 0 && password === confirmPassword;
 
   useEffect(() => {
     const cachedNumber = localStorage.getItem("enrollment_control_number");
@@ -143,9 +153,30 @@ export default function EnrollmentForm() {
 
   const handleEnrollmentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg(null);
 
     if (!studentData) {
       setErrorMsg("Unable to load the approved application details.");
+      return;
+    }
+
+    if (!hasMinLength || !hasLowerAndUpper || !hasAlphanumeric || !hasSpecialChar) {
+      setErrorMsg("Please ensure your password meets all security requirements.");
+      return;
+    }
+
+    if (!passwordsMatch) {
+      setErrorMsg("Passwords do not match.");
+      return;
+    }
+
+    if (!contactPerson || !relationship || !contactNumber) {
+      setErrorMsg("Please fill in all mandatory emergency contact fields.");
+      return;
+    }
+
+    if (!/^\d{11}$/.test(contactNumber)) {
+      setErrorMsg("Emergency contact number must contain exactly 11 digits.");
       return;
     }
 
@@ -178,21 +209,6 @@ export default function EnrollmentForm() {
       graduation_year: "",
       track: studentData.track,
     };
-
-    if (password !== confirmPassword) {
-      setErrorMsg("Passwords do not match.");
-      return;
-    }
-
-    if (!contactPerson || !relationship || !contactNumber) {
-      setErrorMsg("Please fill in all mandatory emergency contact fields.");
-      return;
-    }
-
-    if (!/^\d{11}$/.test(contactNumber)) {
-      setErrorMsg("Emergency contact number must contain exactly 11 digits.");
-      return;
-    }
 
     setSubmitting(true);
 
@@ -283,7 +299,6 @@ export default function EnrollmentForm() {
           </button>
         </div>
 
-        {/* 🚀 FIXED: Changed container layout shell from a div to a form handler */}
         <form onSubmit={handleEnrollmentSubmit} className="space-y-9 rounded-2xl border border-slate-100 bg-white p-5 shadow-[0_12px_40px_rgba(13,43,69,0.08)] sm:p-8 lg:p-10">
           <div className="border-b border-[#FFC107]/70 pb-6">
             <h3 className="text-lg font-bold text-[#0D2B45] sm:text-xl">Student Information</h3>
@@ -315,6 +330,28 @@ export default function EnrollmentForm() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 disabled={submitting}
               />
+            </div>
+
+            {/* Password Validation Checklist */}
+            <div className="mt-6 p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+              <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">Password Security & Confirmation Requirements:</p>
+              <ul className="text-xs space-y-1">
+                <li className={hasMinLength ? "text-emerald-600 font-semibold" : "text-slate-400"}>
+                  {hasMinLength ? "✓" : "○"} At least 8 characters long
+                </li>
+                <li className={hasLowerAndUpper ? "text-emerald-600 font-semibold" : "text-slate-400"}>
+                  {hasLowerAndUpper ? "✓" : "○"} At least one uppercase and one lowercase letter
+                </li>
+                <li className={hasAlphanumeric ? "text-emerald-600 font-semibold" : "text-slate-400"}>
+                  {hasAlphanumeric ? "✓" : "○"} Alphanumeric (contains letters and numbers)
+                </li>
+                <li className={hasSpecialChar ? "text-emerald-600 font-semibold" : "text-slate-400"}>
+                  {hasSpecialChar ? "✓" : "○"} At least one special character (e.g. !@#$%^&*)
+                </li>
+                <li className={passwordsMatch ? "text-emerald-600 font-semibold" : "text-slate-400"}>
+                  {passwordsMatch ? "✓" : "○"} Passwords match
+                </li>
+              </ul>
             </div>
           </div>
 
@@ -372,9 +409,12 @@ export default function EnrollmentForm() {
 
           <button
             type="submit"
-            disabled={!agree || submitting}
-            className={`group flex min-h-14 w-full items-center justify-center rounded-[10px] border-2 px-5 py-4 text-sm font-bold uppercase tracking-wide shadow-[0_5px_16px_rgba(13,43,69,0.18)] transition-[background-color,color,border-color,box-shadow] duration-300 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#FFC107]/60 focus-visible:ring-offset-2 ${agree && !submitting ? "border-[#E5A900] bg-[#FFC107] text-[#082B49] hover:border-[#082B49] hover:bg-[#082B49] hover:text-white hover:shadow-[0_8px_20px_rgba(8,43,73,0.26)]" : "cursor-not-allowed border-slate-300 bg-slate-300 text-slate-500"
-              }`}
+            disabled={!agree || submitting || !hasMinLength || !hasLowerAndUpper || !hasAlphanumeric || !hasSpecialChar || !passwordsMatch}
+            className={`group flex min-h-14 w-full items-center justify-center rounded-[10px] border-2 px-5 py-4 text-sm font-bold uppercase tracking-wide shadow-[0_5px_16px_rgba(13,43,69,0.18)] transition-[background-color,color,border-color,box-shadow] duration-300 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#FFC107]/60 focus-visible:ring-offset-2 ${
+              agree && !submitting && hasMinLength && hasLowerAndUpper && hasAlphanumeric && hasSpecialChar && passwordsMatch
+                ? "border-[#E5A900] bg-[#FFC107] text-[#082B49] hover:border-[#082B49] hover:bg-[#082B49] hover:text-white hover:shadow-[0_8px_20px_rgba(8,43,73,0.26)]"
+                : "cursor-not-allowed border-slate-300 bg-slate-300 text-slate-500"
+            }`}
           >
             {submitting ? "Processing Enrollment..." : "Confirm Enrollment"}
           </button>

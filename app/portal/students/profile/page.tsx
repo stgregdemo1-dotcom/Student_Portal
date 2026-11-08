@@ -2,14 +2,33 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+// ==========================================
+// HOW TO APPLY TO OTHER PAGES (Step 1):
+// Import your custom useAuthGuard hook at the top.
+// Ensure the import path matches your project structure (e.g. "@/hooks/useAuthGuard").
+// ==========================================
+import { useAuthGuard } from "@/app/hooks/useAuthGuard";
 
 export default function EnrolleeDetailsPage() {
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 2):
+  // Call useAuthGuard at the top of your component body.
+  // - requiredPrefix: "ST" ensures only valid student accounts can access enrollee details.
+  // - redirectTo: Sends unauthorized users to the login screen.
+  // ==========================================
+  const { isAuthenticated, loading: authLoading } = useAuthGuard({
+    requiredPrefix: "ST",
+    redirectTo: "/portal/log-in",
+  });
+
   const router = useRouter();
   const [enrollee, setEnrollee] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
+
     const fetchProfileData = async () => {
       try {
         const res = await fetch("/api/portal/student");
@@ -24,14 +43,37 @@ export default function EnrolleeDetailsPage() {
         console.error("Pipeline layout connection failure:", err);
         setError("A network fault occurred while reading configuration profiles.");
       } finally {
-        setLoading(false);
+        setDataLoading(false);
       }
     };
 
     fetchProfileData();
-  }, [router]);
+  }, [isAuthenticated]);
 
-  if (loading) {
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 3):
+  // Render a clean loading screen while verifying credentials.
+  // ==========================================
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 font-sans">
+        <div className="text-center space-y-3">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-[#082b49] border-t-transparent"></div>
+          <p className="text-sm font-bold text-[#856404]">Verifying Security Credentials...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 4):
+  // Halt execution if unauthenticated to prevent content flashing.
+  // ==========================================
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  if (dataLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <p className="text-gray-400 font-medium animate-pulse">Loading secure profile state...</p>

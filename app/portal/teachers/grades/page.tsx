@@ -1,5 +1,11 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+// ==========================================
+// HOW TO APPLY TO OTHER PAGES (Step 1):
+// Import your custom useAuthGuard hook at the top.
+// Ensure the import path matches your project structure (e.g. "@/hooks/useAuthGuard").
+// ==========================================
+import { useAuthGuard } from '@/app/hooks/useAuthGuard';
 
 interface Schedule {
   sched_code: string;
@@ -26,36 +32,34 @@ function getAutomaticRemark(grades: Array<number | string>): string {
 }
 
 const GradingSheet = () => {
-  const [teacherId, setTeacherId] = useState<string>("");
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 2):
+  // Call useAuthGuard at the top of your component body.
+  // - requiredPrefix: "TCH" restricts access strictly to teacher accounts. 
+  //   (Change to "ST" for student pages, "ADM" for admin, etc.)
+  // - redirectTo: Specifies where unauthorized users get sent automatically.
+  // - We alias username as teacherId to preserve your existing code variable names.
+  // ==========================================
+  const { username: teacherId, isAuthenticated, loading: authLoading } = useAuthGuard({
+    requiredPrefix: "TCH",
+    redirectTo: "/portal/log-in",
+  });
+
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [selectedCode, setSelectedCode] = useState<string>("");
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [grades, setGrades] = useState<{ [key: string]: (number | string)[] }>({});
+  const [initialGradesBackup, setInitialGradesBackup] = useState<{ [key: string]: (number | string)[] }>({});
   const [rosterList, setRosterList] = useState<RosterStudent[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [dataLoading, setDataLoading] = useState<boolean>(true);
   const [canSubmitFinal, setCanSubmitFinal] = useState<boolean>(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
 
-  const getCookie = (name: string): string => {
-    if (typeof document === "undefined") return "";
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop()?.split(';').shift() || "";
-    return "";
-  };
-
+  // Fetch configuration settings (Only runs after authentication verification succeeds)
   useEffect(() => {
-    const cachedUsername = getCookie("username");
-    if (cachedUsername) {
-      setTeacherId(cachedUsername);
-    } else {
-      console.warn("No authentication cookie found.");
-      setLoading(false);
-    }
-  }, []);
+    if (!isAuthenticated) return;
 
-  useEffect(() => {
     const fetchConfig = async () => {
       try {
         const res = await fetch('/api/portal/teacher?action=config&id=system');
@@ -68,12 +72,12 @@ const GradingSheet = () => {
       }
     };
     fetchConfig();
-  }, []);
+  }, [isAuthenticated]);
 
   const fetchSchedules = async () => {
-    if (!teacherId) return;
+    if (!teacherId || !isAuthenticated) return;
     try {
-      setLoading(true);
+      setDataLoading(true);
       const response = await fetch(`/api/portal/teacher?table=subjects&id=${teacherId}&action=subjects`);
       const result = await response.json();
       if (result && result.subjects) {
@@ -82,13 +86,15 @@ const GradingSheet = () => {
     } catch (error) {
       console.error("Error grabbing active rosters:", error);
     } finally {
-      setLoading(false);
+      setDataLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchSchedules();
-  }, [teacherId]);
+    if (isAuthenticated && teacherId) {
+      fetchSchedules();
+    }
+  }, [teacherId, isAuthenticated]);
 
   useEffect(() => {
     if (selectedCode || typeof window === "undefined") return;
@@ -100,38 +106,40 @@ const GradingSheet = () => {
 
   const activeClass = schedules.find(s => s.sched_code === selectedCode);
 
-  useEffect(() => {
+  const loadRosterData = async () => {
     if (!selectedCode || !activeClass) {
       setRosterList([]);
       return;
     }
 
-    const fetchRosterData = async () => {
-      try {
-        const response = await fetch(`/api/portal/teacher?table=student_section&id=${activeClass.subject_id}&action=students`);
-        const data = await response.json();
-        if (data && data.students) {
-          const sortedStudents = [...data.students].sort((a, b) =>
-            (a.student_id || "").localeCompare(b.student_id || "")
-          );
+    try {
+      const response = await fetch(`/api/portal/teacher?table=student_section&id=${activeClass.subject_id}&action=students`);
+      const data = await response.json();
+      if (data && data.students) {
+        const sortedStudents = [...data.students].sort((a, b) =>
+          (a.student_id || "").localeCompare(b.student_id || "")
+        );
 
-          setRosterList(sortedStudents);
+        setRosterList(sortedStudents);
 
-          const initialGradesMap: { [key: string]: (number | string)[] } = {};
-          sortedStudents.forEach((std: any) => {
-            const studentGrades = [std.grades[0] || 0, std.grades[1] || 0];
-            initialGradesMap[std.student_id] = [
-              ...studentGrades,
-              getAutomaticRemark(studentGrades),
-            ];
-          });
-          setGrades(initialGradesMap);
-        }
-      } catch (err) {
-        console.error("Error loading student rows:", err);
+        const initialGradesMap: { [key: string]: (number | string)[] } = {};
+        sortedStudents.forEach((std: any) => {
+          const studentGrades = [std.grades[0] || 0, std.grades[1] || 0];
+          initialGradesMap[std.student_id] = [
+            ...studentGrades,
+            getAutomaticRemark(studentGrades),
+          ];
+        });
+        setGrades(initialGradesMap);
+        setInitialGradesBackup(initialGradesMap);
       }
-    };
-    fetchRosterData();
+    } catch (err) {
+      console.error("Error loading student rows:", err);
+    }
+  };
+
+  useEffect(() => {
+    loadRosterData();
   }, [selectedCode, activeClass]);
 
   const updateGradeState = (studentId: string, colIndex: number, val: number | string) => {
@@ -169,6 +177,11 @@ const GradingSheet = () => {
 
   const handleDraftSave = async () => {
     await executeFinalSubmission(false);
+  };
+
+  const handleCancelEdit = () => {
+    setGrades(initialGradesBackup);
+    setIsEditing(false);
   };
 
   const executeFinalSubmission = async (isFinal: boolean = true) => {
@@ -213,6 +226,7 @@ const GradingSheet = () => {
           setSelectedCode("");
           setRosterList([]);
           setGrades({});
+          setInitialGradesBackup({});
           await fetchSchedules();
         } else {
           const refreshResponse = await fetch(`/api/portal/teacher?table=student_section&id=${activeClass.subject_id}&action=students`);
@@ -222,6 +236,17 @@ const GradingSheet = () => {
               (a.student_id || "").localeCompare(b.student_id || "")
             );
             setRosterList(sortedRefreshed);
+
+            const updatedGradesMap: { [key: string]: (number | string)[] } = {};
+            sortedRefreshed.forEach((std: any) => {
+              const studentGrades = [std.grades[0] || 0, std.grades[1] || 0];
+              updatedGradesMap[std.student_id] = [
+                ...studentGrades,
+                getAutomaticRemark(studentGrades),
+              ];
+            });
+            setGrades(updatedGradesMap);
+            setInitialGradesBackup(updatedGradesMap);
           }
         }
       }
@@ -241,19 +266,27 @@ const GradingSheet = () => {
   const isSubjectActive = activeClass?.status === "Active";
   const isEvaluating = activeClass?.status === "Evaluating";
 
-  if (loading) {
-    return <div className="text-center p-20 font-bold text-[#856404]">Syncing with Portal Records...</div>;
-  }
-
-  if (!teacherId && !loading) {
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 3):
+  // Render a clean loading screen while verifying credentials.
+  // ==========================================
+  if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="bg-white p-8 rounded-xl border border-red-200 text-center shadow-md">
-          <p className="text-red-600 font-bold mb-2">Access Denied</p>
-          <p className="text-gray-600 text-sm">Please log in to load your grading dashboard schedules.</p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-100 font-sans">
+        <div className="text-center space-y-3">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-[#0B3763] border-t-transparent"></div>
+          <p className="text-sm font-bold text-[#856404]">Verifying Security Credentials...</p>
         </div>
       </div>
     );
+  }
+
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 4):
+  // Prevent flashing or unauthorized rendering if validation fails.
+  // ==========================================
+  if (!isAuthenticated) {
+    return null;
   }
 
   return (
@@ -282,31 +315,44 @@ const GradingSheet = () => {
             </select>
 
             {activeClass && (
-              <button
-                disabled={isEvaluating}
-                onClick={async () => {
-                  if (isEvaluating) return;
-                  if (isEditing) {
-                    await handleDraftSave();
-                  } else {
-                    setIsEditing(true);
-                  }
-                }}
-                className={`px-6 py-2.5 rounded-lg font-bold text-white transition-all shadow-md transform active:scale-95 ${
-                  isEvaluating
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none"
-                    : isEditing
-                      ? "bg-[#0B3763] hover:bg-[#06264A]"
-                      : "bg-[#FFD700] hover:bg-[#e6c200] text-[#856404]"
-                }`}
-              >
-                {isEvaluating ? "🔒 Under Evaluation" : isEditing ? "✓ Save Draft" : "✎ Edit Grades"}
-              </button>
+              <div className="flex items-center gap-2">
+                {isEditing && (
+                  <button
+                    disabled={isEvaluating}
+                    onClick={handleCancelEdit}
+                    className="px-5 py-2.5 rounded-lg font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all shadow-sm transform active:scale-95"
+                  >
+                    Cancel
+                  </button>
+                )}
+                <button
+                  disabled={isEvaluating}
+                  onClick={async () => {
+                    if (isEvaluating) return;
+                    if (isEditing) {
+                      await handleDraftSave();
+                    } else {
+                      setIsEditing(true);
+                    }
+                  }}
+                  className={`px-6 py-2.5 rounded-lg font-bold text-white transition-all shadow-md transform active:scale-95 ${
+                    isEvaluating
+                      ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none"
+                      : isEditing
+                        ? "bg-[#0B3763] hover:bg-[#06264A]"
+                        : "bg-[#FFD700] hover:bg-[#e6c200] text-[#856404]"
+                  }`}
+                >
+                  {isEvaluating ? "🔒 Under Evaluation" : isEditing ? "✓ Save Draft" : "✎ Edit Grades"}
+                </button>
+              </div>
             )}
           </div>
         </div>
 
-        {activeClass ? (
+        {dataLoading ? (
+          <div className="text-center p-20 font-bold text-[#856404]">Syncing Schedule Records...</div>
+        ) : activeClass ? (
           <div className="space-y-6">
 
             {isEvaluating && (
@@ -345,7 +391,6 @@ const GradingSheet = () => {
                       const numericGrades = currentGradesMap.slice(0, 2) as number[];
                       const currentRemarks = getAutomaticRemark(numericGrades);
 
-                      // Calculate Average safely
                       const g1 = Number(numericGrades[0]) || 0;
                       const g2 = Number(numericGrades[1]) || 0;
                       const validCount = numericGrades.filter(g => typeof g === 'number' && g > 0).length;

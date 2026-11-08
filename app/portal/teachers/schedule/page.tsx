@@ -1,6 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+// ==========================================
+// HOW TO APPLY TO OTHER PAGES (Step 1):
+// Import your custom useAuthGuard hook at the top.
+// Ensure the import path matches your project structure (e.g. "@/hooks/useAuthGuard").
+// ==========================================
+import { useAuthGuard } from "@/app/hooks/useAuthGuard";
 
 interface SubjectSchedule {
   sched_code: string;
@@ -82,36 +88,29 @@ function getTimeInMinutes(value: string): number | null {
 }
 
 export default function TeacherSchedulePage() {
-  const [teacherId, setTeacherId] = useState<string>("");
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 2):
+  // Call useAuthGuard at the top of your component body.
+  // - requiredPrefix: "TCH" ensures only valid teacher accounts can access this schedule.
+  // - redirectTo: Sends unauthorized users to the login page.
+  // - Aliased username as teacherId to preserve your existing code logic.
+  // ==========================================
+  const { username: teacherId, isAuthenticated, loading: authLoading } = useAuthGuard({
+    requiredPrefix: "TCH",
+    redirectTo: "/portal/log-in",
+  });
+
   const [schedules, setSchedules] = useState<SubjectSchedule[]>([]);
   const [selectedSemester, setSelectedSemester] = useState<string>("1st Semester");
   const [selectedSubject, setSelectedSubject] = useState<SubjectSchedule | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-
-  const getCookie = (name: string): string => {
-    if (typeof document === "undefined") return "";
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop()?.split(';').shift() || "";
-    return "";
-  };
+  const [dataLoading, setDataLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const cachedUsername = getCookie("username");
-    if (cachedUsername) {
-      setTeacherId(cachedUsername);
-    } else {
-      console.warn("No authentication username cookie found.");
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!teacherId) return;
+    if (!isAuthenticated || !teacherId) return;
 
     const fetchTeacherSubjects = async () => {
       try {
-        setLoading(true);
+        setDataLoading(true);
         const response = await fetch(`/api/portal/teacher?table=subjects&id=${teacherId}&action=subjects`);
         const result = await response.json();
 
@@ -121,12 +120,12 @@ export default function TeacherSchedulePage() {
       } catch (error) {
         console.error("Error pulling active subject matrix records:", error);
       } finally {
-        setLoading(false);
+        setDataLoading(false);
       }
     };
 
     fetchTeacherSubjects();
-  }, [teacherId]);
+  }, [isAuthenticated, teacherId]);
 
   useEffect(() => {
     if (!selectedSubject) return;
@@ -166,6 +165,7 @@ export default function TeacherSchedulePage() {
     const dbTargetCode = selectedSemester === "1st Semester" ? "1" : "2";
     return String(subject.semester).trim() === dbTargetCode;
   });
+
   const schedulePlacements = new Map<number, SchedulePlacement>();
   const schedulesByDay = new Map<number, Array<{ index: number; start: number; end: number }>>();
 
@@ -228,7 +228,30 @@ export default function TeacherSchedulePage() {
   const overlappingScheduleCount = [...schedulePlacements.values()]
     .filter((placement) => placement.overlaps).length;
 
-  if (loading) {
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 3):
+  // Render a clean loading screen while verifying credentials.
+  // ==========================================
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-100 font-sans">
+        <div className="text-center space-y-3">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-[#0B3763] border-t-transparent"></div>
+          <p className="text-sm font-bold text-[#856404]">Verifying Security Credentials...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 4):
+  // Halt execution if unauthenticated to prevent content flashing.
+  // ==========================================
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  if (dataLoading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center p-6">
         <div role="status" className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-5 py-4 text-sm font-semibold text-slate-600 shadow-sm">
@@ -340,7 +363,7 @@ export default function TeacherSchedulePage() {
                     gridColumnStart: getColumnIndex(subject.subject_day),
                     gridRowStart: rowStart,
                     gridRowEnd: rowEnd,
-                    width: `calc(100% / ${placement.laneCount} - 0.5rem)`,
+                    width: `calc(100% / ${placement.laneCount})`,
                     marginLeft: `calc(100% * ${placement.lane} / ${placement.laneCount})`,
                     justifySelf: "start",
                   }}

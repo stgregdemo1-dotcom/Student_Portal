@@ -20,6 +20,7 @@ const InputField: React.FC<InputFieldProps> = ({
   readOnly,
   value,
   onChange,
+  disabled,
 }) => (
   <div className="flex flex-col gap-2">
     <label className="text-[10px] font-black uppercase text-slate-400 ml-1">
@@ -29,10 +30,12 @@ const InputField: React.FC<InputFieldProps> = ({
       type={type}
       placeholder={placeholder}
       readOnly={readOnly}
+      disabled={disabled}
       value={value || ""}
       onChange={onChange}
-      className={`w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm ${readOnly ? "bg-slate-100 cursor-not-allowed text-slate-500 font-bold" : ""
-        }`}
+      className={`w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm ${
+        readOnly ? "bg-slate-100 cursor-not-allowed text-slate-500 font-bold" : ""
+      }`}
     />
   </div>
 );
@@ -48,9 +51,12 @@ export default function TeacherRegistrationForm() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [contactPerson, setContactPerson] = useState("");
-  const [relationship, setRelationship] = useState("");
-  const [contactNumber, setContactNumber] = useState("");
+
+  // Password validation checks
+  const hasMinLength = password.length >= 8;
+  const hasLowerAndUpper = /(?=.*[a-z])(?=.*[A-Z])/.test(password);
+  const hasAlphanumeric = /(?=.*[a-zA-Z])(?=.*\d)/.test(password);
+  const hasSpecialChar = /(?=.*[^A-Za-z0-9])/.test(password);
 
   useEffect(() => {
     const cachedTeacherId = localStorage.getItem("cached_teacher_id");
@@ -69,7 +75,6 @@ export default function TeacherRegistrationForm() {
 
         if (res.ok) {
           const jsonResponse = await res.json();
-
           const applicationDetails = jsonResponse.data;
           setTeacherData(applicationDetails);
         } else {
@@ -87,6 +92,17 @@ export default function TeacherRegistrationForm() {
 
   const handleTeacherSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg(null);
+
+    if (!hasMinLength || !hasLowerAndUpper || !hasAlphanumeric || !hasSpecialChar) {
+      setErrorMsg("Please ensure your password meets all security requirements.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setErrorMsg("Passwords do not match.");
+      return;
+    }
 
     const completeAddress = `${teacherData.street || ""}, ${teacherData.city || ""}, ${teacherData.province || ""}, ${teacherData.zip || ""}`
       .replace(/^,\s*/, "")
@@ -105,11 +121,6 @@ export default function TeacherRegistrationForm() {
       department_id: teacherData.department_id,
       role_id: teacherData.role_id,
     };
-
-    if (password !== confirmPassword) {
-      setErrorMsg("Passwords do not match.");
-      return;
-    }
 
     setSubmitting(true);
 
@@ -222,6 +233,25 @@ export default function TeacherRegistrationForm() {
                 disabled={submitting}
               />
             </div>
+
+            {/* Password Validation Requirements Checklist */}
+            <div className="mt-6 p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
+              <p className="text-xs font-bold text-slate-700 uppercase tracking-wide">Password Security Requirements:</p>
+              <ul className="text-xs space-y-1">
+                <li className={hasMinLength ? "text-emerald-600 font-semibold" : "text-slate-400"}>
+                  {hasMinLength ? "✓" : "○"} At least 8 characters long
+                </li>
+                <li className={hasLowerAndUpper ? "text-emerald-600 font-semibold" : "text-slate-400"}>
+                  {hasLowerAndUpper ? "✓" : "○"} At least one uppercase and one lowercase letter
+                </li>
+                <li className={hasAlphanumeric ? "text-emerald-600 font-semibold" : "text-slate-400"}>
+                  {hasAlphanumeric ? "✓" : "○"} Alphanumeric (contains letters and numbers)
+                </li>
+                <li className={hasSpecialChar ? "text-emerald-600 font-semibold" : "text-slate-400"}>
+                  {hasSpecialChar ? "✓" : "○"} At least one special character (e.g. !@#$%^&*)
+                </li>
+              </ul>
+            </div>
           </div>
 
           <div className="flex items-start gap-3 pt-4">
@@ -246,9 +276,12 @@ export default function TeacherRegistrationForm() {
 
           <button
             type="submit"
-            disabled={!agree || submitting}
-            className={`w-full py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl transition-all ${agree && !submitting ? "bg-[#166534] hover:bg-[#14532d] text-white" : "bg-slate-300 text-slate-500 cursor-not-allowed"
-              }`}
+            disabled={!agree || submitting || !hasMinLength || !hasLowerAndUpper || !hasAlphanumeric || !hasSpecialChar}
+            className={`w-full py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl transition-all ${
+              agree && submitting === false && hasMinLength && hasLowerAndUpper && hasAlphanumeric && hasSpecialChar
+                ? "bg-[#166534] hover:bg-[#14532d] text-white"
+                : "bg-slate-300 text-slate-500 cursor-not-allowed"
+            }`}
           >
             {submitting ? "Processing Profile Setup..." : "Confirm Account Setup"}
           </button>

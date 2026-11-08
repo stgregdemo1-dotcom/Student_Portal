@@ -2,6 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+// ==========================================
+// HOW TO APPLY TO OTHER PAGES (Step 1):
+// Import your custom useAuthGuard hook at the top.
+// Ensure the import path matches your project structure (e.g. "@/app/hooks/useAuthGuard" or "@/hooks/useAuthGuard").
+// ==========================================
+import { useAuthGuard } from '@/app/hooks/useAuthGuard';
 
 interface TeacherEvent {
   _id?: string;
@@ -102,6 +108,17 @@ function saveTeacherEventSnapshot(storageKey: string, snapshot: TeacherEventNoti
 }
 
 export default function Dashboard() {
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 2):
+  // Call useAuthGuard at the top of your component body.
+  // - requiredPrefix: "TCH" ensures only valid teacher accounts can access this dashboard.
+  // - redirectTo: Sends unauthorized users to the login page.
+  // ==========================================
+  const { username: teacherId, isAuthenticated, loading: authLoading } = useAuthGuard({
+    requiredPrefix: "TCH",
+    redirectTo: "/portal/log-in",
+  });
+
   const [enrolledStudents, setEnrolledStudents] = useState<number>(0);
   const [classCount, setClassCount] = useState<number>(0);
   const [subjects, setSubjects] = useState<any[]>([]);
@@ -141,6 +158,8 @@ export default function Dashboard() {
   }, [isEventPeriodMenuOpen]);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
+
     const controller = new AbortController();
     const storageKey = getTeacherEventStorageKey();
     let requestInProgress = false;
@@ -193,15 +212,16 @@ export default function Dashboard() {
       window.clearInterval(intervalId);
       controller.abort();
     };
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
+
     const getAnalytics = async () => {
       try {
-        const loggedInTeacherId = getCookie("username");
         const res = await fetch(
-          loggedInTeacherId
-            ? `/api/teachers?teacher_id=${loggedInTeacherId}`
+          teacherId
+            ? `/api/teachers?teacher_id=${teacherId}`
             : `/api/teachers`
         );
 
@@ -216,7 +236,7 @@ export default function Dashboard() {
       }
     };
     getAnalytics();
-  }, []);
+  }, [isAuthenticated, teacherId]);
 
   const todayKey = getLocalDateKey(new Date());
   const monthYear = calendarMonth.getFullYear();
@@ -310,13 +330,36 @@ export default function Dashboard() {
     setSelectedCalendarDate(getLocalDateKey(nextMonth));
   };
 
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 3):
+  // Display a secure loading state while verifying permissions.
+  // ==========================================
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-100 font-sans">
+        <div className="text-center space-y-3">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-[#0B3763] border-t-transparent"></div>
+          <p className="text-sm font-bold text-[#856404]">Verifying Teacher Dashboard Session...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 4):
+  // Halt execution if unauthenticated to prevent content flashing.
+  // ==========================================
+  if (!isAuthenticated) {
+    return null;
+  }
+
   return (
     <>
     <div className="flex w-full flex-col gap-3 overflow-visible">
       <div className="portal-dashboard-heading shrink-0 px-1 py-1">
         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-700">Teacher Portal</p>
         <h2 className="mt-0.5 text-xl font-bold tracking-tight text-[#06264A] md:text-2xl">Dashboard</h2>
-        <p className="mt-0.5 hidden text-xs text-slate-500 sm:block">Welcome back! Here is what is happening today.</p>
+        <p className="mt-0.5 hidden text-xs text-slate-500 sm:block">Welcome back, {teacherId}! Here is what is happening today.</p>
       </div>
 
       <div className="flex min-h-0 flex-col gap-3 overflow-visible">
@@ -736,7 +779,7 @@ export default function Dashboard() {
           </div>
         )}
       </section>
-    </div>
+      </div>
     </div>
     {selectedEvent && (
       <div

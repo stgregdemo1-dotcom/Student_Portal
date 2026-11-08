@@ -20,6 +20,27 @@ interface SidebarProps {
 export default function Sidebar({ isOpen = false, onClose, isDashboardPage = false }: SidebarProps) {
   const pathname = usePathname();
 
+  const handleLogout = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    
+    // Clear the username cookie by setting its expiration date to the past
+    if (typeof document !== "undefined") {
+      document.cookie = "username=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    }
+
+    // Also clear any custom local storage cache if applicable
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("cached_teacher_id");
+      localStorage.removeItem("cached_security_code");
+    }
+
+    // Close mobile sidebar if open
+    if (onClose) onClose();
+
+    // Navigate to the login page
+    window.location.href = "/portal/log-in";
+  };
+
   return (
     <aside 
       className={`fixed left-0 top-0 z-50 isolate h-dvh w-64 min-w-[16rem] shrink-0 overflow-hidden border-r border-white/10 bg-[#06264A] text-white shadow-[3px_0_10px_rgba(2,12,27,0.12)] transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 ${isDashboardPage ? 'md:sticky md:top-0 md:h-dvh' : 'md:static md:h-full'}`}
@@ -108,9 +129,9 @@ export default function Sidebar({ isOpen = false, onClose, isDashboardPage = fal
         <div aria-hidden="true" className="relative z-0 min-h-0 flex-1" />
 
         <div className="relative z-10 border-t border-white/20 p-3">
-          <Link
+          <a
             href="/portal/log-in"
-            onClick={() => onClose && onClose()}
+            onClick={handleLogout}
             className="flex w-full cursor-pointer items-center gap-3 rounded-lg border border-[#c2410c] bg-[#e64b1b] px-4 py-2.5 text-sm font-bold text-white shadow-md transition-colors duration-200 ease-in-out hover:border-[#ff9100] hover:bg-[#ff9100] hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFB900] active:scale-[0.98] motion-reduce:transition-none"
           >
             <svg
@@ -128,7 +149,7 @@ export default function Sidebar({ isOpen = false, onClose, isDashboardPage = fal
               <path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6" />
             </svg>
             <span>Exit</span>
-          </Link>
+          </a>
         </div>
       </div>
     </aside>

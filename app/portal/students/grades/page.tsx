@@ -1,17 +1,36 @@
 "use client";
 
 import { useState, useEffect } from "react";
+// ==========================================
+// HOW TO APPLY TO OTHER PAGES (Step 1):
+// Import your custom useAuthGuard hook at the top.
+// Ensure the import path matches your project structure (e.g. "@/hooks/useAuthGuard").
+// ==========================================
+import { useAuthGuard } from "@/app/hooks/useAuthGuard";
 
 export default function GradesPage() {
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 2):
+  // Call useAuthGuard at the top of your component body.
+  // - requiredPrefix: "ST" ensures only student accounts can access their grades.
+  // - redirectTo: Sends unauthorized users to the login screen.
+  // ==========================================
+  const { isAuthenticated, loading: authLoading } = useAuthGuard({
+    requiredPrefix: "ST",
+    redirectTo: "/portal/log-in",
+  });
+
   const [grades, setGrades] = useState<any[]>([]);
   const [generalAvg, setGeneralAvg] = useState<string>("—");
-  const [loading, setLoading] = useState(false);
+  const [dataLoading, setDataLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState("");
   const [selectedSemester, setSelectedSemester] = useState("");
   const [availableYears, setAvailableYears] = useState<string[]>([]);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
+
     async function loadDropdownYears() {
       try {
         const res = await fetch("/api/portal/student?getYearsOnly=true");
@@ -24,7 +43,7 @@ export default function GradesPage() {
       }
     }
     loadDropdownYears();
-  }, []);
+  }, [isAuthenticated]);
 
   const handleFetchGrades = async () => {
     if (!selectedYear || !selectedSemester) {
@@ -33,7 +52,7 @@ export default function GradesPage() {
     }
 
     try {
-      setLoading(true);
+      setDataLoading(true);
       setError(null);
 
       const res = await fetch(
@@ -50,9 +69,32 @@ export default function GradesPage() {
     } catch (err) {
       setError("A connection error occurred while querying the server database ledger.");
     } finally {
-      setLoading(false);
+      setDataLoading(false);
     }
   };
+
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 3):
+  // Render a clean loading screen while verifying credentials.
+  // ==========================================
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-100 font-sans">
+        <div className="text-center space-y-3">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-[#082b49] border-t-transparent"></div>
+          <p className="text-sm font-bold text-[#856404]">Verifying Security Credentials...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 4):
+  // Halt execution if unauthenticated to prevent content flashing.
+  // ==========================================
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="bg-white rounded-xl shadow-sm p-6">
@@ -93,10 +135,10 @@ export default function GradesPage() {
 
           <button
             onClick={handleFetchGrades}
-            disabled={loading}
+            disabled={dataLoading}
             className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#082b49] px-8 font-bold text-white shadow-md transition-all hover:bg-[#0b3b62] hover:shadow-lg active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#082b49] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-400 disabled:shadow-sm md:w-auto whitespace-nowrap"
           >
-            {loading ? "Loading..." : "Show Grades"}
+            {dataLoading ? "Loading..." : "Show Grades"}
           </button>
         </div>
       </div>

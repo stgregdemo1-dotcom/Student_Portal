@@ -1,6 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+// ==========================================
+// HOW TO APPLY TO OTHER PAGES (Step 1):
+// Import your custom useAuthGuard hook at the top.
+// Ensure the import path matches your project structure (e.g. "@/hooks/useAuthGuard").
+// ==========================================
+import { useAuthGuard } from "@/app/hooks/useAuthGuard";
 
 interface SubjectSchedule {
   sched_code: string;
@@ -53,11 +59,22 @@ const getTimeGridLine = (timeStr: string): number => {
 };
 
 export default function StudentSchedulePage() {
-  const [studentId, setStudentId] = useState<string>("");
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 2):
+  // Call useAuthGuard at the top of your component body.
+  // - requiredPrefix: "ST" ensures only valid student IDs can access this schedule.
+  // - redirectTo: Sends unauthorized users to the login screen.
+  // - Aliased username as studentId to preserve your existing code logic.
+  // ==========================================
+  const { username: studentId, isAuthenticated, loading: authLoading } = useAuthGuard({
+    requiredPrefix: "ST",
+    redirectTo: "/portal/log-in",
+  });
+
   const [schedules, setSchedules] = useState<SubjectSchedule[]>([]);
   const [selectedSemester, setSelectedSemester] = useState<string>("1st Semester");
   const [selectedSubject, setSelectedSubject] = useState<SubjectSchedule | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [dataLoading, setDataLoading] = useState<boolean>(true);
 
   useEffect(() => {
     if (!selectedSubject) return;
@@ -70,30 +87,12 @@ export default function StudentSchedulePage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [selectedSubject]);
 
-  const getCookie = (name: string): string => {
-    if (typeof document === "undefined") return "";
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop()?.split(';').shift() || "";
-    return "";
-  };
-
   useEffect(() => {
-    const cachedUsername = getCookie("username");
-    if (cachedUsername) {
-      setStudentId(cachedUsername);
-    } else {
-      console.warn("No authentication student session found.");
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!studentId) return;
+    if (!isAuthenticated || !studentId) return;
 
     const fetchStudentSchedule = async () => {
       try {
-        setLoading(true);
+        setDataLoading(true);
         const response = await fetch(`/api/portal/student?getSchedule=true`);
         const result = await response.json();
 
@@ -105,18 +104,41 @@ export default function StudentSchedulePage() {
       } catch (error) {
         console.error("Error pulling active student schedule records:", error);
       } finally {
-        setLoading(false);
+        setDataLoading(false);
       }
     };
     fetchStudentSchedule();
-  }, [studentId]);
+  }, [isAuthenticated, studentId]);
 
   const filteredSchedules = schedules.filter((subject) => {
     const dbTargetCode = selectedSemester === "1st Semester" ? "1" : "2";
     return String(subject.semester).trim() === dbTargetCode;
   });
 
-  if (loading) {
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 3):
+  // Render a clean loading screen while verifying credentials.
+  // ==========================================
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-100 font-sans">
+        <div className="text-center space-y-3">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-[#082b49] border-t-transparent"></div>
+          <p className="text-sm font-bold text-[#856404]">Verifying Security Credentials...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 4):
+  // Halt execution if unauthenticated to prevent content flashing.
+  // ==========================================
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  if (dataLoading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center p-6">
         <div role="status" className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-5 py-4 text-sm font-semibold text-slate-600 shadow-sm">
@@ -163,11 +185,11 @@ export default function StudentSchedulePage() {
           >
             <div
             className="grid h-full min-h-0 min-w-[1004px] overflow-visible bg-white [--schedule-day-min:184px] [--schedule-row-min:0px] [--schedule-lunch-row:36px] lg:min-w-0 lg:overflow-hidden lg:[--schedule-day-min:120px] lg:[--schedule-lunch-row:48px]"
-            style={{
+          style={{
               gap: 0,
               gridTemplateColumns: "84px repeat(5, minmax(var(--schedule-day-min), 1fr))",
               gridTemplateRows: `36px repeat(5, minmax(var(--schedule-row-min), 1fr)) var(--schedule-lunch-row) repeat(6, minmax(var(--schedule-row-min), 1fr))`
-            }}
+          }}
           >
 
             <div className="sticky left-0 top-0 z-40 flex min-w-0 items-center justify-center border-b border-r border-amber-400 bg-[#ffe8a3] p-1 text-center text-xs font-extrabold uppercase tracking-wide text-[#082b49] sm:p-2 lg:static">Time</div>

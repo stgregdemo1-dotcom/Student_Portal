@@ -1,30 +1,32 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+// ==========================================
+// HOW TO APPLY TO OTHER PAGES (Step 1):
+// Import your custom useAuthGuard hook at the top.
+// Ensure the import path matches your project structure (e.g. "@/hooks/useAuthGuard").
+// ==========================================
+import { useAuthGuard } from "@/app/hooks/useAuthGuard";
 
 const SettingsPage = () => {
-  const [teacherId, setTeacherId] = useState<string>("");
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 2):
+  // Call useAuthGuard at the top of your component body.
+  // - requiredPrefix: "TCH" ensures only valid teacher IDs can access account settings.
+  // - redirectTo: Sends unauthorized users to the login screen.
+  // - Aliased username as teacherId to preserve your existing code logic.
+  // ==========================================
+  const { username: teacherId, isAuthenticated, loading: authLoading } = useAuthGuard({
+    requiredPrefix: "TCH",
+    redirectTo: "/portal/log-in",
+  });
+
   const [name, setName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
 
-  const getCookie = (name: string): string => {
-    if (typeof document === "undefined") return "";
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop()?.split(';').shift() || "";
-    return "";
-  };
-
   useEffect(() => {
-    const cachedUsername = getCookie("username");
-    if (cachedUsername) {
-      setTeacherId(cachedUsername);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!teacherId) return;
+    if (!isAuthenticated || !teacherId) return;
 
     const fetchTeacherProfile = async () => {
       try {
@@ -46,7 +48,7 @@ const SettingsPage = () => {
     };
 
     fetchTeacherProfile();
-  }, [teacherId]);
+  }, [isAuthenticated, teacherId]);
 
   const handleUpdateProfile = async () => {
     if (!teacherId) return alert("Error: Missing teacher identity session.");
@@ -77,6 +79,29 @@ const SettingsPage = () => {
       setIsUpdating(false);
     }
   };
+
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 3):
+  // Render a clean loading screen while verifying credentials.
+  // ==========================================
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-100 font-sans">
+        <div className="text-center space-y-3">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-[#0B3763] border-t-transparent"></div>
+          <p className="text-sm font-bold text-[#856404]">Verifying Security Credentials...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 4):
+  // Halt execution if unauthenticated to prevent content flashing.
+  // ==========================================
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-6">
