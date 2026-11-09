@@ -10,6 +10,9 @@ const UserSchema = new mongoose.Schema(
     password: { type: String, required: true },
     user_type: { type: String }, // Included to check archival/locking status
     privacyNoticeAcknowledged: { type: Boolean },
+    try: { type: Number, default: 0 },          // Track failed login attempts
+    locked: { type: Boolean, default: false },   // Account lock flag
+    lockeduntil: { type: Date },                 // Lock expiration timestamp
   },
   { collection: "credentials" } // Hard-binds to your collection name
 );
@@ -53,12 +56,47 @@ export async function POST(request: Request) {
       );
     }
 
+    // --- CHECK IF ACCOUNT IS CURRENTLY LOCKED OUT ---
+    const now = new Date();
+    if (user.locked && user.lockeduntil && now < new Date(user.lockeduntil)) {
+      const minutesLeft = Math.ceil((new Date(user.lockeduntil).getTime() - now.getTime()) / (60 * 1000));
+      return NextResponse.json(
+        { message: `Account is temporarily locked due to too many failed login attempts. Try again in ${minutesLeft} minute(s).` },
+        { status: 403 }
+      );
+    } else if (user.locked && user.lockeduntil && now >= new Date(user.lockeduntil)) {
+      // Lockout period has expired; reset lock and attempts
+      user.locked = false;
+      user.try = 0;
+      user.lockeduntil = undefined;
+      await user.save();
+    }
+
     // Verify password next
     if (user.password !== password) {
+      // Increment failed attempts
+      user.try = (user.try || 0) + 1;
+
+      // Check if attempts reach or exceed 5
+      if (user.try >= 5) {
+        user.locked = true;
+        user.lockeduntil = new Date(Date.now() + 15 * 60 * 1000); // Current time + 15 minutes
+      }
+
+      await user.save();
+
       return NextResponse.json(
         { message: "Invalid username or password." },
         { status: 401 }
       );
+    }
+
+    // --- SUCCESSFUL PASSWORD: RESET FAILED ATTEMPTS ---
+    if (user.try > 0 || user.locked) {
+      user.try = 0;
+      user.locked = false;
+      user.lockeduntil = undefined;
+      await user.save();
     }
 
     // Determine user classification based on your ID naming conventions

@@ -23,15 +23,19 @@ export default function Sidebar({ isOpen = false, onClose, isDashboardPage = fal
   const handleLogout = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     
-    // Clear the username cookie by setting its expiration date to the past
-    if (typeof document !== "undefined") {
-      document.cookie = "username=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    }
-
-    // Also clear any custom local storage cache if applicable
     if (typeof window !== "undefined") {
-      localStorage.removeItem("cached_teacher_id");
-      localStorage.removeItem("cached_security_code");
+      // Clear client storage caches and teacher-specific items
+      localStorage.clear();
+      sessionStorage.clear();
+
+      // Clear all active browser cookies by setting their expiration dates to the past
+      const cookies = document.cookie.split(";");
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i];
+        const eqPos = cookie.indexOf("=");
+        const name = eqPos > -1 ? cookie.substring(0, eqPos).trim() : cookie.trim();
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+      }
     }
 
     // Close mobile sidebar if open

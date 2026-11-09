@@ -124,6 +124,9 @@ const CredentialSchema = new mongoose.Schema(
     username:   { type: String },
     password:   { type: String },
     user_type:  { type: String },
+    try:        { type: String },
+    locked:     { type: Boolean },
+    lockeduntil:{ type: String },
     privacyNoticeAcknowledged: { type: Boolean }
   },
   { collection: "credentials" }

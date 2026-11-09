@@ -183,9 +183,8 @@ export default function MasterListPage() {
                       {/* Main Subject Row */}
                       <tr
                         onClick={() => toggleRowExpansion(item)}
-                        className={`cursor-pointer transition ${
-                          isExpanded ? "bg-blue-50/60" : "hover:bg-gray-50/80"
-                        }`}
+                        className={`cursor-pointer transition ${isExpanded ? "bg-blue-50/60" : "hover:bg-gray-50/80"
+                          }`}
                       >
                         {/* Schedule Code with Expand Icon */}
                         <td className="p-4 text-gray-700 font-mono text-sm font-bold flex items-center gap-2">
@@ -243,7 +242,7 @@ export default function MasterListPage() {
                                   <table className="w-full text-left text-xs border-collapse">
                                     <thead>
                                       <tr className="bg-gray-100 text-gray-600 uppercase">
-                                        <th className="p-2.5 font-semibold">Student ID</th>
+                                        <th className="p-2.5 font-semibold">Student Name & ID</th>
                                         <th className="p-2.5 font-semibold text-center">1st</th>
                                         <th className="p-2.5 font-semibold text-center">2nd</th>
                                         <th className="p-2.5 font-semibold text-center">Average</th>
@@ -253,8 +252,13 @@ export default function MasterListPage() {
                                     <tbody className="divide-y divide-gray-100">
                                       {students.map((student, idx) => (
                                         <tr key={idx} className="hover:bg-gray-50">
-                                          <td className="p-2.5 font-mono font-bold text-gray-700">
-                                            {student.student_id}
+                                          <td className="p-2.5 font-mono text-gray-700">
+                                            <span className="font-bold text-gray-900">
+                                              {student.last_name || student.first_name
+                                                ? `${student.last_name || ""}, ${student.first_name || ""}`
+                                                : "Unnamed"}
+                                            </span>{" "}
+                                            <span className="text-gray-500 font-normal">({student.student_id})</span>
                                           </td>
                                           <td className="p-2.5 text-center font-mono">{student.grades[0] ?? 0}</td>
                                           <td className="p-2.5 text-center font-mono">{student.grades[1] ?? 0}</td>

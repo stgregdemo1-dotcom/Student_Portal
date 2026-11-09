@@ -24,16 +24,22 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
   ];
 
   const handleLogout = () => {
-    // Clear username cache/session data from client storage
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('username');
-      sessionStorage.removeItem('username');
-      // If your useAuthGuard uses custom keys, clear them here as well:
+      // Clear client storage caches and username records
       localStorage.clear();
       sessionStorage.clear();
+
+      // Clear all active browser cookies by expiring them
+      const cookies = document.cookie.split(";");
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i];
+        const eqPos = cookie.indexOf("=");
+        const name = eqPos > -1 ? cookie.substring(0, eqPos).trim() : cookie.trim();
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+      }
     }
     
-    console.log("User logged out and cache cleared");
+    console.log("User logged out, cookies and cache cleared");
     window.location.href = '/portal/log-in'; 
   };
 

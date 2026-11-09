@@ -85,11 +85,12 @@ export default function GradesManagementPage() {
     const t2 = g2 ? Number(g2) : NaN;
 
     if (isNaN(t1) || isNaN(t2)) {
-      return { finalAvg: "—" };
+      return { finalAvg: "—", remarks: "—" };
     }
 
     const avg = Math.round((t1 + t2) / 2);
-    return { finalAvg: String(avg) };
+    const remarks = avg >= 75 ? "Passed" : "Failed";
+    return { finalAvg: String(avg), remarks };
   };
 
   const handleOpenGradeModal = (record: MappedStudentRow, subId: string) => {
@@ -103,18 +104,18 @@ export default function GradesManagementPage() {
 
     const updatedSubjects = selectedRecord.subjects.map((sub) => {
       if (sub.subject_id !== selectedSubjectId) return sub;
-      return { ...sub, [termField]: value };
-    });
+      
+      const newGrade1 = termField === "grade_1" ? value : sub.grade_1;
+      const newGrade2 = termField === "grade_2" ? value : sub.grade_2;
+      
+      // Automatically compute remarks based on the updated grades
+      const { remarks } = computeFinalGradeAndRemarks(newGrade1, newGrade2);
 
-    setSelectedRecord({ ...selectedRecord, subjects: updatedSubjects });
-  };
-
-  const handleRemarksInputChange = (value: string) => {
-    if (!selectedRecord) return;
-
-    const updatedSubjects = selectedRecord.subjects.map((sub) => {
-      if (sub.subject_id !== selectedSubjectId) return sub;
-      return { ...sub, remarks: value };
+      return { 
+        ...sub, 
+        [termField]: value,
+        remarks: remarks === "—" ? "" : remarks 
+      };
     });
 
     setSelectedRecord({ ...selectedRecord, subjects: updatedSubjects });
@@ -135,8 +136,8 @@ export default function GradesManagementPage() {
       setRecords((prevRecords) =>
         prevRecords.map((item) =>
           item.student_id === selectedRecord.student_id &&
-            item.year === selectedRecord.year &&
-            item.semester === selectedRecord.semester
+          item.year === selectedRecord.year &&
+          item.semester === selectedRecord.semester
             ? selectedRecord
             : item
         )
@@ -391,24 +392,23 @@ export default function GradesManagementPage() {
 
               {(() => {
                 const sub = getEditingSubject();
-                const calc = sub ? computeFinalGradeAndRemarks(sub.grade_1, sub.grade_2) : { finalAvg: "—" };
+                const calc = sub ? computeFinalGradeAndRemarks(sub.grade_1, sub.grade_2) : { finalAvg: "—", remarks: "—" };
                 return (
                   <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 grid grid-cols-2 gap-4 items-center">
                     <div className="text-center">
                       <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Computed Average</p>
                       <p className="text-lg font-black text-indigo-700">{calc.finalAvg}</p>
                     </div>
-                    <div className="flex flex-col text-left">
+                    <div className="flex flex-col text-center">
                       <label className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Evaluation Result</label>
-                      <select
-                        value={sub?.remarks || ""}
-                        onChange={(e) => handleRemarksInputChange(e.target.value)}
-                        className="w-full font-bold text-xs border border-gray-200 rounded-lg p-2 bg-white outline-none focus:border-indigo-400 text-gray-700 h-[34px] cursor-pointer"
-                      >
-                        <option value="">Select Options</option>
-                        <option value="Passed">Passed</option>
-                        <option value="Failed">Failed</option>
-                      </select>
+                      <div>
+                        <span className={`text-xs uppercase font-black tracking-wider px-3 py-1 rounded-md inline-block ${
+                          calc.remarks === "Passed" ? "bg-green-100 text-green-700" :
+                          calc.remarks === "Failed" ? "bg-red-100 text-red-700" : "bg-gray-200 text-gray-500"
+                        }`}>
+                          {calc.remarks}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 );

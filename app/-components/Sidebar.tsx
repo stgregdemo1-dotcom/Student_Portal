@@ -20,6 +20,26 @@ interface SidebarProps {
 export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const pathname = usePathname();
 
+  const handleLogout = () => {
+    if (typeof window !== 'undefined') {
+      // Clear client storage caches
+      localStorage.clear();
+      sessionStorage.clear();
+
+      // Clear all active browser cookies by expiring them
+      const cookies = document.cookie.split(";");
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i];
+        const eqPos = cookie.indexOf("=");
+        const name = eqPos > -1 ? cookie.substring(0, eqPos).trim() : cookie.trim();
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+      }
+    }
+
+    console.log("User logged out, cookies and cache cleared");
+    window.location.href = "/portal/log-in";
+  };
+
   return (
     <aside
       className={`
@@ -98,7 +118,7 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
 
         <div className="relative z-10 border-t border-[#082b49]/20 p-3">
           <button
-            onClick={() => window.location.href = "/portal/log-in"}
+            onClick={handleLogout}
             className="flex w-full cursor-pointer items-center gap-3 rounded-lg border border-[#c2410c] bg-[#e64b1b] px-4 py-2.5 text-sm font-bold text-white shadow-md transition-colors duration-200 ease-in-out hover:border-[#ff9100] hover:bg-[#ff9100] hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#082b49] focus-visible:ring-offset-2 focus-visible:ring-offset-[#ff9800] active:scale-[0.98] motion-reduce:transition-none"
           >
             <svg

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"; 
 import mongoose from "mongoose";
-import { Teacher, Subject, StudentSection, Config, Audit, Events } from "@/models/Schema";
+import { Teacher, Subject, StudentSection, Student, Config, Audit, Events } from "@/models/Schema";
 
 const connectDB = async () => {
   if (mongoose.connection.readyState >= 1) return;
@@ -118,8 +118,6 @@ export async function GET(request: NextRequest) {
 
                   studentGradesList.push({
                     student_id: doc.student_id || "N/A",
-                    first_name: doc.first_name || "Student",
-                    last_name: doc.last_name || "",
                     grade: avgGrade.toFixed(2)
                   });
                 }
@@ -152,15 +150,11 @@ export async function GET(request: NextRequest) {
       }, { status: 200 });
     }
 
-    if (!teacherId) {
-      return NextResponse.json(
-        { success: false, message: "Missing required query parameter: 'id' or 'teacher_id'." },
-        { status: 400 }
-      );
-    }
-
     switch (action) {       
       case "profile": {
+        if (!teacherId || teacherId === "SYSTEM") {
+          return NextResponse.json({ message: "Missing teacher ID." }, { status: 400 });
+        }
         const teacherProfile = await Teacher.findOne({ teacher_id: teacherId }).lean();
         if (!teacherProfile) {
           return NextResponse.json(
@@ -172,18 +166,24 @@ export async function GET(request: NextRequest) {
       }
 
       case "subjects": {
+        if (!teacherId || teacherId === "SYSTEM") {
+          return NextResponse.json({ message: "Missing teacher ID." }, { status: 400 });
+        }
         const subjects = await Subject.find({ teacher_id: teacherId });
         return NextResponse.json({ subjects }, { status: 200 });
       }
 
       case "students": {
-        const subjectId = teacherId; 
+        const subjectId = searchParams.get("subject_id") || searchParams.get("id");
+        if (!subjectId) {
+          return NextResponse.json({ success: false, message: "Missing subject ID parameter." }, { status: 400 });
+        }
 
         const enrolledStudents = await StudentSection.find({
           "class.subjects.subject_id": subjectId
         }).lean();
 
-        const roster = enrolledStudents.map((doc: any) => {
+        const rosterPromises = enrolledStudents.map(async (doc: any) => {
           let foundSubject: any = null;
 
           if (Array.isArray(doc.class)) {
@@ -198,15 +198,22 @@ export async function GET(request: NextRequest) {
             }
           }
 
+          // Fetch student name details from the separate Student collection
+          const studentInfo = await Student.findOne({ student_id: doc.student_id }).lean();
+
           return {
-            student_id: doc.student_id,
+            student_id: doc.student_id || "N/A",
+            first_name: (studentInfo as any)?.first_name || "",
+            last_name: (studentInfo as any)?.last_name || "",
             grades: [
-              parseInt(foundSubject?.grade_1, 10) || 0, // 1st Grading
-              parseInt(foundSubject?.grade_2, 10) || 0, // 2nd Grading
+              parseFloat(foundSubject?.grade_1) || 0, // 1st Grading
+              parseFloat(foundSubject?.grade_2) || 0, // 2nd Grading
             ],
             remarks: foundSubject?.remarks || ""
           };
         });
+
+        const roster = await Promise.all(rosterPromises);
 
         return NextResponse.json({ students: roster }, { status: 200 });
       }
@@ -285,7 +292,6 @@ export async function PUT(request: NextRequest) {
     }
 
     const updatePromises = Object.entries(grades).map(async ([studentId, gradeArray]) => {
-      // Expecting array format: [1st Grading, 2nd Grading, Remarks]
       if (!Array.isArray(gradeArray) || gradeArray.length < 3) {
         throw new Error(`Invalid grade structure for student ${studentId}`);
       }
