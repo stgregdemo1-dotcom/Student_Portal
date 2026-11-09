@@ -23,6 +23,8 @@ interface StudentRecord {
   student_id: string;
   grades: number[];
   remarks: string;
+  last_name: string;
+  first_name: string;
 }
 
 export default function MasterListPage() {
