@@ -1,6 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
+// ==========================================
+// HOW TO APPLY TO OTHER PAGES (Step 1):
+// Import your custom useAuthGuard hook at the top.
+// Ensure the import path matches your project structure (e.g. "@/hooks/useAuthGuard").
+// ==========================================
+import { useAuthGuard } from "@/app/hooks/useAuthGuard";
 
 type SubjectRecord = {
   subject_id: string;
@@ -24,7 +30,7 @@ const HOURS = [
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 
-export default function ClassSchedule() {
+function ClassScheduleContent() {
   // --- Configuration State ---
   const [currentYear, setCurrentYear] = useState<string>("");
   const [sections, setSections] = useState<string[]>([]);
@@ -334,7 +340,7 @@ export default function ClassSchedule() {
                           <div className="text-[10px] text-gray-500 font-mono truncate">{subj.room || subj.subject_id}</div>
                         </div>
                         <div className="text-[10px] text-blue-700 font-bold font-mono truncate opacity-90">
-                          {subj.class_time?.start} - {subj.class_time?.end}
+                          {subj.class_time?.start} – {subj.class_time?.end}
                         </div>
                       </div>
                     </div>
@@ -441,7 +447,7 @@ export default function ClassSchedule() {
                           <div className="text-[10px] text-gray-500 font-mono truncate">{subj.room || subj.subject_id}</div>
                         </div>
                         <div className="text-[10px] text-emerald-700 font-bold font-mono truncate opacity-90">
-                          {subj.class_time?.start} - {subj.class_time?.end}
+                          {subj.class_time?.start} – {subj.class_time?.end}
                         </div>
                       </div>
                     </div>
@@ -548,7 +554,7 @@ export default function ClassSchedule() {
                           <div className="text-[10px] text-gray-500 font-mono truncate">{subj.teacher_id || subj.subject_id}</div>
                         </div>
                         <div className="text-[10px] text-amber-700 font-bold font-mono truncate opacity-90">
-                          {subj.class_time?.start} - {subj.class_time?.end}
+                          {subj.class_time?.start} – {subj.class_time?.end}
                         </div>
                       </div>
                     </div>
@@ -611,7 +617,7 @@ export default function ClassSchedule() {
                     {activeModalSubject.subject_day}
                   </span>
                   <span className="font-mono text-gray-700 text-xs">
-                    {activeModalSubject.class_time?.start} - {activeModalSubject.class_time?.end}
+                    {activeModalSubject.class_time?.start} – {activeModalSubject.class_time?.end}
                   </span>
                 </div>
               </div>
@@ -630,4 +636,42 @@ export default function ClassSchedule() {
       )}
     </div>
   );
+}
+
+export default function ClassSchedule() {
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 2):
+  // Call useAuthGuard at the top of your component body.
+  // - requiredPrefix: "ADM" ensures only valid administrator accounts can access this page.
+  // - redirectTo: Sends unauthorized users to the login screen.
+  // ==========================================
+  const { isAuthenticated, loading: authLoading } = useAuthGuard({
+    requiredPrefix: "ADM",
+    redirectTo: "/portal/log-in",
+  });
+
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 3):
+  // Render a clean loading screen while verifying credentials.
+  // ==========================================
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-100 font-sans">
+        <div className="text-center space-y-3">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
+          <p className="text-sm font-bold text-gray-600">Verifying Administrator Security Credentials...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 4):
+  // Halt execution if unauthenticated to prevent content flashing.
+  // ==========================================
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  return <ClassScheduleContent />;
 }

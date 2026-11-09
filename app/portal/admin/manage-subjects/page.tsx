@@ -2,6 +2,12 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+// ==========================================
+// HOW TO APPLY TO OTHER PAGES (Step 1):
+// Import your custom useAuthGuard hook at the top.
+// Ensure the import path matches your project structure (e.g. "@/hooks/useAuthGuard").
+// ==========================================
+import { useAuthGuard } from "@/app/hooks/useAuthGuard";
 
 const TIME_SLOTS = [
   "7:00 AM", "8:00 AM", "9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM",
@@ -385,7 +391,7 @@ function SubjectModalContent({
   );
 }
 
-export default function ManageSubjects() {
+function ManageSubjectsContent() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [teachers, setTeachers] = useState<TeacherOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -727,7 +733,7 @@ export default function ManageSubjects() {
                     </td>
                     <td className="border-b border-r border-slate-200 px-3 py-4 font-semibold">
                       {subject.class_time?.start && subject.class_time?.end
-                        ? `${subject.class_time.start} - ${subject.class_time.end}`
+                        ? `${subject.class_time.start} – ${subject.class_time.end}`
                         : "No Time Set"}
                     </td>
                     <td className="border-b border-r border-slate-200 px-3 py-4 font-semibold">{subject.subject_day}</td>
@@ -905,4 +911,42 @@ export default function ManageSubjects() {
       )}
     </div>
   );
+}
+
+export default function ManageSubjects() {
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 2):
+  // Call useAuthGuard at the top of your component body.
+  // - requiredPrefix: "ADM" ensures only valid administrator accounts can access this page.
+  // - redirectTo: Sends unauthorized users to the login screen.
+  // ==========================================
+  const { isAuthenticated, loading: authLoading } = useAuthGuard({
+    requiredPrefix: "ADM",
+    redirectTo: "/portal/log-in",
+  });
+
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 3):
+  // Render a clean loading screen while verifying credentials.
+  // ==========================================
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-100 font-sans">
+        <div className="text-center space-y-3">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
+          <p className="text-sm font-bold text-gray-600">Verifying Administrator Security Credentials...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 4):
+  // Halt execution if unauthenticated to prevent content flashing.
+  // ==========================================
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  return <ManageSubjectsContent />;
 }

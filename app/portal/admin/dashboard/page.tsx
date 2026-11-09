@@ -2,6 +2,12 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+// ==========================================
+// HOW TO APPLY TO OTHER PAGES (Step 1):
+// Import your custom useAuthGuard hook at the top.
+// Ensure the import path matches your project structure (e.g. "@/hooks/useAuthGuard").
+// ==========================================
+import { useAuthGuard } from "@/app/hooks/useAuthGuard";
 
 interface TeacherRecord {
   status?: string;
@@ -71,13 +77,13 @@ function formatActivityDate(value?: string): string {
   return Number.isNaN(date.getTime()) ? "Date unavailable" : date.toLocaleString();
 }
 
-export default function DashboardPage() {
+function AdminDashboardContent() {
   const [dashboard, setDashboard] = useState(EMPTY_DASHBOARD);
-  const [isLoading, setIsLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const fetchDashboard = useCallback(async () => {
-    setIsLoading(true);
+    setDataLoading(true);
     setLoadError(null);
     try {
       const endpoints = [
@@ -124,7 +130,7 @@ export default function DashboardPage() {
       console.error("Failed to load Admin Dashboard:", error);
       setLoadError(error instanceof Error ? error.message : "Unable to load dashboard data.");
     } finally {
-      setIsLoading(false);
+      setDataLoading(false);
     }
   }, []);
 
@@ -167,10 +173,10 @@ export default function DashboardPage() {
         <button
           type="button"
           onClick={() => void fetchDashboard()}
-          disabled={isLoading}
+          disabled={dataLoading}
           className="shrink-0 cursor-pointer rounded-lg border border-amber-300 bg-amber-300 px-4 py-2 text-sm font-bold text-[#06264A] shadow-sm transition-colors hover:border-amber-200 hover:bg-amber-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#06264A] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isLoading ? "Refreshing…" : "Refresh"}
+          {dataLoading ? "Refreshing…" : "Refresh"}
         </button>
       </header>
 
@@ -198,7 +204,7 @@ export default function DashboardPage() {
               <div>
                 <p className="text-sm font-medium text-slate-500">{stat.label}</p>
                 <p className="mt-1 text-2xl font-bold text-slate-900 sm:mt-2 sm:text-3xl">
-                  {isLoading ? <span className="inline-block h-9 w-12 animate-pulse rounded bg-slate-100" /> : stat.value}
+                  {dataLoading ? <span className="inline-block h-9 w-12 animate-pulse rounded bg-slate-100" /> : stat.value}
                 </p>
               </div>
               <span className="rounded-lg bg-blue-50 p-2 text-[#0B3763] transition-colors group-hover:bg-blue-100 sm:rounded-xl sm:p-3">
@@ -228,7 +234,7 @@ export default function DashboardPage() {
               View calendar
             </Link>
           </div>
-          {isLoading ? (
+          {dataLoading ? (
             <p className="py-8 text-center text-sm text-slate-400">Loading upcoming events…</p>
           ) : dashboard.upcomingEvents.length === 0 ? (
             <p className="rounded-xl bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">No upcoming events scheduled.</p>
@@ -267,7 +273,7 @@ export default function DashboardPage() {
               View all
             </Link>
           </div>
-          {isLoading ? (
+          {dataLoading ? (
             <p className="py-8 text-center text-sm text-slate-400">Loading recent activity…</p>
           ) : dashboard.recentActivity.length === 0 ? (
             <p className="rounded-xl bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">No activity has been recorded yet.</p>
@@ -290,4 +296,42 @@ export default function DashboardPage() {
       </div>
     </div>
   );
+}
+
+export default function DashboardPage() {
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 2):
+  // Call useAuthGuard at the top of your component body.
+  // - requiredPrefix: "ADM" ensures only valid administrator accounts can access this page.
+  // - redirectTo: Sends unauthorized users to the login screen.
+  // ==========================================
+  const { isAuthenticated, loading: authLoading } = useAuthGuard({
+    requiredPrefix: "ADM",
+    redirectTo: "/portal/log-in",
+  });
+
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 3):
+  // Render a clean loading screen while verifying credentials.
+  // ==========================================
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-100 font-sans">
+        <div className="text-center space-y-3">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
+          <p className="text-sm font-bold text-gray-600">Verifying Administrator Security Credentials...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 4):
+  // Halt execution if unauthenticated to prevent content flashing.
+  // ==========================================
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  return <AdminDashboardContent />;
 }

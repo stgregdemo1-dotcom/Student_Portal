@@ -24,7 +24,16 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
   ];
 
   const handleLogout = () => {
-    console.log("User logged out");
+    // Clear username cache/session data from client storage
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('username');
+      sessionStorage.removeItem('username');
+      // If your useAuthGuard uses custom keys, clear them here as well:
+      localStorage.clear();
+      sessionStorage.clear();
+    }
+    
+    console.log("User logged out and cache cleared");
     window.location.href = '/portal/log-in'; 
   };
 

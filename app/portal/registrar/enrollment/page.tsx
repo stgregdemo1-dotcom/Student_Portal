@@ -2,6 +2,12 @@
 
 import React, { useState, useEffect } from "react";
 import RegistrarSearchInput from "@/app/-components/RegistrarSearchInput";
+// ==========================================
+// HOW TO APPLY TO OTHER PAGES (Step 1):
+// Import your custom useAuthGuard hook at the top.
+// Ensure the import path matches your project structure (e.g. "@/hooks/useAuthGuard").
+// ==========================================
+import { useAuthGuard } from "@/app/hooks/useAuthGuard";
 
 interface EnrollmentRequest {
   _id: string;
@@ -16,8 +22,19 @@ interface EnrollmentRequest {
 type SortableKeys = "student_id" | "studentName" | "track" | "status";
 
 export default function EnrollmentPage() {
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 2):
+  // Call useAuthGuard at the top of your component body.
+  // - requiredPrefix: "REG" ensures only valid registrar accounts can access this page.
+  // - redirectTo: Sends unauthorized users to the login screen.
+  // ==========================================
+  const { isAuthenticated, loading: authLoading } = useAuthGuard({
+    requiredPrefix: "REG",
+    redirectTo: "/portal/log-in",
+  });
+
   const [enrollments, setEnrollments] = useState<EnrollmentRequest[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [dataLoading, setDataLoading] = useState<boolean>(true);
   const [sortKey, setSortKey] = useState<SortableKeys>("student_id");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -25,7 +42,7 @@ export default function EnrollmentPage() {
   const itemsPerPage = 20; 
 
   const fetchEnrollments = async () => {
-    setIsLoading(true);
+    setDataLoading(true);
     try {
       // Fetch all students to ensure variants like "Pending - 2nd Sem" or "Pending - 2nd yr" are not filtered out by the backend
       const res = await fetch("/api/portal/registrar?table=students");
@@ -44,13 +61,14 @@ export default function EnrollmentPage() {
     } catch (err) {
       console.error("Error loading enrollment requests:", err);
     } finally {
-      setIsLoading(false);
+      setDataLoading(false);
     }
   };
 
   useEffect(() => {
+    if (!isAuthenticated) return;
     fetchEnrollments();
-  }, []);
+  }, [isAuthenticated]);
 
   const handleSort = (key: SortableKeys) => {
     if (sortKey === key) {
@@ -112,6 +130,29 @@ export default function EnrollmentPage() {
       return "bg-yellow-100 text-yellow-800";
     }
   };
+
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 3):
+  // Render a clean loading screen while verifying credentials.
+  // ==========================================
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-100 font-sans">
+        <div className="text-center space-y-3">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
+          <p className="text-sm font-bold text-gray-600">Verifying Registrar Security Credentials...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 4):
+  // Halt execution if unauthenticated to prevent content flashing.
+  // ==========================================
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="w-full">
@@ -180,7 +221,7 @@ export default function EnrollmentPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200 text-sm text-gray-700">
-                {isLoading ? (
+                {dataLoading ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-12 text-center text-gray-400 animate-pulse">
                       Loading enrollment requests...
@@ -228,7 +269,7 @@ export default function EnrollmentPage() {
         </div>
 
         {/* 🚀 PAGINATION FOOTER */}
-        {!isLoading && totalItems > 0 && (
+        {!dataLoading && totalItems > 0 && (
           <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
             <span className="text-xs text-gray-500">
               Showing{" "}

@@ -2,6 +2,12 @@
 
 import { useEffect, useState, useCallback } from "react";
 import RegistrarSearchInput from "@/app/-components/RegistrarSearchInput";
+// ==========================================
+// HOW TO APPLY TO OTHER PAGES (Step 1):
+// Import your custom useAuthGuard hook at the top.
+// Ensure the import path matches your project structure (e.g. "@/hooks/useAuthGuard").
+// ==========================================
+import { useAuthGuard } from "@/app/hooks/useAuthGuard";
 
 interface SubjectReference {
   subject_id: string;
@@ -22,8 +28,19 @@ interface StudentSectionRecord {
 }
 
 export default function EnrollmentPage() {
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 2):
+  // Call useAuthGuard at the top of your component body.
+  // - requiredPrefix: "REG" ensures only valid registrar accounts can access this page.
+  // - redirectTo: Sends unauthorized users to the login screen.
+  // ==========================================
+  const { isAuthenticated, loading: authLoading } = useAuthGuard({
+    requiredPrefix: "REG",
+    redirectTo: "/portal/log-in",
+  });
+
   const [requests, setRequests] = useState<StudentSectionRecord[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [dataLoading, setDataLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   
   // Filter States
@@ -36,7 +53,7 @@ export default function EnrollmentPage() {
   const itemsPerPage = 20;
 
   const fetchEvaluationRequests = useCallback(async () => {
-    setLoading(true);
+    setDataLoading(true);
     setError(null);
     try {
       const response = await fetch("/api/portal/registrar?table=student_section");
@@ -57,13 +74,14 @@ export default function EnrollmentPage() {
     } catch (err: any) {
       setError(err.message || "Something went wrong.");
     } finally {
-      setLoading(false);
+      setDataLoading(false);
     }
   }, []);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
     fetchEvaluationRequests();
-  }, [fetchEvaluationRequests]);
+  }, [isAuthenticated, fetchEvaluationRequests]);
 
   // Extract unique options for filter dropdowns from data
   const uniqueYears = Array.from(new Set(requests.map((r) => r.year))).filter(Boolean).sort();
@@ -99,6 +117,29 @@ export default function EnrollmentPage() {
       setCurrentPage(newPage);
     }
   };
+
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 3):
+  // Render a clean loading screen while verifying credentials.
+  // ==========================================
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-100 font-sans">
+        <div className="text-center space-y-3">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
+          <p className="text-sm font-bold text-gray-600">Verifying Registrar Security Credentials...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 4):
+  // Halt execution if unauthenticated to prevent content flashing.
+  // ==========================================
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="p-6">
@@ -167,10 +208,10 @@ export default function EnrollmentPage() {
             {/* Refresh Button */}
             <button
               onClick={fetchEvaluationRequests}
-              disabled={loading}
+              disabled={dataLoading}
               className="px-4 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-opacity"
             >
-              {loading ? "Refreshing..." : "Refresh"}
+              {dataLoading ? "Refreshing..." : "Refresh"}
             </button>
           </div>
         </div>
@@ -194,7 +235,7 @@ export default function EnrollmentPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {loading ? (
+              {dataLoading ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-10 text-center text-gray-400">
                     Loading pending evaluation requests...
@@ -237,7 +278,7 @@ export default function EnrollmentPage() {
         </div>
 
         {/* PAGINATION CONTROLLER FOOTER */}
-        {!loading && totalItems > 0 && (
+        {!dataLoading && totalItems > 0 && (
           <div className="p-4 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
             <span className="text-xs text-gray-500">
               Showing{" "}

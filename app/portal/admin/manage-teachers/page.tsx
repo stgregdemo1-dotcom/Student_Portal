@@ -1,6 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+// ==========================================
+// HOW TO APPLY TO OTHER PAGES (Step 1):
+// Import your custom useAuthGuard hook at the top.
+// Ensure the import path matches your project structure (e.g. "@/hooks/useAuthGuard").
+// ==========================================
+import { useAuthGuard } from "@/app/hooks/useAuthGuard";
 
 interface Teacher {
   id: string;
@@ -286,7 +292,7 @@ function FacultyModalContent({
   );
 }
 
-export default function ManageTeachers() {
+function ManageTeachersContent() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -814,6 +820,8 @@ export default function ManageTeachers() {
         onClose={handleCloseModal}
         onSave={handleSaveTeacher}
       />
+
+      {/* Archive Confirmation Modal */}
       {teacherArchiveAction && (
         <div
           className="portal-modal-backdrop fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
@@ -891,6 +899,8 @@ export default function ManageTeachers() {
           </section>
         </div>
       )}
+
+      {/* Set Password Confirmation Modal */}
       {teacherToSendPassword && (
         <div
           className="portal-modal-backdrop fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
@@ -968,4 +978,42 @@ export default function ManageTeachers() {
       )}
     </div>
   );
+}
+
+export default function ManageTeachers() {
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 2):
+  // Call useAuthGuard at the top of your component body.
+  // - requiredPrefix: "ADM" ensures only valid administrator accounts can access this page.
+  // - redirectTo: Sends unauthorized users to the login screen.
+  // ==========================================
+  const { isAuthenticated, loading: authLoading } = useAuthGuard({
+    requiredPrefix: "ADM",
+    redirectTo: "/portal/log-in",
+  });
+
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 3):
+  // Render a clean loading screen while verifying credentials.
+  // ==========================================
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-100 font-sans">
+        <div className="text-center space-y-3">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
+          <p className="text-sm font-bold text-gray-600">Verifying Administrator Security Credentials...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 4):
+  // Halt execution if unauthenticated to prevent content flashing.
+  // ==========================================
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  return <ManageTeachersContent />;
 }

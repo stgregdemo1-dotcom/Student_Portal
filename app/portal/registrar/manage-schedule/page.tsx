@@ -1,6 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+// ==========================================
+// HOW TO APPLY TO OTHER PAGES (Step 1):
+// Import your custom useAuthGuard hook at the top.
+// Ensure the import path matches your project structure (e.g. "@/hooks/useAuthGuard").
+// ==========================================
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 
 type SubjectRecord = {
   subject_id: string;
@@ -9,13 +15,27 @@ type SubjectRecord = {
 };
 
 export default function ClassSchedule() {
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 2):
+  // Call useAuthGuard at the top of your component body.
+  // - requiredPrefix: "ADM" ensures only valid administrator accounts can access this page.
+  // - redirectTo: Sends unauthorized users to the login screen.
+  // ==========================================
+  const { isAuthenticated, loading: authLoading } = useAuthGuard({
+    requiredPrefix: "ADM",
+    redirectTo: "/portal/log-in",
+  });
+
   const [subjects, setSubjects] = useState<SubjectRecord[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<string>("");
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [dataLoading, setDataLoading] = useState<boolean>(true);
+
   useEffect(() => {
+    if (!isAuthenticated) return;
+
     const fetchDropdownSubjects = async () => {
       try {
-        setIsLoading(true);
+        setDataLoading(true);
         const res = await fetch("/api/portal/admin?table=subjects");
 
         if (res.ok) {
@@ -35,12 +55,35 @@ export default function ClassSchedule() {
       } catch (err) {
         console.error("Network connection issue loading dropdown items:", err);
       } finally {
-        setIsLoading(false);
+        setDataLoading(false);
       }
     };
 
     fetchDropdownSubjects();
-  }, []);
+  }, [isAuthenticated]);
+
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 3):
+  // Render a clean loading screen while verifying credentials.
+  // ==========================================
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-100 font-sans">
+        <div className="text-center space-y-3">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
+          <p className="text-sm font-bold text-gray-600">Verifying Administrator Security Credentials...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 4):
+  // Halt execution if unauthenticated to prevent content flashing.
+  // ==========================================
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="p-6">
@@ -53,7 +96,7 @@ export default function ClassSchedule() {
             <label htmlFor="subject-select" className="text-sm font-medium text-gray-600">
               Select Subject:
             </label>
-            {isLoading ? (
+            {dataLoading ? (
               <span className="text-xs text-gray-400 animate-pulse">Loading subjects...</span>
             ) : (
               <select

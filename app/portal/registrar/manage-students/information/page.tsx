@@ -2,6 +2,12 @@
 
 import React, { useState, useEffect, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+// ==========================================
+// HOW TO APPLY TO OTHER PAGES (Step 1):
+// Import your custom useAuthGuard hook at the top.
+// Ensure the import path matches your project structure (e.g. "@/hooks/useAuthGuard").
+// ==========================================
+import { useAuthGuard } from "@/app/hooks/useAuthGuard";
 
 interface StudentData {
   _id: string;
@@ -59,7 +65,7 @@ function AdminStudentDetailsContent() {
 
   const [student, setStudent] = useState<StudentData | null>(null);
   const [studentSectionDoc, setStudentSectionDoc] = useState<StudentSectionData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [sectionsList, setSectionsList] = useState<string[]>([]);
   const [selectedSection, setSelectedSection] = useState<string>("");
@@ -104,7 +110,7 @@ function AdminStudentDetailsContent() {
 
   const fetchStudentDetails = async () => {
     if (!studentId) return;
-    setLoading(true);
+    setDataLoading(true);
     try {
       const studentRes = await fetch(`/api/portal/registrar?table=students&id=${studentId}`);
       if (studentRes.ok) {
@@ -133,7 +139,7 @@ function AdminStudentDetailsContent() {
     } catch (err) {
       console.error("Error loading student record details:", err);
     } finally {
-      setLoading(false);
+      setDataLoading(false);
     }
   };
 
@@ -238,7 +244,7 @@ function AdminStudentDetailsContent() {
     );
   }
 
-  if (loading) {
+  if (dataLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-400 font-medium animate-pulse">
         Retrieving Enrollment Profile from Database...
@@ -479,6 +485,40 @@ function AdminStudentDetailsContent() {
 }
 
 export default function AdminStudentDetailsPage() {
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 2):
+  // Call useAuthGuard at the top of your component body.
+  // - requiredPrefix: "REG" ensures only valid registrar accounts can access this page.
+  // - redirectTo: Sends unauthorized users to the login screen.
+  // ==========================================
+  const { isAuthenticated, loading: authLoading } = useAuthGuard({
+    requiredPrefix: "REG",
+    redirectTo: "/portal/log-in",
+  });
+
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 3):
+  // Render a clean loading screen while verifying credentials.
+  // ==========================================
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-100 font-sans">
+        <div className="text-center space-y-3">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
+          <p className="text-sm font-bold text-gray-600">Verifying Registrar Security Credentials...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 4):
+  // Halt execution if unauthenticated to prevent content flashing.
+  // ==========================================
+  if (!isAuthenticated) {
+    return null;
+  }
+
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-gray-400">Loading student details...</div>}>
       <AdminStudentDetailsContent />

@@ -3,6 +3,12 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+// ==========================================
+// HOW TO APPLY TO OTHER PAGES (Step 1):
+// Import your custom useAuthGuard hook at the top.
+// Ensure the import path matches your project structure (e.g. "@/hooks/useAuthGuard").
+// ==========================================
+import { useAuthGuard } from "@/app/hooks/useAuthGuard";
 
 interface StatusCount {
   status: string;
@@ -10,6 +16,17 @@ interface StatusCount {
 }
 
 export default function DashboardPage() {
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 2):
+  // Call useAuthGuard at the top of your component body.
+  // - requiredPrefix: "REG" ensures only valid registrar accounts can access this dashboard.
+  // - redirectTo: Sends unauthorized users to the login screen.
+  // ==========================================
+  const { isAuthenticated, loading: authLoading } = useAuthGuard({
+    requiredPrefix: "REG",
+    redirectTo: "/portal/log-in",
+  });
+
   const router = useRouter();
   const [studentCount, setStudentCount] = useState<number>(0);
   const [admissionCount, setAdmissionCount] = useState<number>(0);
@@ -97,6 +114,8 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
+
     fetchMetrics();
 
     const INTERVAL_MS = 30000;
@@ -105,7 +124,7 @@ export default function DashboardPage() {
     }, INTERVAL_MS);
 
     return () => clearInterval(intervalId);
-  }, [fetchMetrics]);
+  }, [isAuthenticated, fetchMetrics]);
 
   const stats = [
     {
@@ -157,6 +176,29 @@ export default function DashboardPage() {
       ),
     },
   ];
+
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 3):
+  // Render a clean loading screen while verifying credentials.
+  // ==========================================
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-100 font-sans">
+        <div className="text-center space-y-3">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
+          <p className="text-sm font-bold text-gray-600">Verifying Registrar Security Credentials...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 4):
+  // Halt execution if unauthenticated to prevent content flashing.
+  // ==========================================
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="flex min-h-0 w-full flex-1 flex-col gap-2 overflow-visible md:h-full md:overflow-hidden md:gap-3">
@@ -486,4 +528,4 @@ function ActivityItem({ svgPath, color, bg, title, desc, time }: ActivityItemPro
       </div>
     </div>
   );
-}2
+}

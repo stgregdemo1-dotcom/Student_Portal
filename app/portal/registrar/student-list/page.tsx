@@ -3,6 +3,12 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import RegistrarSearchInput from "@/app/-components/RegistrarSearchInput";
+// ==========================================
+// HOW TO APPLY TO OTHER PAGES (Step 1):
+// Import your custom useAuthGuard hook at the top.
+// Ensure the import path matches your project structure (e.g. "@/hooks/useAuthGuard").
+// ==========================================
+import { useAuthGuard } from "@/app/hooks/useAuthGuard";
 
 interface StudentRecord {
   _id: string;
@@ -39,7 +45,7 @@ function StudentListContent() {
 
   const [students, setStudents] = useState<StudentRecord[]>([]);
   const [credentialsMap, setCredentialsMap] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [dataLoading, setDataLoading] = useState<boolean>(true);
   const [sortKey, setSortKey] = useState<SortableKeys>("student_id");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -49,7 +55,7 @@ function StudentListContent() {
   const itemsPerPage = 20;
 
   const fetchData = async () => {
-    setIsLoading(true);
+    setDataLoading(true);
     try {
       const [studentsRes, credsRes] = await Promise.all([
         fetch("/api/portal/registrar?table=students"),
@@ -79,7 +85,7 @@ function StudentListContent() {
     } catch (err) {
       console.error("Error loading student and credential records:", err);
     } finally {
-      setIsLoading(false);
+      setDataLoading(false);
     }
   };
 
@@ -294,7 +300,7 @@ function StudentListContent() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200 text-sm text-gray-700">
-                {isLoading ? (
+                {dataLoading ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-12 text-center text-gray-400 animate-pulse">
                       Loading student records...
@@ -426,7 +432,7 @@ function StudentListContent() {
         </div>
 
         {/* Pagination Footer */}
-        {!isLoading && totalItems > 0 && (
+        {!dataLoading && totalItems > 0 && (
           <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
             <span className="text-xs text-gray-500">
               Showing <span className="font-semibold text-gray-700">{startIndex + 1}</span> to{" "}
@@ -475,6 +481,40 @@ function StudentListContent() {
 }
 
 export default function StudentListPage() {
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 2):
+  // Call useAuthGuard at the top of your component body.
+  // - requiredPrefix: "REG" ensures only valid registrar accounts can access this page.
+  // - redirectTo: Sends unauthorized users to the login screen.
+  // ==========================================
+  const { isAuthenticated, loading: authLoading } = useAuthGuard({
+    requiredPrefix: "REG",
+    redirectTo: "/portal/log-in",
+  });
+
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 3):
+  // Render a clean loading screen while verifying credentials.
+  // ==========================================
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-100 font-sans">
+        <div className="text-center space-y-3">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
+          <p className="text-sm font-bold text-gray-600">Verifying Registrar Security Credentials...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 4):
+  // Halt execution if unauthenticated to prevent content flashing.
+  // ==========================================
+  if (!isAuthenticated) {
+    return null;
+  }
+
   return (
     <Suspense fallback={<div className="p-6 text-center text-gray-500">Loading student list...</div>}>
       <StudentListContent />

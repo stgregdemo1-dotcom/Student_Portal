@@ -2,12 +2,29 @@
 
 import React, { useState, useEffect } from 'react';
 import RegistrarSearchInput from "@/app/-components/RegistrarSearchInput";
+// ==========================================
+// HOW TO APPLY TO OTHER PAGES (Step 1):
+// Import your custom useAuthGuard hook at the top.
+// Ensure the import path matches your project structure (e.g. "@/hooks/useAuthGuard").
+// ==========================================
+import { useAuthGuard } from "@/app/hooks/useAuthGuard";
 
 type SortableKeys = 'studentId' | 'firstName' | 'program' | 'status' | 'section' | 'semester';
 
 export default function ManageStudents() {
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 2):
+  // Call useAuthGuard at the top of your component body.
+  // - requiredPrefix: "REG" ensures only valid registrar accounts can access this page.
+  // - redirectTo: Sends unauthorized users to the login screen.
+  // ==========================================
+  const { isAuthenticated, loading: authLoading } = useAuthGuard({
+    requiredPrefix: "REG",
+    redirectTo: "/portal/log-in",
+  });
+
   const [students, setStudents] = useState<any[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [dataLoading, setDataLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -25,7 +42,7 @@ export default function ManageStudents() {
 
   const fetchEnrolledStudents = async () => {
     try {
-      setLoading(true);
+      setDataLoading(true);
       setError(null);
 
       const [studentsRes, sectionsRes] = await Promise.all([
@@ -89,13 +106,14 @@ export default function ManageStudents() {
       console.error("Database connecting query error:", err);
       setError("Network error connecting to student collections pipeline.");
     } finally {
-      setLoading(false);
+      setDataLoading(false);
     }
   };
 
   useEffect(() => {
+    if (!isAuthenticated) return;
     fetchEnrolledStudents();
-  }, [currentYear]);
+  }, [isAuthenticated, currentYear]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -171,7 +189,30 @@ export default function ManageStudents() {
     }
   };
 
-  if (loading && students.length === 0) {
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 3):
+  // Render a clean loading screen while verifying credentials.
+  // ==========================================
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-100 font-sans">
+        <div className="text-center space-y-3">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
+          <p className="text-sm font-bold text-gray-600">Verifying Registrar Security Credentials...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // HOW TO APPLY TO OTHER PAGES (Step 4):
+  // Halt execution if unauthenticated to prevent content flashing.
+  // ==========================================
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  if (dataLoading && students.length === 0) {
     return (
       <div className="p-12 text-center text-sm font-medium text-gray-400 animate-pulse">
         Retrieving active registry accounts from database...
@@ -222,10 +263,10 @@ export default function ManageStudents() {
           {/* Refresh Button */}
           <button
             onClick={fetchEnrolledStudents}
-            disabled={loading}
+            disabled={dataLoading}
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm disabled:opacity-50"
           >
-            {loading ? "Refreshing..." : "Refresh"}
+            {dataLoading ? "Refreshing..." : "Refresh"}
           </button>
         </div>
       </div>
@@ -303,7 +344,7 @@ export default function ManageStudents() {
         )}
 
         {/* DYNAMIC PAGINATION CONTROL FOOTER */}
-        {!loading && totalItems > 0 && (
+        {!dataLoading && totalItems > 0 && (
           <div className="pt-6 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 mt-4">
             <span className="text-xs text-gray-500">
               Showing{" "}
