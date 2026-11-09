@@ -6,7 +6,7 @@ import React, { useState, useEffect } from "react";
 // Import your custom useAuthGuard hook at the top.
 // Ensure the import path matches your project structure (e.g. "@/hooks/useAuthGuard").
 // ==========================================
-import { useAuthGuard } from "@/hooks/useAuthGuard";
+import { useAuthGuard } from "@/app/hooks/useAuthGuard";
 
 interface DropdownConfig {
   section: string[];
