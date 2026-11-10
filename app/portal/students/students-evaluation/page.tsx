@@ -68,8 +68,13 @@ export default function Page() {
 
       const result = await res.json();
       if (result.success) {
-        alert("Successfully submitted enrollment for 2nd Semester!");
-        setEvaluation(prev => prev ? { ...prev, status: "Pending - 2nd Sem", studentStatus: "Pending - 2nd Sem" } : null);
+        if (isFirstSemester) {
+          alert("Successfully submitted enrollment for 2nd Semester!");
+          setEvaluation(prev => prev ? { ...prev, status: "Pending - 2nd Sem", studentStatus: "Pending - 2nd Sem" } : null);
+        } else {
+          alert("Successfully submitted enrollment for New School Year!");
+          setEvaluation(prev => prev ? { ...prev, status: "Pending - New School Year", studentStatus: "Pending - New School Year" } : null);
+        }
       } else {
         alert(result.message || "Enrollment failed.");
       }
@@ -85,6 +90,7 @@ export default function Page() {
       case "Approved":
         return "bg-green-50 text-green-700 border-green-200";
       case "Pending - 2nd Sem":
+      case "Pending - New School Year":
         return "bg-blue-50 text-blue-700 border-blue-200";
       case "Rejected":
         return "bg-red-50 text-red-700 border-red-200";
@@ -95,6 +101,7 @@ export default function Page() {
   };
 
   const isFirstSemester = evaluation?.semester === "1" || evaluation?.semester?.toLowerCase().includes("1st");
+  const isSecondSemester = evaluation?.semester === "2" || evaluation?.semester?.toLowerCase().includes("2nd");
   const isStudentEnrolled = evaluation?.studentStatus === "Enrolled";
   const canEnroll = Boolean((evaluation?.allPassedAndCompleted || evaluation?.status === "Approved") && isStudentEnrolled);
 
@@ -194,7 +201,7 @@ export default function Page() {
               </div>
 
               {/* Dynamic Action Button Zone */}
-              {isFirstSemester && (
+              {(isFirstSemester || isSecondSemester) && (
                 <div className="border-t border-gray-100 pt-5 flex flex-col items-end">
                   <button
                     onClick={handleEnrollment}
@@ -204,13 +211,17 @@ export default function Page() {
                         ? "bg-[#082b49] hover:bg-[#0b3b62] hover:shadow-md text-white border-transparent cursor-pointer active:scale-[0.98]"
                         : "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed pointer-events-none"}`}
                   >
-                    {enrolling ? "Processing..." : `Enroll to 2nd Sem (A.Y. ${evaluation.year})`}
+                    {enrolling 
+                      ? "Processing..." 
+                      : isFirstSemester 
+                        ? `Enroll to 2nd Sem (A.Y. ${evaluation.year})` 
+                        : `Enroll to New School Year`}
                   </button>
 
                   {/* Warning / Status messages */}
                   {!canEnroll && isStudentEnrolled && (
                     <p className="text-xs text-amber-600 mt-2 italic">
-                      * Next semester enrollment activates once all subjects are marked as <strong>Completed</strong> and <strong>Passed</strong>.
+                      * {isFirstSemester ? "Next semester" : "New school year"} enrollment activates once all subjects are marked as <strong>Completed</strong> and <strong>Passed</strong>.
                     </p>
                   )}
                   

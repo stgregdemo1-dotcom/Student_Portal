@@ -31,7 +31,7 @@ export default function EnrollmentPage() {
   const [requests, setRequests] = useState<StudentSectionRecord[]>([]);
   const [dataLoading, setDataLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   const [selectedYear, setSelectedYear] = useState<string>("All");
   const [selectedSemester, setSelectedSemester] = useState<string>("All");
   const [selectedSection, setSelectedSection] = useState<string>("All");
@@ -122,11 +122,11 @@ export default function EnrollmentPage() {
   return (
     <div className="p-6">
       <div className="bg-white rounded-xl shadow overflow-hidden">
-        
+
         {/* Top Header & Filter Controls Bar */}
         <div className="p-4 border-b border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <h3 className="text-lg font-semibold text-gray-800">Students Evaluation Requests</h3>
-          
+
           <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
             <RegistrarSearchInput
               value={searchQuery}
@@ -134,7 +134,7 @@ export default function EnrollmentPage() {
               placeholder="Search student or section..."
               ariaLabel="Search evaluation requests by student, year, semester, or section"
             />
-            
+
             {/* Year Filter Dropdown */}
             <div className="flex items-center gap-1.5">
               <label htmlFor="year-filter" className="text-xs font-medium text-gray-500">Year:</label>
@@ -241,7 +241,7 @@ export default function EnrollmentPage() {
                       <td className="px-6 py-4 text-sm text-gray-500">{record.section}</td>
                       <td className="px-6 py-4 text-sm">
                         <a
-                          href={`/portal/registrar/students-evaluation/information?id=${record.student_id}`}
+                          href={`/portal/registrar/students-evaluation/information?id=${record.student_id}&semester=${encodeURIComponent(record.semester)}`}
                           className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
                         >
                           View

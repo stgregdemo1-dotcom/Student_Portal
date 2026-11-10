@@ -335,17 +335,36 @@ export async function PUT(request: NextRequest) {
     const studentProfile = await Student.findOne({ student_id: studentId });
     const studentRecord = await StudentSection.findOne({ student_id: studentId });
 
-    if (!studentProfile || !studentRecord) {
+    if (!studentProfile || !studentRecord || !studentRecord.class || studentRecord.class.length === 0) {
       return NextResponse.json({ success: false, message: "Student record or profile not found." }, { status: 404 });
     }
 
-    studentProfile.status = "Pending - 2nd Sem";
-    await studentProfile.save();
+    // Determine the current active/target class (same logic as GET)
+    const unapprovedClass = studentRecord.class.slice().reverse().find(
+      (cls: any) => cls.evaluation && cls.evaluation.toLowerCase() !== "approved"
+    ) || studentRecord.class[studentRecord.class.length - 1];
 
-    return NextResponse.json({ 
-      success: true, 
-      message: "Successfully submitted enrollment for 2nd Semester!" 
-    }, { status: 200 });
+    const currentSemester = String(unapprovedClass?.semester || "1").trim();
+    const isFirstSemester = currentSemester === "1" || currentSemester.toLowerCase().includes("1st");
+
+    // Set status and message dynamically based on current semester
+    if (isFirstSemester) {
+      studentProfile.status = "Pending - 2nd Sem";
+      await studentProfile.save();
+
+      return NextResponse.json({ 
+        success: true, 
+        message: "Successfully submitted enrollment for 2nd Semester!" 
+      }, { status: 200 });
+    } else {
+      studentProfile.status = "Pending - New School Year";
+      await studentProfile.save();
+
+      return NextResponse.json({ 
+        success: true, 
+        message: "Successfully submitted enrollment for New School Year!" 
+      }, { status: 200 });
+    }
 
   } catch (error: any) {
     console.error("Enrollment Route Error:", error);

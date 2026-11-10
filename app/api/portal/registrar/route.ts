@@ -362,7 +362,7 @@ export async function GET(request: NextRequest) {
                   $mergeObjects: ["$$sub",
                     {
                       status: {
-                        $ifNull: [ "$$sub.status",
+                        $ifNull: ["$$sub.status",
                           {
                             $arrayElemAt: [
                               "$liveSubjects.status",
@@ -574,14 +574,18 @@ export async function PUT(request: NextRequest) {
         );
       }
 
-      let updatePayload: any = {};
+      let updateFieldPath = "";
+      let updateValue: any = null;
       let auditDescription = "";
 
       if (subjects) {
-        updatePayload = { "class.$.subjects": subjects };
+        updateFieldPath = "class.$[elem].subjects";
+        updateValue = subjects;
         auditDescription = `Updated grade matrices for student ID: ${student_id} (SY: ${year}, Semester: ${semester}).`;
       } else if (subject_status) {
-        updatePayload = { "class.$.subjects.$[].status": subject_status };
+        // Change $[sub] to $[], which targets all subjects in the matched class element
+        updateFieldPath = "class.$[elem].subjects.$[].status";
+        updateValue = subject_status;
         auditDescription = `Updated all subject statuses to '${subject_status}' for student ID: ${student_id} (SY: ${year}, Semester: ${semester}).`;
       } else {
         return NextResponse.json(
@@ -590,10 +594,25 @@ export async function PUT(request: NextRequest) {
         );
       }
 
+      const semesterStr = String(semester).trim();
+      const semesterDigit = semesterStr.replace(/\D/g, "") || semesterStr;
+      const yearStr = String(year).trim();
+
       const updatedDocument = await TargetModel.findOneAndUpdate(
-        { student_id, "class.year": year, "class.semester": semester },
-        { $set: updatePayload },
-        { new: true, runValidators: true }
+        { student_id },
+        { $set: { [updateFieldPath]: updateValue } },
+        {
+          arrayFilters: [
+            {
+              "elem.year": yearStr,
+              "elem.semester": {
+                $in: [semesterStr, semesterDigit, `${semesterDigit}nd`, `${semesterDigit}st`, "2", "1"]
+              }
+            }
+          ],
+          new: true,
+          runValidators: true
+        }
       ).lean();
 
       if (!updatedDocument) {

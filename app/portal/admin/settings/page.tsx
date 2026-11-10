@@ -222,6 +222,8 @@ function SettingsConfigContent() {
   ];
 
   const selectedSemester = String(config?.current_semester ?? "1");
+  const currentYearsList = Array.isArray(config?.current_year) ? (config.current_year as string[]) : [];
+  const hasMultipleYears = currentYearsList.length > 1;
 
   return (
     <div className="w-full space-y-8 p-4 font-sans sm:p-6">
@@ -276,38 +278,49 @@ function SettingsConfigContent() {
         {/* Current Academic Years Card */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col justify-between space-y-4">
           <div>
-            <h3 className="text-md font-bold text-gray-700 border-b pb-2 mb-3">
-              Current Academic Years
-            </h3>
+            <div className="flex items-center justify-between border-b pb-2 mb-3">
+              <h3 className="text-md font-bold text-gray-700">
+                Current Academic Years
+              </h3>
+              {hasMultipleYears && (
+                <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full border border-amber-200 animate-pulse">
+                  Warning: Multiple Values Detected ({currentYearsList.length})
+                </span>
+              )}
+            </div>
+
+            {hasMultipleYears && (
+              <div className="mb-3 p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 font-medium leading-relaxed">
+                ⚠️ <strong>Notice:</strong> The current academic year should only have <strong>one</strong> active value. Please remove extra entries so schedules filter correctly.
+              </div>
+            )}
 
             <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto p-1">
-              {Array.isArray(config?.current_year) &&
-                (config.current_year as string[]).map((item) => (
-                  <span
-                    key={item}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-red-700 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors group cursor-pointer"
-                    onClick={() => handleRemoveOption("current_year", item)}
-                    title="Click to remove option"
-                  >
-                    {item}
-                    <span className="text-slate-400 group-hover:text-red-500 font-bold">
-                      ✕
-                    </span>
+              {currentYearsList.map((item) => (
+                <span
+                  key={item}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-red-700 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors group cursor-pointer"
+                  onClick={() => handleRemoveOption("current_year", item)}
+                  title="Click to remove option"
+                >
+                  {item}
+                  <span className="text-slate-400 group-hover:text-red-500 font-bold">
+                    ✕
                   </span>
-                ))}
-              {Array.isArray(config?.current_year) &&
-                (config.current_year as string[]).length === 0 && (
-                  <span className="text-xs text-gray-400 italic">
-                    No options defined.
-                  </span>
-                )}
+                </span>
+              ))}
+              {currentYearsList.length === 0 && (
+                <span className="text-xs text-gray-400 italic">
+                  No options defined.
+                </span>
+              )}
             </div>
           </div>
 
           <div className="flex gap-2 pt-2">
             <input
               type="text"
-              placeholder="e.g., 2026"
+              placeholder="e.g., 2025-2026"
               value={inputs["current_year"] || ""}
               onChange={(e) =>
                 setInputs({ ...inputs, current_year: e.target.value })
