@@ -1,19 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-// ==========================================
-// HOW TO APPLY TO OTHER PAGES (Step 1):
-// Import your custom useAuthGuard hook at the top.
-// Ensure the import path matches your project structure (e.g. "@/hooks/useAuthGuard").
-// ==========================================
 import { useAuthGuard } from "@/app/hooks/useAuthGuard";
 
 interface MappedSubject {
   subject_id: string;
   sched_code: string;
   teacher_id: string;
-  grade_1: string; // Represents "1st"
-  grade_2: string; // Represents "2nd"
+  grade_1: string;
+  grade_2: string;
   remarks: string;
   status: string;
 }
@@ -30,12 +25,6 @@ interface MappedStudentRow {
 }
 
 export default function GradesManagementPage() {
-  // ==========================================
-  // HOW TO APPLY TO OTHER PAGES (Step 2):
-  // Call useAuthGuard at the top of your component body.
-  // - requiredPrefix: "REG" ensures only valid registrar accounts can access this page.
-  // - redirectTo: Sends unauthorized users to the login screen.
-  // ==========================================
   const { isAuthenticated, loading: authLoading } = useAuthGuard({
     requiredPrefix: "REG",
     redirectTo: "/portal/log-in",
@@ -104,17 +93,16 @@ export default function GradesManagementPage() {
 
     const updatedSubjects = selectedRecord.subjects.map((sub) => {
       if (sub.subject_id !== selectedSubjectId) return sub;
-      
+
       const newGrade1 = termField === "grade_1" ? value : sub.grade_1;
       const newGrade2 = termField === "grade_2" ? value : sub.grade_2;
-      
-      // Automatically compute remarks based on the updated grades
+
       const { remarks } = computeFinalGradeAndRemarks(newGrade1, newGrade2);
 
-      return { 
-        ...sub, 
+      return {
+        ...sub,
         [termField]: value,
-        remarks: remarks === "—" ? "" : remarks 
+        remarks: remarks === "—" ? "" : remarks
       };
     });
 
@@ -136,8 +124,8 @@ export default function GradesManagementPage() {
       setRecords((prevRecords) =>
         prevRecords.map((item) =>
           item.student_id === selectedRecord.student_id &&
-          item.year === selectedRecord.year &&
-          item.semester === selectedRecord.semester
+            item.year === selectedRecord.year &&
+            item.semester === selectedRecord.semester
             ? selectedRecord
             : item
         )
@@ -170,10 +158,6 @@ export default function GradesManagementPage() {
     return selectedRecord.subjects.find((s) => s.subject_id === selectedSubjectId);
   };
 
-  // ==========================================
-  // HOW TO APPLY TO OTHER PAGES (Step 3):
-  // Render a clean loading screen while verifying credentials.
-  // ==========================================
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-100 font-sans">
@@ -185,10 +169,6 @@ export default function GradesManagementPage() {
     );
   }
 
-  // ==========================================
-  // HOW TO APPLY TO OTHER PAGES (Step 4):
-  // Halt execution if unauthenticated to prevent content flashing.
-  // ==========================================
   if (!isAuthenticated) {
     return null;
   }
@@ -319,7 +299,7 @@ export default function GradesManagementPage() {
                           </td>
                           <td className="p-4 text-center">
                             <span className={`text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-md ${subject.remarks === "Passed" ? "bg-green-100 text-green-700" :
-                                subject.remarks === "Failed" ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-400"
+                              subject.remarks === "Failed" ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-400"
                               }`}>
                               {subject.remarks || "—"}
                             </span>
@@ -328,11 +308,10 @@ export default function GradesManagementPage() {
                             <button
                               disabled={subject.status !== "Evaluating"}
                               onClick={() => handleOpenGradeModal(row, subject.subject_id)}
-                              className={`text-xs font-semibold px-2.5 py-1 rounded transition-colors ${
-                                subject.status === "Evaluating"
+                              className={`text-xs font-semibold px-2.5 py-1 rounded transition-colors ${subject.status === "Evaluating"
                                   ? "text-indigo-600 hover:text-indigo-800 bg-indigo-50/0 group-hover:bg-indigo-50 cursor-pointer"
                                   : "text-gray-300 bg-gray-50/50 cursor-not-allowed"
-                              }`}
+                                }`}
                             >
                               Edit Term Grades
                             </button>
@@ -402,10 +381,9 @@ export default function GradesManagementPage() {
                     <div className="flex flex-col text-center">
                       <label className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Evaluation Result</label>
                       <div>
-                        <span className={`text-xs uppercase font-black tracking-wider px-3 py-1 rounded-md inline-block ${
-                          calc.remarks === "Passed" ? "bg-green-100 text-green-700" :
-                          calc.remarks === "Failed" ? "bg-red-100 text-red-700" : "bg-gray-200 text-gray-500"
-                        }`}>
+                        <span className={`text-xs uppercase font-black tracking-wider px-3 py-1 rounded-md inline-block ${calc.remarks === "Passed" ? "bg-green-100 text-green-700" :
+                            calc.remarks === "Failed" ? "bg-red-100 text-red-700" : "bg-gray-200 text-gray-500"
+                          }`}>
                           {calc.remarks}
                         </span>
                       </div>

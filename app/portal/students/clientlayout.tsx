@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Header from "../../-components/aheader";
 import Footer from "../../-components/afooter";
-import Sidebar from "../../-components/Sidebar"; // or asidebar depending on portal
+import Sidebar from "../../-components/Sidebar";
 
 export default function ClientLayout({
   children,

@@ -1,11 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-// ==========================================
-// HOW TO APPLY TO OTHER PAGES (Step 1):
-// Import your custom useAuthGuard hook at the top.
-// Ensure the import path matches your project structure (e.g. "@/hooks/useAuthGuard").
-// ==========================================
 import { useAuthGuard } from "@/app/hooks/useAuthGuard";
 
 interface Subject {
@@ -28,13 +23,6 @@ interface StudentRecord {
 }
 
 export default function MasterListPage() {
-  // ==========================================
-  // HOW TO APPLY TO OTHER PAGES (Step 2):
-  // Call useAuthGuard at the top of your component body.
-  // - requiredPrefix: "TCH" ensures only valid teacher IDs can access this master list.
-  // - redirectTo: Sends unauthorized users to the login screen.
-  // - Aliased username as teacherId to preserve your existing code logic.
-  // ==========================================
   const { username: teacherId, isAuthenticated, loading: authLoading } = useAuthGuard({
     requiredPrefix: "TCH",
     redirectTo: "/portal/log-in",
@@ -44,7 +32,6 @@ export default function MasterListPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [dataLoading, setDataLoading] = useState<boolean>(true);
 
-  // Expandable row state & student cache
   const [expandedSubjectId, setExpandedSubjectId] = useState<string | null>(null);
   const [studentsCache, setStudentsCache] = useState<Record<string, StudentRecord[]>>({});
   const [loadingStudents, setLoadingStudents] = useState<Record<string, boolean>>({});
@@ -71,18 +58,16 @@ export default function MasterListPage() {
     fetchTeacherSubjects();
   }, [isAuthenticated, teacherId]);
 
-  // Toggle row expansion and fetch students on demand if not already cached
   const toggleRowExpansion = async (subject: Subject) => {
     const targetId = subject.subject_id;
 
     if (expandedSubjectId === targetId) {
-      setExpandedSubjectId(null); // Collapse if already open
+      setExpandedSubjectId(null); 
       return;
     }
 
     setExpandedSubjectId(targetId);
 
-    // If students are already fetched for this subject, skip re-fetching
     if (studentsCache[targetId]) return;
 
     try {
@@ -109,10 +94,6 @@ export default function MasterListPage() {
       s.room?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // ==========================================
-  // HOW TO APPLY TO OTHER PAGES (Step 3):
-  // Render a clean loading screen while verifying credentials.
-  // ==========================================
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-100 font-sans">
@@ -124,10 +105,6 @@ export default function MasterListPage() {
     );
   }
 
-  // ==========================================
-  // HOW TO APPLY TO OTHER PAGES (Step 4):
-  // Halt execution if unauthenticated to prevent content flashing.
-  // ==========================================
   if (!isAuthenticated) {
     return null;
   }

@@ -2,11 +2,6 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-// ==========================================
-// HOW TO APPLY TO OTHER PAGES (Step 1):
-// Import your custom useAuthGuard hook at the top.
-// Ensure the import path matches your project structure (e.g. "@/hooks/useAuthGuard").
-// ==========================================
 import { useAuthGuard } from "@/app/hooks/useAuthGuard";
 
 interface SubjectRecord {
@@ -263,21 +258,11 @@ function AdminStudentDetailsContent() {
 }
 
 export default function AdminStudentDetailsPage() {
-  // ==========================================
-  // HOW TO APPLY TO OTHER PAGES (Step 2):
-  // Call useAuthGuard at the top of your component body.
-  // - requiredPrefix: "REG" ensures only valid registrar accounts can access this page.
-  // - redirectTo: Sends unauthorized users to the login screen.
-  // ==========================================
   const { isAuthenticated, loading: authLoading } = useAuthGuard({
     requiredPrefix: "REG",
     redirectTo: "/portal/log-in",
   });
 
-  // ==========================================
-  // HOW TO APPLY TO OTHER PAGES (Step 3):
-  // Render a clean loading screen while verifying credentials.
-  // ==========================================
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-100 font-sans">
@@ -289,10 +274,6 @@ export default function AdminStudentDetailsPage() {
     );
   }
 
-  // ==========================================
-  // HOW TO APPLY TO OTHER PAGES (Step 4):
-  // Halt execution if unauthenticated to prevent content flashing.
-  // ==========================================
   if (!isAuthenticated) {
     return null;
   }

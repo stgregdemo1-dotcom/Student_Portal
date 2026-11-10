@@ -2,16 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import RegistrarSearchInput from "@/app/-components/RegistrarSearchInput";
-// ==========================================
-// HOW TO APPLY TO OTHER PAGES (Step 1):
-// Import your custom useAuthGuard hook at the top.
-// Ensure the import path matches your project structure (e.g. "@/hooks/useAuthGuard").
-// ==========================================
 import { useAuthGuard } from "@/app/hooks/useAuthGuard";
 
 interface EnrollmentRequest {
   _id: string;
-  student_id?: string; 
+  student_id?: string;
   first_name?: string;
   last_name?: string;
   track?: string;
@@ -22,12 +17,6 @@ interface EnrollmentRequest {
 type SortableKeys = "student_id" | "studentName" | "track" | "status";
 
 export default function EnrollmentPage() {
-  // ==========================================
-  // HOW TO APPLY TO OTHER PAGES (Step 2):
-  // Call useAuthGuard at the top of your component body.
-  // - requiredPrefix: "REG" ensures only valid registrar accounts can access this page.
-  // - redirectTo: Sends unauthorized users to the login screen.
-  // ==========================================
   const { isAuthenticated, loading: authLoading } = useAuthGuard({
     requiredPrefix: "REG",
     redirectTo: "/portal/log-in",
@@ -38,25 +27,24 @@ export default function EnrollmentPage() {
   const [sortKey, setSortKey] = useState<SortableKeys>("student_id");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [searchQuery, setSearchQuery] = useState<string>(""); 
-  const itemsPerPage = 20; 
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const itemsPerPage = 20;
 
   const fetchEnrollments = async () => {
     setDataLoading(true);
     try {
-      // Fetch all students to ensure variants like "Pending - 2nd Sem" or "Pending - 2nd yr" are not filtered out by the backend
+
       const res = await fetch("/api/portal/registrar?table=students");
       if (res.ok) {
         const jsonResponse = await res.json();
         const rawData = Array.isArray(jsonResponse) ? jsonResponse : jsonResponse.data || [];
-        
-        // Filter records where status contains "Pending" (case-insensitive)
-        const pendingRecords = rawData.filter((record: EnrollmentRequest) => 
+
+        const pendingRecords = rawData.filter((record: EnrollmentRequest) =>
           String(record.status || "").toLowerCase().includes("pending")
         );
 
         setEnrollments(pendingRecords);
-        setCurrentPage(1); 
+        setCurrentPage(1);
       }
     } catch (err) {
       console.error("Error loading enrollment requests:", err);
@@ -77,10 +65,9 @@ export default function EnrollmentPage() {
       setSortKey(key);
       setSortDirection("asc");
     }
-    setCurrentPage(1); 
+    setCurrentPage(1);
   };
 
-  // Filter enrollments based on search query (First name or Last name)
   const filteredEnrollments = enrollments.filter((record) => {
     const fullName = `${record.first_name || ""} ${record.last_name || ""}`.trim().toLowerCase();
     return fullName.includes(searchQuery.toLowerCase());
@@ -131,10 +118,6 @@ export default function EnrollmentPage() {
     }
   };
 
-  // ==========================================
-  // HOW TO APPLY TO OTHER PAGES (Step 3):
-  // Render a clean loading screen while verifying credentials.
-  // ==========================================
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-100 font-sans">
@@ -146,10 +129,6 @@ export default function EnrollmentPage() {
     );
   }
 
-  // ==========================================
-  // HOW TO APPLY TO OTHER PAGES (Step 4):
-  // Halt execution if unauthenticated to prevent content flashing.
-  // ==========================================
   if (!isAuthenticated) {
     return null;
   }
@@ -157,15 +136,15 @@ export default function EnrollmentPage() {
   return (
     <div className="w-full">
       <div className="bg-white rounded-xl shadow overflow-hidden border border-gray-100">
-        
+
         <div>
           {/* Table Header Section with Title + Search on Left, Refresh on Right */}
           <div className="p-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
-            
+
             {/* Left side: Title and Search Input */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
               <h3 className="text-lg font-semibold text-gray-800 whitespace-nowrap">Enrollment Requests</h3>
-              
+
               <RegistrarSearchInput
                 value={searchQuery}
                 onChange={(value) => {
@@ -178,7 +157,7 @@ export default function EnrollmentPage() {
             </div>
 
             {/* Right side: Refresh Button */}
-            <button 
+            <button
               onClick={fetchEnrollments}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium whitespace-nowrap w-full sm:w-auto"
             >
@@ -191,26 +170,26 @@ export default function EnrollmentPage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th 
-                    onClick={() => handleSort("student_id")} 
+                  <th
+                    onClick={() => handleSort("student_id")}
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-100/70 transition-colors"
                   >
                     Student ID {renderSortIcon("student_id")}
                   </th>
-                  <th 
-                    onClick={() => handleSort("studentName")} 
+                  <th
+                    onClick={() => handleSort("studentName")}
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-100/70 transition-colors"
                   >
                     Student {renderSortIcon("studentName")}
                   </th>
-                  <th 
-                    onClick={() => handleSort("track")} 
+                  <th
+                    onClick={() => handleSort("track")}
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-100/70 transition-colors"
                   >
                     Strand / Track {renderSortIcon("track")}
                   </th>
-                  <th 
-                    onClick={() => handleSort("status")} 
+                  <th
+                    onClick={() => handleSort("status")}
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-100/70 transition-colors"
                   >
                     Status {renderSortIcon("status")}
@@ -240,8 +219,8 @@ export default function EnrollmentPage() {
                         {record.student_id || `ID-${record._id.slice(-6).toUpperCase()}`}
                       </td>
                       <td className="px-6 py-4 font-medium text-gray-900">
-                        {record.first_name || record.last_name 
-                          ? `${record.first_name || ""} ${record.last_name || ""}`.trim() 
+                        {record.first_name || record.last_name
+                          ? `${record.first_name || ""} ${record.last_name || ""}`.trim()
                           : "Unnamed Student"}
                       </td>
                       <td className="px-6 py-4 text-gray-500 font-medium">
@@ -253,8 +232,8 @@ export default function EnrollmentPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-blue-600 font-medium">
-                        <a 
-                          href={`/portal/registrar/enrollment/information?id=${record.student_id}`} 
+                        <a
+                          href={`/portal/registrar/enrollment/information?id=${record.student_id}`}
                           className="text-blue-600 hover:text-blue-800 hover:underline"
                         >
                           View
@@ -297,11 +276,10 @@ export default function EnrollmentPage() {
                   <button
                     key={pageNum}
                     onClick={() => handlePageChange(pageNum)}
-                    className={`w-8 h-8 text-xs font-semibold rounded-lg transition-colors ${
-                      currentPage === pageNum
+                    className={`w-8 h-8 text-xs font-semibold rounded-lg transition-colors ${currentPage === pageNum
                         ? "bg-blue-600 text-white border border-transparent"
                         : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-                    }`}
+                      }`}
                   >
                     {pageNum}
                   </button>

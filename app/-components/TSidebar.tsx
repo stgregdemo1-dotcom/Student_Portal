@@ -24,11 +24,9 @@ export default function Sidebar({ isOpen = false, onClose, isDashboardPage = fal
     e.preventDefault();
     
     if (typeof window !== "undefined") {
-      // Clear client storage caches and teacher-specific items
       localStorage.clear();
       sessionStorage.clear();
 
-      // Clear all active browser cookies by setting their expiration dates to the past
       const cookies = document.cookie.split(";");
       for (let i = 0; i < cookies.length; i++) {
         const cookie = cookies[i];
@@ -38,10 +36,8 @@ export default function Sidebar({ isOpen = false, onClose, isDashboardPage = fal
       }
     }
 
-    // Close mobile sidebar if open
     if (onClose) onClose();
 
-    // Navigate to the login page
     window.location.href = "/portal/log-in";
   };
 

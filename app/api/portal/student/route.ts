@@ -127,7 +127,6 @@ export async function GET(request: NextRequest) {
         (cls: any) => cls.evaluation && cls.evaluation.toLowerCase() !== "approved"
       ) || studentRecord.class[studentRecord.class.length - 1];
 
-      // Fetch master subjects for name mapping
       const subjectIds = (unapprovedClass?.subjects || []).map((s: any) => s.subject_id).filter(Boolean);
       const masterSubjects = await Subject.find({ subject_id: { $in: subjectIds } }).lean();
       const masterSubjectMap = new Map();
@@ -340,7 +339,6 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ success: false, message: "Student record or profile not found." }, { status: 404 });
     }
 
-    // Update student status to reflect pending 2nd semester enrollment
     studentProfile.status = "Pending - 2nd Sem";
     await studentProfile.save();
 

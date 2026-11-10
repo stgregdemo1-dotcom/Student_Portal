@@ -2,11 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-// ==========================================
-// HOW TO APPLY TO OTHER PAGES (Step 1):
-// Import your custom useAuthGuard hook at the top.
-// Ensure the import path matches your project structure (e.g. "@/app/hooks/useAuthGuard" or "@/hooks/useAuthGuard").
-// ==========================================
 import { useAuthGuard } from '@/app/hooks/useAuthGuard';
 
 interface TeacherEvent {
@@ -108,12 +103,6 @@ function saveTeacherEventSnapshot(storageKey: string, snapshot: TeacherEventNoti
 }
 
 export default function Dashboard() {
-  // ==========================================
-  // HOW TO APPLY TO OTHER PAGES (Step 2):
-  // Call useAuthGuard at the top of your component body.
-  // - requiredPrefix: "TCH" ensures only valid teacher accounts can access this dashboard.
-  // - redirectTo: Sends unauthorized users to the login page.
-  // ==========================================
   const { username: teacherId, isAuthenticated, loading: authLoading } = useAuthGuard({
     requiredPrefix: "TCH",
     redirectTo: "/portal/log-in",
@@ -330,10 +319,6 @@ export default function Dashboard() {
     setSelectedCalendarDate(getLocalDateKey(nextMonth));
   };
 
-  // ==========================================
-  // HOW TO APPLY TO OTHER PAGES (Step 3):
-  // Display a secure loading state while verifying permissions.
-  // ==========================================
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-100 font-sans">
@@ -345,10 +330,6 @@ export default function Dashboard() {
     );
   }
 
-  // ==========================================
-  // HOW TO APPLY TO OTHER PAGES (Step 4):
-  // Halt execution if unauthenticated to prevent content flashing.
-  // ==========================================
   if (!isAuthenticated) {
     return null;
   }

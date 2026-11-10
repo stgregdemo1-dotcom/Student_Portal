@@ -12,7 +12,6 @@ export default function Header({ onToggleSidebar, title = "Student Portal" }: He
   const [userInitial, setUserInitial] = useState<string>("U");
 
   useEffect(() => {
-    // Helper function to get cookie value by name
     const getCookie = (name: string) => {
       const value = `; ${document.cookie}`;
       const parts = value.split(`; ${name}=`);
@@ -26,8 +25,7 @@ export default function Header({ onToggleSidebar, title = "Student Portal" }: He
       setUserInitial(username.charAt(0).toUpperCase());
 
       if (upperUsername.startsWith("ST")) {
-        // Fetch the student's first and last name from your API route
-        fetch("/api/portal/student?getStudentName=true") // Update path if your API route is nested differently (e.g., /api/student)
+        fetch("/api/portal/student?getStudentName=true") 
           .then((res) => res.json())
           .then((data) => {
             if (data && data.success && data.firstName && data.lastName) {

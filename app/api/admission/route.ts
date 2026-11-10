@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
       }
 
       const safeFilename = file.filename || "downloaded-file";
-      
+
       return new NextResponse(new Uint8Array(rawBuffer), {
         headers: {
           "Content-Type": file.contentType || "application/octet-stream",
@@ -159,9 +159,6 @@ export async function POST(request: NextRequest) {
       if (value) fields[key] = value;
     }
 
-    // ==========================================
-    // Duplicate Application Check
-    // ==========================================
     const firstNameVal = fields.firstName?.trim();
     const middleNameVal = fields.middleName?.trim();
     const lastNameVal = fields.lastName?.trim();
@@ -192,14 +189,13 @@ export async function POST(request: NextRequest) {
 
       if (existingApplication) {
         return NextResponse.json(
-          { 
-            message: `An existing application for ${firstNameVal} ${lastNameVal} with this date of birth already exists (Status: ${existingApplication.status}).` 
+          {
+            message: `An existing application for ${firstNameVal} ${lastNameVal} with this date of birth already exists (Status: ${existingApplication.status}).`
           },
           { status: 400 }
         );
       }
     }
-    // ==========================================
 
     const processedAttachments: {
       filename: string;

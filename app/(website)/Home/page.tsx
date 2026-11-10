@@ -40,11 +40,10 @@ export default function Home() {
   const [selectedStatement, setSelectedStatement] = useState<"Mission" | "Vision" | keyof typeof programs | null>(null);
   const [admissionButtonEnabled, setAdmissionButtonEnabled] = useState<boolean>(false);
 
-  // Fetch configuration on mount to determine if admission button should display
   useEffect(() => {
     async function fetchConfig() {
       try {
-        const response = await fetch("/api/portal/admin?table=configuration"); // Replace with your actual route path (e.g., /api/settings)
+        const response = await fetch("/api/portal/admin?table=configuration"); 
         if (response.ok) {
           const configData = await response.json();
           setAdmissionButtonEnabled(Boolean(configData.admission_button));

@@ -1,44 +1,38 @@
-// app/api/login/route.ts
 import { NextResponse } from "next/server";
-import mongoose         from "mongoose";
-import { Audit }        from "@/models/Schema"; 
+import mongoose from "mongoose";
+import { Audit } from "@/models/Schema";
 
-// 1. Define a schema that references your existing "credentials" collection
 const UserSchema = new mongoose.Schema(
   {
     username: { type: String, required: true },
     password: { type: String, required: true },
-    user_type: { type: String }, // Included to check archival/locking status
+    user_type: { type: String },
     privacyNoticeAcknowledged: { type: Boolean },
-    try: { type: Number, default: 0 },          // Track failed login attempts
-    locked: { type: Boolean, default: false },   // Account lock flag
-    lockeduntil: { type: Date },                 // Lock expiration timestamp
+    try: { type: Number, default: 0 },
+    locked: { type: Boolean, default: false },
+    lockeduntil: { type: Date },
   },
-  { collection: "credentials" } // Hard-binds to your collection name
+  { collection: "credentials" }
 );
 
-// Prevent Next.js from redefining the model during hot-reloads
 const User = mongoose.models.User || mongoose.model("User", UserSchema);
 
 
-// 2. Establish your Database Connection
 const connectDB = async () => {
-  if (mongoose.connection.readyState >= 1) return;  
-  const MONGODB_URI = process.env.MONGODB_URI;  
+  if (mongoose.connection.readyState >= 1) return;
+  const MONGODB_URI = process.env.MONGODB_URI;
   if (!MONGODB_URI) {
     throw new Error("Please define the MONGODB_URI environment variable inside .env.local");
   }
   await mongoose.connect(MONGODB_URI);
 };
 
-// 3. Handle the incoming POST Request
 export async function POST(request: Request) {
   try {
     await connectDB();
-    
+
     const { username, password, user_type, privacyAcknowledged } = await request.json();
 
-    // Query MongoDB by username first
     const user = await User.findOne({ username });
 
     if (!user) {
@@ -48,7 +42,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // --- CHECK USER_TYPE FIRST BEFORE ANYTHING ELSE ---
     if (user.user_type === "archive") {
       return NextResponse.json(
         { message: "Access denied. This account has been archived and is currently locked." },
@@ -56,7 +49,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // --- CHECK IF ACCOUNT IS CURRENTLY LOCKED OUT ---
     const now = new Date();
     if (user.locked && user.lockeduntil && now < new Date(user.lockeduntil)) {
       const minutesLeft = Math.ceil((new Date(user.lockeduntil).getTime() - now.getTime()) / (60 * 1000));
@@ -65,22 +57,18 @@ export async function POST(request: Request) {
         { status: 403 }
       );
     } else if (user.locked && user.lockeduntil && now >= new Date(user.lockeduntil)) {
-      // Lockout period has expired; reset lock and attempts
       user.locked = false;
       user.try = 0;
       user.lockeduntil = undefined;
       await user.save();
     }
 
-    // Verify password next
     if (user.password !== password) {
-      // Increment failed attempts
       user.try = (user.try || 0) + 1;
 
-      // Check if attempts reach or exceed 5
       if (user.try >= 5) {
         user.locked = true;
-        user.lockeduntil = new Date(Date.now() + 15 * 60 * 1000); // Current time + 15 minutes
+        user.lockeduntil = new Date(Date.now() + 15 * 60 * 1000);
       }
 
       await user.save();
@@ -91,7 +79,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // --- SUCCESSFUL PASSWORD: RESET FAILED ATTEMPTS ---
     if (user.try > 0 || user.locked) {
       user.try = 0;
       user.locked = false;
@@ -99,8 +86,7 @@ export async function POST(request: Request) {
       await user.save();
     }
 
-    // Determine user classification based on your ID naming conventions
-    let detectedUserType = "student"; 
+    let detectedUserType = "student";
     const upperUsername = username.toUpperCase();
 
     if (upperUsername.startsWith("ADM")) {
@@ -111,12 +97,11 @@ export async function POST(request: Request) {
       detectedUserType = "registrar";
     }
 
-    // --- ROLE VALIDATION CRITERIA CHECK ---
-    const isStaffRole = 
-      detectedUserType === "admin" || 
-      detectedUserType === "teacher" || 
+    const isStaffRole =
+      detectedUserType === "admin" ||
+      detectedUserType === "teacher" ||
       detectedUserType === "registrar";
-    
+
     if (user_type === "student" && isStaffRole) {
       return NextResponse.json(
         { message: `Access denied. This ID belongs to an administrator/faculty account.` },
@@ -153,7 +138,7 @@ export async function POST(request: Request) {
       user.privacyNoticeAcknowledged = true;
       await user.save();
     }
- 
+
     const logEntry = new Audit({
       username: username,
       user_type: detectedUserType,

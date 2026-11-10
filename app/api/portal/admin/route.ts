@@ -170,7 +170,6 @@ export async function GET(request: NextRequest) {
           submit_final_grade: false,
         });
       } else {
-        // Ensure strictly boolean outputs for toggle fields
         config = {
           ...config,
           admission_button: Boolean(config.admission_button),
@@ -247,7 +246,6 @@ export async function POST(request: NextRequest) {
       if (action === "set") {
         const isBooleanField = field === "admission_button" || field === "submit_final_grade";
         
-        // Coerce strictly to boolean for toggle fields, assign scalar string values ("1" or "2") otherwise
         const targetValue = isBooleanField ? Boolean(value) : String(value);
         
         updateQuery = { $set: { [field]: targetValue } };
@@ -265,7 +263,6 @@ export async function POST(request: NextRequest) {
         { new: true, upsert: true }
       );
 
-      // Audit logging
       const currentOperator = getAuditUser(request);
       const activityDescription = action === "set"
         ? `Set configuration field [${field}] to '${value}'`

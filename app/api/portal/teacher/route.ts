@@ -198,7 +198,6 @@ export async function GET(request: NextRequest) {
             }
           }
 
-          // Fetch student name details from the separate Student collection
           const studentInfo = await Student.findOne({ student_id: doc.student_id }).lean();
 
           return {
@@ -206,8 +205,8 @@ export async function GET(request: NextRequest) {
             first_name: (studentInfo as any)?.first_name || "",
             last_name: (studentInfo as any)?.last_name || "",
             grades: [
-              parseFloat(foundSubject?.grade_1) || 0, // 1st Grading
-              parseFloat(foundSubject?.grade_2) || 0, // 2nd Grading
+              parseFloat(foundSubject?.grade_1) || 0, 
+              parseFloat(foundSubject?.grade_2) || 0, 
             ],
             remarks: foundSubject?.remarks || ""
           };

@@ -1,11 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-// ==========================================
-// HOW TO APPLY TO OTHER PAGES (Step 1):
-// Import your custom useAuthGuard hook at the top.
-// Ensure the import path matches your project structure (e.g. "@/hooks/useAuthGuard").
-// ==========================================
 import { useAuthGuard } from "@/app/hooks/useAuthGuard";
 
 interface SubjectSchedule {
@@ -59,13 +54,6 @@ const getTimeGridLine = (timeStr: string): number => {
 };
 
 export default function StudentSchedulePage() {
-  // ==========================================
-  // HOW TO APPLY TO OTHER PAGES (Step 2):
-  // Call useAuthGuard at the top of your component body.
-  // - requiredPrefix: "ST" ensures only valid student IDs can access this schedule.
-  // - redirectTo: Sends unauthorized users to the login screen.
-  // - Aliased username as studentId to preserve your existing code logic.
-  // ==========================================
   const { username: studentId, isAuthenticated, loading: authLoading } = useAuthGuard({
     requiredPrefix: "ST",
     redirectTo: "/portal/log-in",
@@ -115,10 +103,6 @@ export default function StudentSchedulePage() {
     return String(subject.semester).trim() === dbTargetCode;
   });
 
-  // ==========================================
-  // HOW TO APPLY TO OTHER PAGES (Step 3):
-  // Render a clean loading screen while verifying credentials.
-  // ==========================================
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-100 font-sans">
@@ -130,10 +114,6 @@ export default function StudentSchedulePage() {
     );
   }
 
-  // ==========================================
-  // HOW TO APPLY TO OTHER PAGES (Step 4):
-  // Halt execution if unauthenticated to prevent content flashing.
-  // ==========================================
   if (!isAuthenticated) {
     return null;
   }

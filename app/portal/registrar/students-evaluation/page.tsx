@@ -2,11 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import RegistrarSearchInput from "@/app/-components/RegistrarSearchInput";
-// ==========================================
-// HOW TO APPLY TO OTHER PAGES (Step 1):
-// Import your custom useAuthGuard hook at the top.
-// Ensure the import path matches your project structure (e.g. "@/hooks/useAuthGuard").
-// ==========================================
 import { useAuthGuard } from "@/app/hooks/useAuthGuard";
 
 interface SubjectReference {
@@ -28,12 +23,6 @@ interface StudentSectionRecord {
 }
 
 export default function EnrollmentPage() {
-  // ==========================================
-  // HOW TO APPLY TO OTHER PAGES (Step 2):
-  // Call useAuthGuard at the top of your component body.
-  // - requiredPrefix: "REG" ensures only valid registrar accounts can access this page.
-  // - redirectTo: Sends unauthorized users to the login screen.
-  // ==========================================
   const { isAuthenticated, loading: authLoading } = useAuthGuard({
     requiredPrefix: "REG",
     redirectTo: "/portal/log-in",
@@ -43,7 +32,6 @@ export default function EnrollmentPage() {
   const [dataLoading, setDataLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Filter States
   const [selectedYear, setSelectedYear] = useState<string>("All");
   const [selectedSemester, setSelectedSemester] = useState<string>("All");
   const [selectedSection, setSelectedSection] = useState<string>("All");
@@ -83,12 +71,10 @@ export default function EnrollmentPage() {
     fetchEvaluationRequests();
   }, [isAuthenticated, fetchEvaluationRequests]);
 
-  // Extract unique options for filter dropdowns from data
   const uniqueYears = Array.from(new Set(requests.map((r) => r.year))).filter(Boolean).sort();
   const uniqueSemesters = Array.from(new Set(requests.map((r) => r.semester))).filter(Boolean).sort();
   const uniqueSections = Array.from(new Set(requests.map((r) => r.section))).filter(Boolean).sort();
 
-  // Filter logic based on selected dropdowns
   const filteredRequests = requests.filter((record) => {
     const matchesYear = selectedYear === "All" || record.year === selectedYear;
     const matchesSemester = selectedSemester === "All" || record.semester === selectedSemester;
@@ -118,10 +104,6 @@ export default function EnrollmentPage() {
     }
   };
 
-  // ==========================================
-  // HOW TO APPLY TO OTHER PAGES (Step 3):
-  // Render a clean loading screen while verifying credentials.
-  // ==========================================
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-100 font-sans">
@@ -133,10 +115,6 @@ export default function EnrollmentPage() {
     );
   }
 
-  // ==========================================
-  // HOW TO APPLY TO OTHER PAGES (Step 4):
-  // Halt execution if unauthenticated to prevent content flashing.
-  // ==========================================
   if (!isAuthenticated) {
     return null;
   }

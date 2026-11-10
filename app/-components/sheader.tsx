@@ -25,7 +25,6 @@ export default function Header() {
     fetchHeaderProfile();
   }, []);
 
-  // 🚀 Fallback variables while loading or if data fetch fails
   const fullName = profile 
     ? `${profile.first_name} ${profile.last_name}` 
     : "Loading...";

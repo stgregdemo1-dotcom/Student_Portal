@@ -11,7 +11,6 @@ export default function THeader({ onToggleSidebar }: HeaderProps) {
   const [userInitial, setUserInitial] = useState<string>("T");
 
   useEffect(() => {
-    // Helper function to get cookie value by name
     const getCookie = (name: string) => {
       const value = `; ${document.cookie}`;
       const parts = value.split(`; ${name}=`);
@@ -25,7 +24,6 @@ export default function THeader({ onToggleSidebar }: HeaderProps) {
       setUserInitial(username.charAt(0).toUpperCase());
 
       if (upperUsername.startsWith("ST")) {
-        // Fetch student name if cookie belongs to a student
         fetch("/api/portal/student?getStudentName=true")
           .then((res) => res.json())
           .then((data) => {

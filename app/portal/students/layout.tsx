@@ -8,7 +8,6 @@ export const metadata: Metadata = {
     "centralized digital hub where learners manage their academic lives",
 };
 
-// 🚀 Explicitly configure viewport settings for mobile responsiveness
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,

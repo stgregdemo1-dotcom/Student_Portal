@@ -151,7 +151,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// 🚀 NEW: Added PUT handler to update password in credentials collection without modifying existing POST code
 export async function PUT(request: NextRequest) {
   try {
     await connectDB();

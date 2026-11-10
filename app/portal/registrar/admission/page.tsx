@@ -3,11 +3,6 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import RegistrarSearchInput from "@/app/-components/RegistrarSearchInput";
-// ==========================================
-// HOW TO APPLY TO OTHER PAGES (Step 1):
-// Import your custom useAuthGuard hook at the top.
-// Ensure the import path matches your project structure (e.g. "@/hooks/useAuthGuard").
-// ==========================================
 import { useAuthGuard } from "@/app/hooks/useAuthGuard";
 
 interface AdmissionRequest {
@@ -25,7 +20,6 @@ type SortableKeys = "applicant_id" | "studentName" | "track" | "status";
 function EnrollmentContent() {
   const searchParams = useSearchParams();
 
-  // Dynamically set the default status filter based on the URL query parameter
   const [statusFilter, setStatusFilter] = useState<string>(() => {
     const statusParam = searchParams.get("status");
     if (statusParam) {
@@ -40,7 +34,7 @@ function EnrollmentContent() {
         return "Rejected";
       }
     }
-    return "All"; // Default fallback if no status parameter is in the URL
+    return "All";
   });
 
   const [admissions, setAdmissions] = useState<AdmissionRequest[]>([]);
@@ -354,23 +348,12 @@ function EnrollmentContent() {
   );
 }
 
-// Wrapped in a Suspense boundary as required by Next.js App Router for components using useSearchParams
 export default function EnrollmentPage() {
-  // ==========================================
-  // HOW TO APPLY TO OTHER PAGES (Step 2):
-  // Call useAuthGuard at the top of your component body.
-  // - requiredPrefix: "REG" ensures only valid registrar accounts can access this page.
-  // - redirectTo: Sends unauthorized users to the login screen.
-  // ==========================================
   const { isAuthenticated, loading: authLoading } = useAuthGuard({
     requiredPrefix: "REG",
     redirectTo: "/portal/log-in",
   });
 
-  // ==========================================
-  // HOW TO APPLY TO OTHER PAGES (Step 3):
-  // Render a clean loading screen while verifying credentials.
-  // ==========================================
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-100 font-sans">
@@ -382,10 +365,6 @@ export default function EnrollmentPage() {
     );
   }
 
-  // ==========================================
-  // HOW TO APPLY TO OTHER PAGES (Step 4):
-  // Halt execution if unauthenticated to prevent content flashing.
-  // ==========================================
   if (!isAuthenticated) {
     return null;
   }

@@ -1,11 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-// ==========================================
-// HOW TO APPLY TO OTHER PAGES (Step 1):
-// Import your custom useAuthGuard hook at the top.
-// Ensure the import path matches your project structure (e.g. "@/hooks/useAuthGuard").
-// ==========================================
 import { useAuthGuard } from "@/app/hooks/useAuthGuard";
 
 interface SubjectSchedule {
@@ -88,13 +83,6 @@ function getTimeInMinutes(value: string): number | null {
 }
 
 export default function TeacherSchedulePage() {
-  // ==========================================
-  // HOW TO APPLY TO OTHER PAGES (Step 2):
-  // Call useAuthGuard at the top of your component body.
-  // - requiredPrefix: "TCH" ensures only valid teacher accounts can access this schedule.
-  // - redirectTo: Sends unauthorized users to the login page.
-  // - Aliased username as teacherId to preserve your existing code logic.
-  // ==========================================
   const { username: teacherId, isAuthenticated, loading: authLoading } = useAuthGuard({
     requiredPrefix: "TCH",
     redirectTo: "/portal/log-in",
@@ -228,10 +216,6 @@ export default function TeacherSchedulePage() {
   const overlappingScheduleCount = [...schedulePlacements.values()]
     .filter((placement) => placement.overlaps).length;
 
-  // ==========================================
-  // HOW TO APPLY TO OTHER PAGES (Step 3):
-  // Render a clean loading screen while verifying credentials.
-  // ==========================================
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-100 font-sans">
@@ -243,10 +227,6 @@ export default function TeacherSchedulePage() {
     );
   }
 
-  // ==========================================
-  // HOW TO APPLY TO OTHER PAGES (Step 4):
-  // Halt execution if unauthenticated to prevent content flashing.
-  // ==========================================
   if (!isAuthenticated) {
     return null;
   }

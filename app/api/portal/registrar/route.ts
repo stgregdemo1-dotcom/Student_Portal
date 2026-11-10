@@ -120,13 +120,11 @@ export async function GET(request: NextRequest) {
     const { model: TargetModel, idKey } = ALLOWED_TABLES[tableName];
     const queryConditions = buildQueryConditions(searchParams);
 
-    // Handle Credentials Table GET Request
     if (tableName === "credentials") {
       const credentialsList = await TargetModel.find({}).lean();
       return NextResponse.json({ success: true, data: credentialsList }, { status: 200 });
     }
 
-    // Handle Status Breakdown Request for admissions and students
     if (getStatusBreakdown && (tableName === "admissions_applications" || tableName === "students")) {
       const breakdown = await TargetModel.aggregate([
         {
@@ -147,7 +145,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: true, data: breakdown }, { status: 200 });
     }
 
-    // Handle Failed Remarks Breakdown in student_section filtered by configuration current_year
     if (tableName === "student_section" && getFailedRemarksBreakdown) {
       const currentYearManila = new Intl.DateTimeFormat("en-US", {
         timeZone: "Asia/Manila",

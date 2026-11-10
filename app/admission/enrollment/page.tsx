@@ -95,7 +95,6 @@ export default function EnrollmentForm() {
   const [relationship, setRelationship] = useState("");
   const [contactNumber, setContactNumber] = useState("");
 
-  // Password validation checks
   const hasMinLength = password.length >= 8;
   const hasLowerAndUpper = /(?=.*[a-z])(?=.*[A-Z])/.test(password);
   const hasAlphanumeric = /(?=.*[a-zA-Z])(?=.*\d)/.test(password);

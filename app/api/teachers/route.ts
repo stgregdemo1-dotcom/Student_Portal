@@ -108,7 +108,6 @@ export async function GET(request: NextRequest) {
               if (sSub.subject_id === targetSubjectId) {
                 totalStudents++;
 
-                // Check remarks field for passed/failed status
                 const remark = (sSub.remarks || "").trim().toLowerCase();
                 if (remark === "passed") {
                   passedCount++;
@@ -116,7 +115,6 @@ export async function GET(request: NextRequest) {
                   failedCount++;
                 }
 
-                // Calculate average grade for top student evaluation
                 const grades = [sSub.grade_1, sSub.grade_2, sSub.grade_3, sSub.grade_4]
                   .map(g => parseFloat(g || ""))
                   .filter(g => !isNaN(g));

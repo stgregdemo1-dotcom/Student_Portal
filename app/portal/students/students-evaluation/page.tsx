@@ -1,11 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-// ==========================================
-// HOW TO APPLY TO OTHER PAGES (Step 1):
-// Import your custom useAuthGuard hook at the top.
-// Ensure the import path matches your project structure (e.g. "@/hooks/useAuthGuard").
-// ==========================================
 import { useAuthGuard } from "@/app/hooks/useAuthGuard";
 
 interface SubjectEvaluation {
@@ -25,12 +20,6 @@ interface EvaluationData {
 }
 
 export default function Page() {
-  // ==========================================
-  // HOW TO APPLY TO OTHER PAGES (Step 2):
-  // Call useAuthGuard at the top of your component body.
-  // - requiredPrefix: "ST" ensures only valid student accounts can access evaluation status.
-  // - redirectTo: Sends unauthorized users to the login screen.
-  // ==========================================
   const { isAuthenticated, loading: authLoading } = useAuthGuard({
     requiredPrefix: "ST",
     redirectTo: "/portal/log-in",
@@ -80,7 +69,6 @@ export default function Page() {
       const result = await res.json();
       if (result.success) {
         alert("Successfully submitted enrollment for 2nd Semester!");
-        // Update both to reflect pending state in UI
         setEvaluation(prev => prev ? { ...prev, status: "Pending - 2nd Sem", studentStatus: "Pending - 2nd Sem" } : null);
       } else {
         alert(result.message || "Enrollment failed.");
@@ -110,10 +98,6 @@ export default function Page() {
   const isStudentEnrolled = evaluation?.studentStatus === "Enrolled";
   const canEnroll = Boolean((evaluation?.allPassedAndCompleted || evaluation?.status === "Approved") && isStudentEnrolled);
 
-  // ==========================================
-  // HOW TO APPLY TO OTHER PAGES (Step 3):
-  // Render a clean loading screen while verifying credentials.
-  // ==========================================
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-100 font-sans">
@@ -125,10 +109,6 @@ export default function Page() {
     );
   }
 
-  // ==========================================
-  // HOW TO APPLY TO OTHER PAGES (Step 4):
-  // Halt execution if unauthenticated to prevent content flashing.
-  // ==========================================
   if (!isAuthenticated) {
     return null;
   }

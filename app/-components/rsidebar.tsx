@@ -24,11 +24,9 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
 
   const handleLogout = () => {
     if (typeof window !== 'undefined') {
-      // Clear client storage caches and username records
       localStorage.clear();
       sessionStorage.clear();
 
-      // Clear all active browser cookies by expiring them
       const cookies = document.cookie.split(";");
       for (let i = 0; i < cookies.length; i++) {
         const cookie = cookies[i];

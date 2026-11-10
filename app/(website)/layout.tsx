@@ -9,7 +9,6 @@ export const metadata: Metadata = {
   description: "Science and Technology",
 };
 
-// 🚀 Explicitly configure viewport settings for mobile responsiveness
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,

@@ -1,10 +1,5 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-// ==========================================
-// HOW TO APPLY TO OTHER PAGES (Step 1):
-// Import your custom useAuthGuard hook at the top.
-// Ensure the import path matches your project structure (e.g. "@/hooks/useAuthGuard").
-// ==========================================
 import { useAuthGuard } from '@/app/hooks/useAuthGuard';
 
 interface Schedule {
@@ -32,14 +27,6 @@ function getAutomaticRemark(grades: Array<number | string>): string {
 }
 
 const GradingSheet = () => {
-  // ==========================================
-  // HOW TO APPLY TO OTHER PAGES (Step 2):
-  // Call useAuthGuard at the top of your component body.
-  // - requiredPrefix: "TCH" restricts access strictly to teacher accounts. 
-  //   (Change to "ST" for student pages, "ADM" for admin, etc.)
-  // - redirectTo: Specifies where unauthorized users get sent automatically.
-  // - We alias username as teacherId to preserve your existing code variable names.
-  // ==========================================
   const { username: teacherId, isAuthenticated, loading: authLoading } = useAuthGuard({
     requiredPrefix: "TCH",
     redirectTo: "/portal/log-in",
@@ -56,7 +43,6 @@ const GradingSheet = () => {
   const [isConfirmOpen, setIsConfirmOpen] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
 
-  // Fetch configuration settings (Only runs after authentication verification succeeds)
   useEffect(() => {
     if (!isAuthenticated) return;
 
@@ -266,10 +252,6 @@ const GradingSheet = () => {
   const isSubjectActive = activeClass?.status === "Active";
   const isEvaluating = activeClass?.status === "Evaluating";
 
-  // ==========================================
-  // HOW TO APPLY TO OTHER PAGES (Step 3):
-  // Render a clean loading screen while verifying credentials.
-  // ==========================================
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100 font-sans">
@@ -281,10 +263,6 @@ const GradingSheet = () => {
     );
   }
 
-  // ==========================================
-  // HOW TO APPLY TO OTHER PAGES (Step 4):
-  // Prevent flashing or unauthorized rendering if validation fails.
-  // ==========================================
   if (!isAuthenticated) {
     return null;
   }
