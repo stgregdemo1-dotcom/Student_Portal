@@ -36,6 +36,24 @@ export default function THeader({ onToggleSidebar }: HeaderProps) {
           .catch(() => {
             setWelcomeText("Welcome, Student");
           });
+      } else if (upperUsername.startsWith("TCH")) {
+        fetch(`/api/portal/teacher?action=profile&id=${username}`)
+          .then((res) => res.json())
+          .then((data) => {
+            if (data && data.success && data.data) {
+              const teacher = data.data;
+              const prefix = teacher.prefix ? `${teacher.prefix} ` : "";
+              const firstName = teacher.first_name || "";
+              const lastName = teacher.last_name || "";
+              
+              setWelcomeText(`Welcome, ${prefix}${firstName} ${lastName}`.trim());
+            } else {
+              setWelcomeText("Welcome, Teacher");
+            }
+          })
+          .catch(() => {
+            setWelcomeText("Welcome, Teacher");
+          });
       } else {
         let role = "User";
 
@@ -43,8 +61,6 @@ export default function THeader({ onToggleSidebar }: HeaderProps) {
           role = "Admin";
         } else if (upperUsername.startsWith("REG")) {
           role = "Registrar";
-        } else if (upperUsername.startsWith("TCH")) {
-          role = "Teacher";
         }
 
         setWelcomeText(`Welcome, ${role}`);

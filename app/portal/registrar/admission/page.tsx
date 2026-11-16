@@ -20,7 +20,7 @@ type SortableKeys = "applicant_id" | "studentName" | "track" | "status";
 function EnrollmentContent() {
   const searchParams = useSearchParams();
 
-  const [statusFilter, setStatusFilter] = useState<string>(() => {
+  const getDefaultStatus = () => {
     const statusParam = searchParams.get("status");
     if (statusParam) {
       const lowerStatus = statusParam.toLowerCase();
@@ -34,9 +34,10 @@ function EnrollmentContent() {
         return "Rejected";
       }
     }
-    return "All";
-  });
+    return "Pending";
+  };
 
+  const [statusFilter, setStatusFilter] = useState<string>(getDefaultStatus);
   const [admissions, setAdmissions] = useState<AdmissionRequest[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -81,6 +82,12 @@ function EnrollmentContent() {
     fetchAdmissions();
   }, []);
 
+  const handleRefresh = () => {
+    setStatusFilter(getDefaultStatus());
+    setSearchTerm("");
+    fetchAdmissions();
+  };
+
   const handleStatusFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setStatusFilter(e.target.value);
     setCurrentPage(1);
@@ -94,6 +101,33 @@ function EnrollmentContent() {
       setSortDirection("asc");
     }
     setCurrentPage(1);
+  };
+
+  const handleDelete = async (applicantId?: string, mongoId?: string) => {
+    const identifier = applicantId || mongoId;
+    if (!identifier) return;
+
+    if (!window.confirm("Are you sure you want to delete this rejected admission record? This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/portal/registrar?table=admissions_applications&id=${identifier}`, {
+        method: "DELETE",
+      });
+      const jsonResponse = await res.json();
+
+      if (!res.ok) {
+        throw new Error(jsonResponse.message || "Failed to delete admission record.");
+      }
+
+      setAdmissions((prev) =>
+        prev.filter((item) => item.applicant_id !== identifier && item._id !== mongoId)
+      );
+    } catch (err) {
+      console.error("Error deleting admission request:", err);
+      alert(err instanceof Error ? err.message : "Unable to delete admission record. Please try again.");
+    }
   };
 
   const filteredAdmissions = admissions.filter((record) => {
@@ -197,7 +231,7 @@ function EnrollmentContent() {
               </select>
 
               <button
-                onClick={fetchAdmissions}
+                onClick={handleRefresh}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
               >
                 Refresh
@@ -284,6 +318,15 @@ function EnrollmentContent() {
                         >
                           View Profile
                         </a>
+
+                        {record.status?.toLowerCase() === "rejected" && (
+                          <button
+                            onClick={() => handleDelete(record.applicant_id, record._id)}
+                            className="text-red-600 hover:text-red-800 hover:underline font-medium text-sm transition-colors"
+                          >
+                            Delete
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))

@@ -173,12 +173,12 @@ export default function Dashboard() {
         const stored = readTeacherEventSnapshot(storageKey);
         const snapshot = stored
           ? {
-              known: [...new Set([...stored.known, ...currentKeys])],
-              unread: [...new Set([
-                ...stored.unread,
-                ...currentKeys.filter((key) => !stored.known.includes(key)),
-              ])],
-            }
+            known: [...new Set([...stored.known, ...currentKeys])],
+            unread: [...new Set([
+              ...stored.unread,
+              ...currentKeys.filter((key) => !stored.known.includes(key)),
+            ])],
+          }
           : { known: currentKeys, unread: [] };
 
         saveTeacherEventSnapshot(storageKey, snapshot);
@@ -336,483 +336,478 @@ export default function Dashboard() {
 
   return (
     <>
-    <div className="flex w-full flex-col gap-3 overflow-visible">
-      <div className="portal-dashboard-heading shrink-0 px-1 py-1">
-        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-700">Teacher Portal</p>
-        <h2 className="mt-0.5 text-xl font-bold tracking-tight text-[#06264A] md:text-2xl">Dashboard</h2>
-        <p className="mt-0.5 hidden text-xs text-slate-500 sm:block">Welcome back, {teacherId}! Here is what is happening today.</p>
-      </div>
-
-      <div className="flex min-h-0 flex-col gap-3 overflow-visible">
-      <div className="flex shrink-0 gap-1 rounded-xl border border-emerald-200 bg-emerald-50 p-1 shadow-sm">
-        {(["calendar", "events"] as const).map((view) => (
-          <button
-            key={view}
-            type="button"
-            onClick={() => {
-              setCalendarView(view);
-              if (view === "events") setEventListDate(null);
-            }}
-            aria-pressed={calendarView === view}
-            className={`flex min-h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-700 ${
-              calendarView === view
-                ? "border-emerald-700 bg-[#0B3763] text-white shadow-sm"
-                : "border-transparent text-[#0B3763] hover:bg-emerald-100"
-            }`}
-          >
-            <i className={`fa-solid ${view === "calendar" ? "fa-calendar" : "fa-calendar-days"}`} aria-hidden="true" />
-            {view === "calendar" ? "Calendar" : "Events"}
-            {view === "events" && unreadEventKeys.length > 0 && (
-              <span
-                aria-label={`${unreadEventKeys.length} new event${unreadEventKeys.length === 1 ? "" : "s"}`}
-                className="flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1.5 text-[10px] font-extrabold text-[#0B3763] shadow-sm"
-              >
-                {unreadEventKeys.length}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
-
-      <section aria-label="School events calendar" className={`${calendarView === "calendar" ? "flex" : "hidden"} min-h-[420px] flex-col overflow-visible rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4 md:h-[440px] md:min-h-0 md:shrink-0 md:overflow-hidden`}>
-        <div className="mb-2 flex shrink-0 items-center justify-between gap-2">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-700">School Calendar</p>
-            <h3 className="text-base font-bold text-slate-900 sm:text-lg">Events</h3>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                const today = new Date();
-                setCalendarMonth(new Date(today.getFullYear(), today.getMonth(), 1));
-                setSelectedCalendarDate(getLocalDateKey(today));
-              }}
-              className="cursor-pointer rounded-md border border-emerald-200 px-2 py-1 text-xs font-semibold text-emerald-800 transition-colors hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
-            >
-              Today
-            </button>
-            <button type="button" aria-label="Previous month" onClick={() => moveCalendarMonth(-1)} disabled={!canGoToPreviousMonth} className="cursor-pointer rounded-md border border-slate-200 px-2 py-1 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 disabled:cursor-not-allowed disabled:opacity-40">‹</button>
-            <span className="min-w-[7rem] text-center text-xs font-semibold text-slate-700 sm:text-sm">
-              {calendarMonth.toLocaleDateString(undefined, { month: "long", year: "numeric" })}
-            </span>
-            <button type="button" aria-label="Next month" onClick={() => moveCalendarMonth(1)} disabled={!canGoToNextMonth} className="cursor-pointer rounded-md border border-slate-200 px-2 py-1 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 disabled:cursor-not-allowed disabled:opacity-40">›</button>
-          </div>
+      <div className="flex w-full flex-col gap-3 overflow-visible">
+        <div className="portal-dashboard-heading shrink-0 px-1 py-1">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-700">Teacher Portal</p>
+          <h2 className="mt-0.5 text-xl font-bold tracking-tight text-[#06264A] md:text-2xl">Dashboard</h2>
         </div>
 
-        <div className="grid shrink-0 grid-cols-7 border-b border-slate-100 pb-1 text-center text-[9px] font-bold uppercase text-slate-400 sm:text-[10px]">
-          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => <span key={day}>{day}</span>)}
-        </div>
-        <div
-          className="grid min-h-0 flex-1 grid-cols-7 gap-px border border-slate-200 bg-slate-200 py-2"
-          style={{ gridTemplateRows: `repeat(${calendarRowCount}, minmax(0, 1fr))` }}
-        >
-          {calendarDays.map((day, index) => {
-            if (!day) return <span key={`empty-${index}`} />;
-            const dateKey = getLocalDateKey(new Date(monthYear, monthIndex, day));
-            const isSelected = dateKey === activeDateKey;
-            const hasEvent = eventDates.has(dateKey);
-            const dayEvents = eventsByDate.get(dateKey) || [];
-            return (
-              <div
-                key={dateKey}
-                className={`flex h-full min-h-0 flex-col overflow-hidden p-0.5 transition-colors sm:p-1 ${
-                  isSelected ? "bg-[#0B3763]/10 ring-1 ring-inset ring-[#0B3763]" : "bg-white hover:bg-emerald-50"
-                }`}
-              >
-                <button
-                  type="button"
-                  aria-label={`${dateKey}${hasEvent ? `, ${dayEvents.length} events` : ""}`}
-                  aria-pressed={isSelected}
-                  onClick={() => selectCalendarDate(dateKey)}
-                  className={`flex shrink-0 cursor-pointer items-center justify-between px-1 py-0.5 text-left text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-600 sm:text-sm ${
-                    isSelected ? "font-bold text-[#0B3763]" : dateKey === todayKey ? "font-bold text-emerald-800" : "text-slate-700"
+        <div className="flex min-h-0 flex-col gap-3 overflow-visible">
+          <div className="flex shrink-0 gap-1 rounded-xl border border-emerald-200 bg-emerald-50 p-1 shadow-sm">
+            {(["calendar", "events"] as const).map((view) => (
+              <button
+                key={view}
+                type="button"
+                onClick={() => {
+                  setCalendarView(view);
+                  if (view === "events") setEventListDate(null);
+                }}
+                aria-pressed={calendarView === view}
+                className={`flex min-h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-700 ${calendarView === view
+                    ? "border-emerald-700 bg-[#0B3763] text-white shadow-sm"
+                    : "border-transparent text-[#0B3763] hover:bg-emerald-100"
                   }`}
-                >
-                  <span>{day}</span>
-                  {hasEvent && <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-amber-500" />}
-                </button>
-                {hasEvent && (
-                  <div
-                    aria-label={`Events on ${dateKey}`}
-                    className="min-h-0 flex-1 space-y-0.5 overflow-y-auto overscroll-contain px-0.5 pb-0.5"
+              >
+                <i className={`fa-solid ${view === "calendar" ? "fa-calendar" : "fa-calendar-days"}`} aria-hidden="true" />
+                {view === "calendar" ? "Calendar" : "Events"}
+                {view === "events" && unreadEventKeys.length > 0 && (
+                  <span
+                    aria-label={`${unreadEventKeys.length} new event${unreadEventKeys.length === 1 ? "" : "s"}`}
+                    className="flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1.5 text-[10px] font-extrabold text-[#0B3763] shadow-sm"
                   >
-                    {dayEvents.map((event, eventIndex) => (
-                      <button
-                        key={event._id || `${dateKey}-${event.title}-${eventIndex}`}
-                        type="button"
-                        title={event.title}
-                        onClick={() => openTeacherEvent(event)}
-                        className={`block w-full cursor-pointer truncate rounded px-1 py-0.5 text-left text-[8px] font-semibold leading-tight transition hover:brightness-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 sm:text-[9px] ${event.color === "bg-yellow-500" ? "text-slate-900" : "text-white"} ${EVENT_COLORS[event.color] || EVENT_COLORS["bg-blue-500"]}`}
-                      >
-                        {event.title}
-                      </button>
-                    ))}
-                  </div>
+                    {unreadEventKeys.length}
+                  </span>
                 )}
-              </div>
-            );
-          })}
-        </div>
-
-      </section>
-
-      <section
-        aria-label="School events"
-        className={`${calendarView === "events" ? "flex" : "hidden"} min-h-[420px] flex-col overflow-visible rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4 md:h-auto md:min-h-[440px] md:shrink-0`}
-      >
-        <header className="mb-3 flex shrink-0 items-center justify-between gap-3 border-b border-slate-100 pb-3">
-          <div className="relative min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-700">School Calendar</p>
-            {eventListDate ? (
-              <h3 className="text-base font-bold text-slate-900 sm:text-lg">
-                Events on {formatTeacherEventDate(eventListDate)}
-              </h3>
-            ) : (
-              <>
-                <h3>
-                  <button
-                    type="button"
-                    aria-haspopup="menu"
-                    aria-expanded={isEventPeriodMenuOpen}
-                    onClick={() => setIsEventPeriodMenuOpen((isOpen) => !isOpen)}
-                    className="flex max-w-full cursor-pointer items-center gap-2 rounded-lg border border-transparent px-1 py-0.5 text-left text-base font-bold text-slate-900 transition-colors hover:border-emerald-200 hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 sm:text-lg"
-                  >
-                    <i className={`fa-solid ${eventPeriod === "upcoming" ? "fa-calendar-check" : "fa-clock-rotate-left"} shrink-0 text-emerald-700`} aria-hidden="true" />
-                    <span>{eventPeriod === "upcoming" ? "Upcoming Events" : "Past Events"}</span>
-                    <i className={`fa-solid fa-chevron-down shrink-0 text-[10px] text-slate-500 transition-transform ${isEventPeriodMenuOpen ? "rotate-180" : ""}`} aria-hidden="true" />
-                  </button>
-                </h3>
-                {isEventPeriodMenuOpen && (
-                  <div role="menu" className="absolute left-0 top-full z-20 mt-2 min-w-40 overflow-hidden rounded-lg border border-emerald-200 bg-white p-1 shadow-lg">
-                    {(["upcoming", "past"] as const).map((period) => (
-                      <button
-                        key={period}
-                        type="button"
-                        role="menuitem"
-                        aria-current={eventPeriod === period ? "true" : undefined}
-                        onClick={() => {
-                          setEventPeriod(period);
-                          if (period !== "past") setPastEventYear("all");
-                          setIsEventPeriodMenuOpen(false);
-                        }}
-                        className={`block w-full cursor-pointer rounded-md px-3 py-2 text-left text-xs font-bold transition-colors hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-600 ${
-                          eventPeriod === period ? "bg-emerald-50 text-emerald-800" : "text-slate-700"
-                        }`}
-                      >
-                        {period === "upcoming" ? "Upcoming Events" : "Past Events"}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
+              </button>
+            ))}
           </div>
-          <div className="flex shrink-0 items-center gap-2">
-            {!eventListDate && eventPeriod === "past" && (
-              <div className="flex items-center gap-1.5">
-                <label htmlFor="teacher-past-event-year" className="sr-only">Filter past events by year</label>
-                <select
-                  id="teacher-past-event-year"
-                  value={pastEventYear}
-                  onChange={(event) => setPastEventYear(event.target.value)}
-                  className="max-w-32 cursor-pointer rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-slate-700 outline-none transition hover:border-emerald-300 focus-visible:ring-2 focus-visible:ring-emerald-600 sm:max-w-40 sm:px-3"
-                >
-                  <option value="all">All years</option>
-                  {pastEventYears.map((year) => <option key={year} value={year}>{year}</option>)}
-                </select>
+
+          <section aria-label="School events calendar" className={`${calendarView === "calendar" ? "flex" : "hidden"} min-h-[420px] flex-col overflow-visible rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4 md:h-[440px] md:min-h-0 md:shrink-0 md:overflow-hidden`}>
+            <div className="mb-2 flex shrink-0 items-center justify-between gap-2">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-700">School Calendar</p>
+                <h3 className="text-base font-bold text-slate-900 sm:text-lg">Events</h3>
               </div>
-            )}
-            <span className="text-xs font-medium text-slate-500">
-              {isEventsLoading ? "Loading…" : `${visibleEvents.length} event${visibleEvents.length === 1 ? "" : "s"}`}
-            </span>
-          </div>
-        </header>
-        {eventListDate && (
-          <button
-            type="button"
-            onClick={() => setEventListDate(null)}
-            className="mb-2 self-start rounded-md px-2 py-1 text-xs font-semibold text-[#0B3763] hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
-          >
-            View all events
-          </button>
-        )}
-        {eventsError ? (
-          <p role="alert" className="py-2 text-sm text-red-700">{eventsError}</p>
-        ) : isEventsLoading ? (
-          <p className="py-2 text-sm text-slate-500">Loading school events…</p>
-        ) : visibleEvents.length === 0 ? (
-          <p className="py-2 text-sm text-slate-500">
-            {eventListDate ? "No events scheduled for this date." : "No school events are scheduled."}
-          </p>
-        ) : (
-          <ul className="space-y-1">
-            {visibleEvents.map((event, index) => (
-              <li key={`all-${event._id || `${event.event_date}-${event.title}-${index}`}`}>
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => openTeacherEvent(event)}
-                  className="flex w-full min-w-0 cursor-pointer items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
+                  onClick={() => {
+                    const today = new Date();
+                    setCalendarMonth(new Date(today.getFullYear(), today.getMonth(), 1));
+                    setSelectedCalendarDate(getLocalDateKey(today));
+                  }}
+                  className="cursor-pointer rounded-md border border-emerald-200 px-2 py-1 text-xs font-semibold text-emerald-800 transition-colors hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
                 >
-                  <span className={`size-2.5 shrink-0 rounded-full ${EVENT_COLORS[event.color] || EVENT_COLORS["bg-blue-500"]}`} />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-xs font-semibold text-slate-800 sm:text-sm">{event.title}</span>
-                    <span className="mt-0.5 block text-[10px] text-slate-500 sm:text-xs">
-                      {formatTeacherEventDate(event.event_date)}
-                      {" · "}
-                      {event.start_time || "Time TBA"}{event.end_time ? ` – ${event.end_time}` : ""}
-                    </span>
-                  </span>
-                  <i className="fa-solid fa-chevron-right shrink-0 text-[10px] text-slate-400" aria-hidden="true" />
+                  Today
                 </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      {/* Stats Cards */}
-      <div className="grid shrink-0 grid-cols-2 gap-2 sm:gap-3">
-        <StatCard title="Enrolled Students" value={enrolledStudents} icon="fa-users" color="blue" href="/portal/teachers/masterlist" />
-        <StatCard title="Classes" value={classCount} icon="fa-chalkboard-teacher" color="green" href="/portal/teachers/schedule" />
-      </div>
-
-      {/* Assigned Subjects Section */}
-      <section aria-label="Assigned classes and analytics" className="flex min-h-[420px] flex-col overflow-visible rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4 md:min-h-[420px] md:shrink-0">
-        <div className="mb-3 flex shrink-0 flex-col gap-1 border-b border-slate-100 pb-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-700">Teaching Overview</p>
-            <h3 className="mt-1 text-lg font-bold text-gray-800">Your Assigned Classes & Analytics</h3>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-slate-500">{filteredSubjects.length} of {subjects.length} classes</span>
-            <div className="relative w-36 sm:w-48">
-              <label className="sr-only" htmlFor="assigned-subject-search">Search assigned classes</label>
-              <input
-                id="assigned-subject-search"
-                type="search"
-                value={subjectFilter}
-                onChange={(event) => setSubjectFilter(event.target.value)}
-                placeholder="Search classes..."
-                className="w-full rounded-lg border border-slate-300 bg-slate-50 py-1.5 pl-8 pr-2 text-xs text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-600/15"
-              />
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400"
-              >
-                <circle cx="10.8" cy="10.8" r="6.8" />
-                <path strokeLinecap="round" d="m16 16 4 4" />
-              </svg>
+                <button type="button" aria-label="Previous month" onClick={() => moveCalendarMonth(-1)} disabled={!canGoToPreviousMonth} className="cursor-pointer rounded-md border border-slate-200 px-2 py-1 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 disabled:cursor-not-allowed disabled:opacity-40">‹</button>
+                <span className="min-w-[7rem] text-center text-xs font-semibold text-slate-700 sm:text-sm">
+                  {calendarMonth.toLocaleDateString(undefined, { month: "long", year: "numeric" })}
+                </span>
+                <button type="button" aria-label="Next month" onClick={() => moveCalendarMonth(1)} disabled={!canGoToNextMonth} className="cursor-pointer rounded-md border border-slate-200 px-2 py-1 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 disabled:cursor-not-allowed disabled:opacity-40">›</button>
+              </div>
             </div>
-          </div>
-        </div>
-        {subjects.length === 0 ? (
-          <p className="py-4 text-sm text-gray-500">No active classes found.</p>
-        ) : filteredSubjects.length === 0 ? (
-          <p className="py-4 text-sm text-gray-500">No classes match “{subjectFilter}”.</p>
-        ) : (
-          <div className="overflow-visible pr-2">
-          <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-3 lg:grid-cols-2 lg:gap-4">
-            {filteredSubjects.map((subject: any, index: number) => {
-              const total = subject.totalStudents || 0;
-              const passed = subject.passedCount || 0;
-              const failed = subject.failedCount || 0;
-              const ungraded = Math.max(0, total - (passed + failed));
 
-              const passedPct = total > 0 ? (passed / total) * 100 : 0;
-              const failedPct = total > 0 ? (failed / total) * 100 : 0;
-
-              return (
-                <Link
-                  key={subject.subject_id || index}
-                  href={`/portal/teachers/grades${subject.sched_code ? `?sched_code=${encodeURIComponent(subject.sched_code)}` : ""}`}
-                  aria-label={`View grades for ${subject.subject_name || "this class"}`}
-                  className="group block h-full cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0B3763] focus-visible:ring-offset-2"
-                >
-                <div className="flex h-full flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[#0B3763]/50 hover:shadow-md sm:p-5">
-                  <div className="mb-3 flex items-start justify-between gap-3">
-                    <div>
-                      <h4 className="font-semibold text-gray-800 text-lg">
-                        {subject.subject_name || "Unnamed Subject"}
-                      </h4>
-                      <p className="text-xs text-gray-400 font-mono mt-0.5">
-                        {subject.subject_id}
-                      </p>
-                    </div>
-                    <span className="rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800">
-                      {subject.sched_code || "N/A"}
-                    </span>
-                  </div>
-                  <div className="text-sm text-gray-600 space-y-1 mb-4">
-                    <p><span className="font-medium text-gray-500">Semester:</span> {subject.semester || "N/A"}</p>
-                    <p><span className="font-medium text-gray-500">Section:</span> {subject.subject_year_section || "N/A"}</p>
-                  </div>
-
-                  {/* Pie / Donut Graph Section */}
-                  <div className="mb-4 pt-3 border-t border-gray-100">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Class Performance Breakdown</p>
-                    
-                    {total === 0 ? (
-                      <p className="text-xs text-gray-400 italic">No students enrolled in this subject yet.</p>
-                    ) : (
-                      <div className="flex items-center justify-around bg-gray-50 p-3 rounded-lg">
-                        {/* Donut Chart Visual */}
-                        <div className="relative w-24 h-24 flex items-center justify-center">
-                          <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                            <path
-                              className="text-gray-200"
-                              strokeWidth="4"
-                              stroke="currentColor"
-                              fill="none"
-                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                            />
-                            {passed > 0 && (
-                              <path
-                                className="text-green-500"
-                                strokeDasharray={`${passedPct}, 100`}
-                                strokeWidth="4"
-                                stroke="currentColor"
-                                fill="none"
-                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                              />
-                            )}
-                            {failed > 0 && (
-                              <path
-                                className="text-red-500"
-                                strokeDasharray={`${failedPct}, 100`}
-                                strokeDashoffset={`-${passedPct}`}
-                                strokeWidth="4"
-                                stroke="currentColor"
-                                fill="none"
-                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                              />
-                            )}
-                          </svg>
-                          <div className="absolute text-center">
-                            <span className="text-xs text-gray-400 block font-medium">Total</span>
-                            <span className="text-lg font-bold text-gray-800">{total}</span>
-                          </div>
-                        </div>
-
-                        {/* Legend */}
-                        <div className="text-xs space-y-1.5">
-                          <div className="flex items-center space-x-2">
-                            <span className="w-3 h-3 bg-gray-200 rounded-full inline-block"></span>
-                            <span className="text-gray-600 font-medium">Total Students:</span>
-                            <span className="font-bold text-gray-800">{total}</span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <span className="w-3 h-3 bg-green-500 rounded-full inline-block"></span>
-                            <span className="text-gray-600 font-medium">Passed:</span>
-                            <span className="font-bold text-green-600">{passed}</span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <span className="w-3 h-3 bg-red-500 rounded-full inline-block"></span>
-                            <span className="text-gray-600 font-medium">Failed:</span>
-                            <span className="font-bold text-red-500">{failed}</span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <span className="w-3 h-3 bg-slate-300 rounded-full inline-block"></span>
-                            <span className="text-gray-600 font-medium">Pending:</span>
-                            <span className="font-bold text-slate-600">{ungraded}</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Top Student Section */}
-                  <div className="mt-2 pt-3 border-t border-gray-100">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Top Student(s)</p>
-                    {(!subject.topStudents || subject.topStudents.length === 0) ? (
-                      <p className="text-xs text-gray-400 italic">No grades recorded yet.</p>
-                    ) : (
-                      <div className="max-h-32 space-y-2 overflow-y-auto overscroll-contain pr-1 [scrollbar-color:#94a3b8_transparent] [scrollbar-width:thin]">
-                        {subject.topStudents.map((student: any, sIdx: number) => (
-                          <div key={sIdx} className="flex justify-between items-center bg-gray-50 p-2.5 rounded text-sm">
-                            <div>
-                              <p className="font-medium text-gray-800">{student.last_name}, {student.first_name}</p>
-                              <p className="text-xs text-gray-500">ID: {student.student_id}</p>
-                            </div>
-                            <div className="text-right">
-                              <span className="text-xs bg-green-100 text-green-700 font-bold px-2 py-1 rounded">
-                                Average Grade: {student.grade}
-                              </span>
-                            </div>
-                          </div>
+            <div className="grid shrink-0 grid-cols-7 border-b border-slate-100 pb-1 text-center text-[9px] font-bold uppercase text-slate-400 sm:text-[10px]">
+              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => <span key={day}>{day}</span>)}
+            </div>
+            <div
+              className="grid min-h-0 flex-1 grid-cols-7 gap-px border border-slate-200 bg-slate-200 py-2"
+              style={{ gridTemplateRows: `repeat(${calendarRowCount}, minmax(0, 1fr))` }}
+            >
+              {calendarDays.map((day, index) => {
+                if (!day) return <span key={`empty-${index}`} />;
+                const dateKey = getLocalDateKey(new Date(monthYear, monthIndex, day));
+                const isSelected = dateKey === activeDateKey;
+                const hasEvent = eventDates.has(dateKey);
+                const dayEvents = eventsByDate.get(dateKey) || [];
+                return (
+                  <div
+                    key={dateKey}
+                    className={`flex h-full min-h-0 flex-col overflow-hidden p-0.5 transition-colors sm:p-1 ${isSelected ? "bg-[#0B3763]/10 ring-1 ring-inset ring-[#0B3763]" : "bg-white hover:bg-emerald-50"
+                      }`}
+                  >
+                    <button
+                      type="button"
+                      aria-label={`${dateKey}${hasEvent ? `, ${dayEvents.length} events` : ""}`}
+                      aria-pressed={isSelected}
+                      onClick={() => selectCalendarDate(dateKey)}
+                      className={`flex shrink-0 cursor-pointer items-center justify-between px-1 py-0.5 text-left text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-600 sm:text-sm ${isSelected ? "font-bold text-[#0B3763]" : dateKey === todayKey ? "font-bold text-emerald-800" : "text-slate-700"
+                        }`}
+                    >
+                      <span>{day}</span>
+                      {hasEvent && <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-amber-500" />}
+                    </button>
+                    {hasEvent && (
+                      <div
+                        aria-label={`Events on ${dateKey}`}
+                        className="min-h-0 flex-1 space-y-0.5 overflow-y-auto overscroll-contain px-0.5 pb-0.5"
+                      >
+                        {dayEvents.map((event, eventIndex) => (
+                          <button
+                            key={event._id || `${dateKey}-${event.title}-${eventIndex}`}
+                            type="button"
+                            title={event.title}
+                            onClick={() => openTeacherEvent(event)}
+                            className={`block w-full cursor-pointer truncate rounded px-1 py-0.5 text-left text-[8px] font-semibold leading-tight transition hover:brightness-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 sm:text-[9px] ${event.color === "bg-yellow-500" ? "text-slate-900" : "text-white"} ${EVENT_COLORS[event.color] || EVENT_COLORS["bg-blue-500"]}`}
+                          >
+                            {event.title}
+                          </button>
                         ))}
                       </div>
                     )}
                   </div>
-                  <div className="mt-auto flex items-center justify-end gap-2 border-t border-slate-100 pt-3 text-xs font-bold text-[#0B3763]">
-                    <span>View grades</span>
-                    <i className="fa-solid fa-arrow-right transition-transform group-hover:translate-x-1" aria-hidden="true" />
+                );
+              })}
+            </div>
+
+          </section>
+
+          <section
+            aria-label="School events"
+            className={`${calendarView === "events" ? "flex" : "hidden"} min-h-[420px] flex-col overflow-visible rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4 md:h-auto md:min-h-[440px] md:shrink-0`}
+          >
+            <header className="mb-3 flex shrink-0 items-center justify-between gap-3 border-b border-slate-100 pb-3">
+              <div className="relative min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-700">School Calendar</p>
+                {eventListDate ? (
+                  <h3 className="text-base font-bold text-slate-900 sm:text-lg">
+                    Events on {formatTeacherEventDate(eventListDate)}
+                  </h3>
+                ) : (
+                  <>
+                    <h3>
+                      <button
+                        type="button"
+                        aria-haspopup="menu"
+                        aria-expanded={isEventPeriodMenuOpen}
+                        onClick={() => setIsEventPeriodMenuOpen((isOpen) => !isOpen)}
+                        className="flex max-w-full cursor-pointer items-center gap-2 rounded-lg border border-transparent px-1 py-0.5 text-left text-base font-bold text-slate-900 transition-colors hover:border-emerald-200 hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 sm:text-lg"
+                      >
+                        <i className={`fa-solid ${eventPeriod === "upcoming" ? "fa-calendar-check" : "fa-clock-rotate-left"} shrink-0 text-emerald-700`} aria-hidden="true" />
+                        <span>{eventPeriod === "upcoming" ? "Upcoming Events" : "Past Events"}</span>
+                        <i className={`fa-solid fa-chevron-down shrink-0 text-[10px] text-slate-500 transition-transform ${isEventPeriodMenuOpen ? "rotate-180" : ""}`} aria-hidden="true" />
+                      </button>
+                    </h3>
+                    {isEventPeriodMenuOpen && (
+                      <div role="menu" className="absolute left-0 top-full z-20 mt-2 min-w-40 overflow-hidden rounded-lg border border-emerald-200 bg-white p-1 shadow-lg">
+                        {(["upcoming", "past"] as const).map((period) => (
+                          <button
+                            key={period}
+                            type="button"
+                            role="menuitem"
+                            aria-current={eventPeriod === period ? "true" : undefined}
+                            onClick={() => {
+                              setEventPeriod(period);
+                              if (period !== "past") setPastEventYear("all");
+                              setIsEventPeriodMenuOpen(false);
+                            }}
+                            className={`block w-full cursor-pointer rounded-md px-3 py-2 text-left text-xs font-bold transition-colors hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-600 ${eventPeriod === period ? "bg-emerald-50 text-emerald-800" : "text-slate-700"
+                              }`}
+                          >
+                            {period === "upcoming" ? "Upcoming Events" : "Past Events"}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                {!eventListDate && eventPeriod === "past" && (
+                  <div className="flex items-center gap-1.5">
+                    <label htmlFor="teacher-past-event-year" className="sr-only">Filter past events by year</label>
+                    <select
+                      id="teacher-past-event-year"
+                      value={pastEventYear}
+                      onChange={(event) => setPastEventYear(event.target.value)}
+                      className="max-w-32 cursor-pointer rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-slate-700 outline-none transition hover:border-emerald-300 focus-visible:ring-2 focus-visible:ring-emerald-600 sm:max-w-40 sm:px-3"
+                    >
+                      <option value="all">All years</option>
+                      {pastEventYears.map((year) => <option key={year} value={year}>{year}</option>)}
+                    </select>
                   </div>
+                )}
+                <span className="text-xs font-medium text-slate-500">
+                  {isEventsLoading ? "Loading…" : `${visibleEvents.length} event${visibleEvents.length === 1 ? "" : "s"}`}
+                </span>
+              </div>
+            </header>
+            {eventListDate && (
+              <button
+                type="button"
+                onClick={() => setEventListDate(null)}
+                className="mb-2 self-start rounded-md px-2 py-1 text-xs font-semibold text-[#0B3763] hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
+              >
+                View all events
+              </button>
+            )}
+            {eventsError ? (
+              <p role="alert" className="py-2 text-sm text-red-700">{eventsError}</p>
+            ) : isEventsLoading ? (
+              <p className="py-2 text-sm text-slate-500">Loading school events…</p>
+            ) : visibleEvents.length === 0 ? (
+              <p className="py-2 text-sm text-slate-500">
+                {eventListDate ? "No events scheduled for this date." : "No school events are scheduled."}
+              </p>
+            ) : (
+              <ul className="space-y-1">
+                {visibleEvents.map((event, index) => (
+                  <li key={`all-${event._id || `${event.event_date}-${event.title}-${index}`}`}>
+                    <button
+                      type="button"
+                      onClick={() => openTeacherEvent(event)}
+                      className="flex w-full min-w-0 cursor-pointer items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
+                    >
+                      <span className={`size-2.5 shrink-0 rounded-full ${EVENT_COLORS[event.color] || EVENT_COLORS["bg-blue-500"]}`} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-xs font-semibold text-slate-800 sm:text-sm">{event.title}</span>
+                        <span className="mt-0.5 block text-[10px] text-slate-500 sm:text-xs">
+                          {formatTeacherEventDate(event.event_date)}
+                          {" · "}
+                          {event.start_time || "Time TBA"}{event.end_time ? ` – ${event.end_time}` : ""}
+                        </span>
+                      </span>
+                      <i className="fa-solid fa-chevron-right shrink-0 text-[10px] text-slate-400" aria-hidden="true" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          {/* Stats Cards */}
+          <div className="grid shrink-0 grid-cols-2 gap-2 sm:gap-3">
+            <StatCard title="Enrolled Students" value={enrolledStudents} icon="fa-users" color="blue" href="/portal/teachers/masterlist" />
+            <StatCard title="Classes" value={classCount} icon="fa-chalkboard-teacher" color="green" href="/portal/teachers/schedule" />
+          </div>
+
+          {/* Assigned Subjects Section */}
+          <section aria-label="Assigned classes and analytics" className="flex min-h-[420px] flex-col overflow-visible rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4 md:min-h-[420px] md:shrink-0">
+            <div className="mb-3 flex shrink-0 flex-col gap-1 border-b border-slate-100 pb-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-700">Teaching Overview</p>
+                <h3 className="mt-1 text-lg font-bold text-gray-800">Your Assigned Classes & Analytics</h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-slate-500">{filteredSubjects.length} of {subjects.length} classes</span>
+                <div className="relative w-36 sm:w-48">
+                  <label className="sr-only" htmlFor="assigned-subject-search">Search assigned classes</label>
+                  <input
+                    id="assigned-subject-search"
+                    type="search"
+                    value={subjectFilter}
+                    onChange={(event) => setSubjectFilter(event.target.value)}
+                    placeholder="Search classes..."
+                    className="w-full rounded-lg border border-slate-300 bg-slate-50 py-1.5 pl-8 pr-2 text-xs text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-600/15"
+                  />
+                  <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400"
+                  >
+                    <circle cx="10.8" cy="10.8" r="6.8" />
+                    <path strokeLinecap="round" d="m16 16 4 4" />
+                  </svg>
                 </div>
-                </Link>
-              );
-            })}
-          </div>
-          </div>
-        )}
-      </section>
+              </div>
+            </div>
+            {subjects.length === 0 ? (
+              <p className="py-4 text-sm text-gray-500">No active classes found.</p>
+            ) : filteredSubjects.length === 0 ? (
+              <p className="py-4 text-sm text-gray-500">No classes match “{subjectFilter}”.</p>
+            ) : (
+              <div className="overflow-visible pr-2">
+                <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-3 lg:grid-cols-2 lg:gap-4">
+                  {filteredSubjects.map((subject: any, index: number) => {
+                    const total = subject.totalStudents || 0;
+                    const passed = subject.passedCount || 0;
+                    const failed = subject.failedCount || 0;
+                    const ungraded = Math.max(0, total - (passed + failed));
+
+                    const passedPct = total > 0 ? (passed / total) * 100 : 0;
+                    const failedPct = total > 0 ? (failed / total) * 100 : 0;
+
+                    return (
+                      <Link
+                        key={subject.subject_id || index}
+                        href={`/portal/teachers/grades${subject.sched_code ? `?sched_code=${encodeURIComponent(subject.sched_code)}` : ""}`}
+                        aria-label={`View grades for ${subject.subject_name || "this class"}`}
+                        className="group block h-full cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0B3763] focus-visible:ring-offset-2"
+                      >
+                        <div className="flex h-full flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[#0B3763]/50 hover:shadow-md sm:p-5">
+                          <div className="mb-3 flex items-start justify-between gap-3">
+                            <div>
+                              <h4 className="font-semibold text-gray-800 text-lg">
+                                {subject.subject_name || "Unnamed Subject"}
+                              </h4>
+                              <p className="text-xs text-gray-400 font-mono mt-0.5">
+                                {subject.subject_id}
+                              </p>
+                            </div>
+                            <span className="rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800">
+                              {subject.sched_code || "N/A"}
+                            </span>
+                          </div>
+                          <div className="text-sm text-gray-600 space-y-1 mb-4">
+                            <p><span className="font-medium text-gray-500">Semester:</span> {subject.semester || "N/A"}</p>
+                            <p><span className="font-medium text-gray-500">Section:</span> {subject.subject_year_section || "N/A"}</p>
+                          </div>
+
+                          {/* Pie / Donut Graph Section */}
+                          <div className="mb-4 pt-3 border-t border-gray-100">
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Class Performance Breakdown</p>
+
+                            {total === 0 ? (
+                              <p className="text-xs text-gray-400 italic">No students enrolled in this subject yet.</p>
+                            ) : (
+                              <div className="flex items-center justify-around bg-gray-50 p-3 rounded-lg">
+                                {/* Donut Chart Visual */}
+                                <div className="relative w-24 h-24 flex items-center justify-center">
+                                  <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                                    <path
+                                      className="text-gray-200"
+                                      strokeWidth="4"
+                                      stroke="currentColor"
+                                      fill="none"
+                                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                    />
+                                    {passed > 0 && (
+                                      <path
+                                        className="text-green-500"
+                                        strokeDasharray={`${passedPct}, 100`}
+                                        strokeWidth="4"
+                                        stroke="currentColor"
+                                        fill="none"
+                                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                      />
+                                    )}
+                                    {failed > 0 && (
+                                      <path
+                                        className="text-red-500"
+                                        strokeDasharray={`${failedPct}, 100`}
+                                        strokeDashoffset={`-${passedPct}`}
+                                        strokeWidth="4"
+                                        stroke="currentColor"
+                                        fill="none"
+                                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                      />
+                                    )}
+                                  </svg>
+                                  <div className="absolute text-center">
+                                    <span className="text-xs text-gray-400 block font-medium">Total</span>
+                                    <span className="text-lg font-bold text-gray-800">{total}</span>
+                                  </div>
+                                </div>
+
+                                {/* Legend */}
+                                <div className="text-xs space-y-1.5">
+                                  <div className="flex items-center space-x-2">
+                                    <span className="w-3 h-3 bg-gray-200 rounded-full inline-block"></span>
+                                    <span className="text-gray-600 font-medium">Total Students:</span>
+                                    <span className="font-bold text-gray-800">{total}</span>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <span className="w-3 h-3 bg-green-500 rounded-full inline-block"></span>
+                                    <span className="text-gray-600 font-medium">Passed:</span>
+                                    <span className="font-bold text-green-600">{passed}</span>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <span className="w-3 h-3 bg-red-500 rounded-full inline-block"></span>
+                                    <span className="text-gray-600 font-medium">Failed:</span>
+                                    <span className="font-bold text-red-500">{failed}</span>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <span className="w-3 h-3 bg-slate-300 rounded-full inline-block"></span>
+                                    <span className="text-gray-600 font-medium">Pending:</span>
+                                    <span className="font-bold text-slate-600">{ungraded}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Top Student Section */}
+                          <div className="mt-2 pt-3 border-t border-gray-100">
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Top Student(s)</p>
+                            {(!subject.topStudents || subject.topStudents.length === 0) ? (
+                              <p className="text-xs text-gray-400 italic">No grades recorded yet.</p>
+                            ) : (
+                              <div className="max-h-32 space-y-2 overflow-y-auto overscroll-contain pr-1 [scrollbar-color:#94a3b8_transparent] [scrollbar-width:thin]">
+                                {subject.topStudents.map((student: any, sIdx: number) => (
+                                  <div key={sIdx} className="flex justify-between items-center bg-gray-50 p-2.5 rounded text-sm">
+                                    <div>
+                                      <p className="font-medium text-gray-800">{student.last_name}, {student.first_name}</p>
+                                      <p className="text-xs text-gray-500">ID: {student.student_id}</p>
+                                    </div>
+                                    <div className="text-right">
+                                      <span className="text-xs bg-green-100 text-green-700 font-bold px-2 py-1 rounded">
+                                        Average Grade: {student.grade}
+                                      </span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          <div className="mt-auto flex items-center justify-end gap-2 border-t border-slate-100 pt-3 text-xs font-bold text-[#0B3763]">
+                            <span>View grades</span>
+                            <i className="fa-solid fa-arrow-right transition-transform group-hover:translate-x-1" aria-hidden="true" />
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </section>
+        </div>
       </div>
-    </div>
-    {selectedEvent && (
-      <div
-        className="portal-modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4"
-        onClick={() => setSelectedEvent(null)}
-      >
-        <section
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="teacher-event-dialog-title"
-          onClick={(event) => event.stopPropagation()}
-          className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl"
+      {selectedEvent && (
+        <div
+          className="portal-modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4"
+          onClick={() => setSelectedEvent(null)}
         >
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-700">School Event</p>
-              <h2 id="teacher-event-dialog-title" className="mt-1 break-words text-xl font-bold text-[#06264A]">
-                {selectedEvent.title}
-              </h2>
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="teacher-event-dialog-title"
+            onClick={(event) => event.stopPropagation()}
+            className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-700">School Event</p>
+                <h2 id="teacher-event-dialog-title" className="mt-1 break-words text-xl font-bold text-[#06264A]">
+                  {selectedEvent.title}
+                </h2>
+              </div>
+              <button
+                type="button"
+                aria-label="Close event details"
+                onClick={() => setSelectedEvent(null)}
+                className="rounded-lg px-2 py-1 text-xl leading-none text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
+              >
+                ×
+              </button>
             </div>
-            <button
-              type="button"
-              aria-label="Close event details"
-              onClick={() => setSelectedEvent(null)}
-              className="rounded-lg px-2 py-1 text-xl leading-none text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
-            >
-              ×
-            </button>
-          </div>
-          <dl className="mt-5 space-y-3 text-sm">
-            <div>
-              <dt className="font-semibold text-slate-500">Date</dt>
-              <dd className="mt-0.5 text-slate-800">{formatTeacherEventLongDate(selectedEvent.event_date)}</dd>
-            </div>
-            <div>
-              <dt className="font-semibold text-slate-500">Time</dt>
-              <dd className="mt-0.5 text-slate-800">
-                {selectedEvent.start_time || "Not specified"}
-                {selectedEvent.end_time ? ` – ${selectedEvent.end_time}` : ""}
-              </dd>
-            </div>
-            <div className="flex items-center gap-2">
-              <dt className="font-semibold text-slate-500">Event color</dt>
-              <dd className="flex items-center gap-2 text-slate-800">
-                <span aria-hidden="true" className={`size-3 rounded-full ${EVENT_COLORS[selectedEvent.color] || EVENT_COLORS["bg-blue-500"]}`} />
-                {selectedEvent.color.replace("bg-", "").replace("-500", "")}
-              </dd>
-            </div>
-          </dl>
-        </section>
-      </div>
-    )}
+            <dl className="mt-5 space-y-3 text-sm">
+              <div>
+                <dt className="font-semibold text-slate-500">Date</dt>
+                <dd className="mt-0.5 text-slate-800">{formatTeacherEventLongDate(selectedEvent.event_date)}</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-slate-500">Time</dt>
+                <dd className="mt-0.5 text-slate-800">
+                  {selectedEvent.start_time || "Not specified"}
+                  {selectedEvent.end_time ? ` – ${selectedEvent.end_time}` : ""}
+                </dd>
+              </div>
+              <div className="flex items-center gap-2">
+                <dt className="font-semibold text-slate-500">Event color</dt>
+                <dd className="flex items-center gap-2 text-slate-800">
+                  <span aria-hidden="true" className={`size-3 rounded-full ${EVENT_COLORS[selectedEvent.color] || EVENT_COLORS["bg-blue-500"]}`} />
+                  {selectedEvent.color.replace("bg-", "").replace("-500", "")}
+                </dd>
+              </div>
+            </dl>
+          </section>
+        </div>
+      )}
     </>
   );
 }
@@ -842,19 +837,19 @@ function StatCard({ title, value, icon, color, href }: StatCardProps) {
       className="group block cursor-pointer rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
     >
       <div className={`h-full rounded-2xl border border-slate-200 border-l-4 bg-white p-5 shadow-sm transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-amber-400 group-hover:shadow-md sm:p-6 ${selectedColor.border}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-semibold text-slate-500">{title}</p>
-          <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{value}</p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-slate-500">{title}</p>
+            <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{value}</p>
+          </div>
+          <div className={`rounded-xl p-3 transition-transform group-hover:scale-105 ${selectedColor.bg} ${selectedColor.text}`}>
+            <i className={`fas ${icon} text-2xl`}></i>
+          </div>
         </div>
-        <div className={`rounded-xl p-3 transition-transform group-hover:scale-105 ${selectedColor.bg} ${selectedColor.text}`}>
-          <i className={`fas ${icon} text-2xl`}></i>
+        <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs">
+          <span className="font-medium text-slate-500">Open {title.toLowerCase()}</span>
+          <span className="font-bold text-[#0B3763] transition group-hover:text-amber-700">View</span>
         </div>
-      </div>
-      <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs">
-        <span className="font-medium text-slate-500">Open {title.toLowerCase()}</span>
-        <span className="font-bold text-[#0B3763] transition group-hover:text-amber-700">View</span>
-      </div>
       </div>
     </Link>
   );

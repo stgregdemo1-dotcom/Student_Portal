@@ -583,7 +583,6 @@ export async function PUT(request: NextRequest) {
         updateValue = subjects;
         auditDescription = `Updated grade matrices for student ID: ${student_id} (SY: ${year}, Semester: ${semester}).`;
       } else if (subject_status) {
-        // Change $[sub] to $[], which targets all subjects in the matched class element
         updateFieldPath = "class.$[elem].subjects.$[].status";
         updateValue = subject_status;
         auditDescription = `Updated all subject statuses to '${subject_status}' for student ID: ${student_id} (SY: ${year}, Semester: ${semester}).`;
@@ -678,6 +677,73 @@ export async function PUT(request: NextRequest) {
   } catch (error: any) {
     console.error("Database update processing error:", error);
     return NextResponse.json({ message: error.message || "Failed to update record" }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    await connectDB();
+
+    const { searchParams } = request.nextUrl;
+    const tableName = searchParams.get("table");
+    const targetId = searchParams.get("id") || searchParams.get("applicant_id");
+
+    if (!tableName || !ALLOWED_TABLES[tableName]) {
+      return NextResponse.json(
+        { message: `Access denied or invalid table choice: '${tableName}'` },
+        { status: 400 }
+      );
+    }
+
+    if (tableName !== "admissions_applications") {
+      return NextResponse.json(
+        { message: `Delete action is currently only supported for admissions applications.` },
+        { status: 400 }
+      );
+    }
+
+    if (!targetId) {
+      return NextResponse.json(
+        { message: "Missing required parameter: id or applicant_id must be specified." },
+        { status: 400 }
+      );
+    }
+
+    const { model: TargetModel, idKey } = ALLOWED_TABLES[tableName];
+
+    let query: any = { [idKey]: targetId };
+    let deletedDocument = await TargetModel.findOneAndDelete(query).lean();
+
+    if (!deletedDocument && mongoose.Types.ObjectId.isValid(targetId)) {
+      deletedDocument = await TargetModel.findOneAndDelete({ _id: targetId }).lean();
+    }
+
+    if (!deletedDocument) {
+      return NextResponse.json(
+        { message: `No admission record found for identifier: ${targetId}` },
+        { status: 404 }
+      );
+    }
+
+    try {
+      const cookieStore = await cookies();
+      const auditUser = cookieStore.get("audit_user")?.value || "Unknown System Staff";
+      await createAuditLog(
+        auditUser,
+        `Deleted rejected admission application for ID: ${targetId}.`
+      );
+    } catch (auditErr) {
+      console.error("Audit log creation error:", auditErr);
+    }
+
+    return NextResponse.json(
+      { success: true, message: "Admission record deleted successfully", data: deletedDocument },
+      { status: 200 }
+    );
+
+  } catch (error: any) {
+    console.error("Database delete processing error:", error);
+    return NextResponse.json({ message: error.message || "Failed to delete record" }, { status: 500 });
   }
 }
 

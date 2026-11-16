@@ -276,7 +276,6 @@ const GradingSheet = () => {
           <div>
             <h1 className="text-3xl font-black text-[#856404] tracking-tight">Grading Management</h1>
             <p className="text-gray-500 font-medium italic">School Year 2026-2027</p>
-            <p className="text-xs text-[#0B3763] font-bold mt-1">Logged in as: {teacherId}</p>
           </div>
 
           <div className="flex items-center gap-3">
@@ -313,13 +312,12 @@ const GradingSheet = () => {
                       setIsEditing(true);
                     }
                   }}
-                  className={`px-6 py-2.5 rounded-lg font-bold text-white transition-all shadow-md transform active:scale-95 ${
-                    isEvaluating
+                  className={`px-6 py-2.5 rounded-lg font-bold text-white transition-all shadow-md transform active:scale-95 ${isEvaluating
                       ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none"
                       : isEditing
                         ? "bg-[#0B3763] hover:bg-[#06264A]"
                         : "bg-[#FFD700] hover:bg-[#e6c200] text-[#856404]"
-                  }`}
+                    }`}
                 >
                   {isEvaluating ? "🔒 Under Evaluation" : isEditing ? "✓ Save Draft" : "✎ Edit Grades"}
                 </button>
@@ -391,11 +389,10 @@ const GradingSheet = () => {
                                   className="w-20 bg-white border-2 border-[#FFD700] text-gray-900 text-center text-sm rounded-lg focus:ring-2 focus:ring-[#0B3763] p-2 outline-none font-bold"
                                 />
                               ) : (
-                                <span className={`inline-block min-w-[40px] py-1 px-2 rounded-md font-black ${
-                                  gradeValue >= 85 ? "text-[#155724] bg-[#d4edda]" :
-                                  gradeValue >= 75 ? "text-[#856404] bg-[#fff3cd]" :
-                                  gradeValue > 0 ? "text-[#721c24] bg-[#f8d7da]" : "text-gray-400 bg-gray-100"
-                                }`}>
+                                <span className={`inline-block min-w-[40px] py-1 px-2 rounded-md font-black ${gradeValue >= 85 ? "text-[#155724] bg-[#d4edda]" :
+                                    gradeValue >= 75 ? "text-[#856404] bg-[#fff3cd]" :
+                                      gradeValue > 0 ? "text-[#721c24] bg-[#f8d7da]" : "text-gray-400 bg-gray-100"
+                                  }`}>
                                   {gradeValue === 0 ? "-" : gradeValue}
                                 </span>
                               )}
@@ -404,21 +401,19 @@ const GradingSheet = () => {
 
                           {/* Average Column */}
                           <td className="px-6 py-4 text-center">
-                            <span className={`inline-block min-w-[50px] py-1 px-2 rounded-md font-black ${
-                              Number(averageVal) >= 85 ? "text-[#155724] bg-[#d4edda]" :
-                              Number(averageVal) >= 75 ? "text-[#856404] bg-[#fff3cd]" :
-                              averageVal !== "-" ? "text-[#721c24] bg-[#f8d7da]" : "text-gray-400 bg-gray-100"
-                            }`}>
+                            <span className={`inline-block min-w-[50px] py-1 px-2 rounded-md font-black ${Number(averageVal) >= 85 ? "text-[#155724] bg-[#d4edda]" :
+                                Number(averageVal) >= 75 ? "text-[#856404] bg-[#fff3cd]" :
+                                  averageVal !== "-" ? "text-[#721c24] bg-[#f8d7da]" : "text-gray-400 bg-gray-100"
+                              }`}>
                               {averageVal}
                             </span>
                           </td>
 
                           {/* Remarks Column */}
                           <td className="px-6 py-4 text-center">
-                            <span className={`inline-block min-w-[70px] py-1 px-2.5 rounded-md text-xs font-black uppercase tracking-wider ${
-                              currentRemarks === "Passed" ? "text-emerald-700 bg-emerald-100" :
-                              currentRemarks === "Failed" ? "text-red-700 bg-red-100" : "text-gray-400 bg-gray-100 font-normal normal-case"
-                            }`}>
+                            <span className={`inline-block min-w-[70px] py-1 px-2.5 rounded-md text-xs font-black uppercase tracking-wider ${currentRemarks === "Passed" ? "text-emerald-700 bg-emerald-100" :
+                                currentRemarks === "Failed" ? "text-red-700 bg-red-100" : "text-gray-400 bg-gray-100 font-normal normal-case"
+                              }`}>
                               {currentRemarks || "-"}
                             </span>
                           </td>
@@ -442,11 +437,10 @@ const GradingSheet = () => {
                 <button
                   onClick={() => setIsConfirmOpen(true)}
                   disabled={isEditing || !selectedCode || !allStudentsHaveRemarks || !isSubjectActive || isEvaluating}
-                  className={`w-full md:w-auto px-10 py-3.5 rounded-xl font-black text-white tracking-wide shadow-lg transition-all transform active:scale-95 ${
-                    isEditing || !selectedCode || !allStudentsHaveRemarks || !isSubjectActive || isEvaluating
+                  className={`w-full md:w-auto px-10 py-3.5 rounded-xl font-black text-white tracking-wide shadow-lg transition-all transform active:scale-95 ${isEditing || !selectedCode || !allStudentsHaveRemarks || !isSubjectActive || isEvaluating
                       ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none"
                       : "bg-[#0B3763] hover:bg-[#06264A]"
-                  }`}
+                    }`}
                 >
                   Submit Final Grades
                 </button>

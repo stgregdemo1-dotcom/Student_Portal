@@ -29,7 +29,7 @@ type ListField =
 function SettingsConfigContent() {
   const [config, setConfig] = useState<DropdownConfig | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [inputs, setInputs] = useState<Record<string, string>>({
+  const [inputs, setInputs] = useState<Record<ListField, string>>({
     section: "",
     room: "",
     employee_status: "",
@@ -38,6 +38,12 @@ function SettingsConfigContent() {
     specification: "",
     current_year: "",
   });
+
+  // State to manage the deletion confirmation modal
+  const [deleteModal, setDeleteModal] = useState<{
+    field: ListField;
+    value: string;
+  } | null>(null);
 
   const fetchSettings = async () => {
     try {
@@ -71,7 +77,7 @@ function SettingsConfigContent() {
       if (res.ok) {
         const jsonResponse = await res.json();
         setConfig(jsonResponse.data);
-        setInputs({ ...inputs, [field]: "" });
+        setInputs((prev) => ({ ...prev, [field]: "" }));
       }
     } catch (err) {
       console.error("Failed to append configuration option:", err);
@@ -133,7 +139,7 @@ function SettingsConfigContent() {
     if (typeof val === "string") return val === "true";
     if (Array.isArray(val)) {
       if (val.length === 0) return false;
-      return val.includes("true") || val.includes(true as any);
+      return val.includes("true") || val.includes(true as unknown as string);
     }
     return false;
   };
@@ -226,7 +232,7 @@ function SettingsConfigContent() {
   const hasMultipleYears = currentYearsList.length > 1;
 
   return (
-    <div className="w-full space-y-8 p-4 font-sans sm:p-6">
+    <div className="w-full space-y-8 p-4 font-sans sm:p-6 relative">
       <div>
         <h2 className="text-2xl font-black text-gray-800 tracking-tight">
           System Global Configurations
@@ -300,7 +306,7 @@ function SettingsConfigContent() {
                 <span
                   key={item}
                   className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-red-700 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors group cursor-pointer"
-                  onClick={() => handleRemoveOption("current_year", item)}
+                  onClick={() => setDeleteModal({ field: "current_year", value: item })}
                   title="Click to remove option"
                 >
                   {item}
@@ -405,7 +411,7 @@ function SettingsConfigContent() {
                     <span
                       key={item}
                       className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-red-700 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors group cursor-pointer"
-                      onClick={() => handleRemoveOption(sec.id, item)}
+                      onClick={() => setDeleteModal({ field: sec.id, value: item })}
                       title="Click to remove option"
                     >
                       {item}
@@ -447,6 +453,37 @@ function SettingsConfigContent() {
           </div>
         ))}
       </div>
+
+      {/* Deletion Confirmation Modal */}
+      {deleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4 border border-gray-100 transform transition-all">
+            <h3 className="text-lg font-bold text-gray-800">Confirm Deletion</h3>
+            <p className="text-sm text-gray-600">
+              Are you sure you want to delete <span className="font-semibold text-gray-900 bg-gray-100 px-1.5 py-0.5 rounded">{deleteModal.value}</span>? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeleteModal(null)}
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold uppercase transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  handleRemoveOption(deleteModal.field, deleteModal.value);
+                  setDeleteModal(null);
+                }}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold uppercase transition shadow-sm"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

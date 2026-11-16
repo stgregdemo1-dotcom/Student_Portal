@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
-import { Student, StudentSection, Subject, Teacher, Events } from "@/models/Schema"; 
+import { Student, StudentSection, Subject, Teacher, Events, Config } from "@/models/Schema"; 
 import { cookies } from "next/headers";
 
 const connectDB = async () => {
@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
     const studentId = usernameCookie.value;
     const { searchParams } = request.nextUrl;
 
+    // --- Fetch Student Name ---
     if (searchParams.get("getStudentName") === "true") {
       const studentProfile = await Student.findOne({ student_id: studentId }).lean();
 
@@ -36,6 +37,18 @@ export async function GET(request: NextRequest) {
       }, { status: 200 });
     }
 
+    // --- Fetch Current Year from Config ---
+    if (searchParams.get("getCurrentYear") === "true") {
+      const ConfigModel = mongoose.models.Config || Config;
+      const configRecord = await ConfigModel.findOne({}).lean();
+
+      return NextResponse.json({
+        success: true,
+        current_year: (configRecord as any)?.current_year || (configRecord as any)?.active_year || "—"
+      }, { status: 200 });
+    }
+
+    // --- Fetch Calendar Events ---
     if (searchParams.get("getCalendarEvents") === "true") {
       const EventModel = mongoose.models.Events || Events;
       const calendarEvents = await EventModel.find({}).lean();
@@ -52,15 +65,29 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: true, events: formattedEvents }, { status: 200 });
     }
 
+    // --- Fetch Schedule (Filtered by Config current_year) ---
     if (searchParams.get("getSchedule") === "true") {
+      const ConfigModel = mongoose.models.Config || Config;
+      const configRecord = await ConfigModel.findOne({}).lean();
+      const currentYear = (configRecord as any)?.current_year;
+
       const studentRecord = await StudentSection.findOne({ student_id: studentId }).lean();
 
       if (!studentRecord || !studentRecord.class || studentRecord.class.length === 0) {
         return NextResponse.json({ success: true, subjects: [] }, { status: 200 });
       }
 
+      // Filter classes by current_year if it exists
+      const targetClasses = currentYear 
+        ? studentRecord.class.filter((cls: any) => String(cls.year).trim() === String(currentYear).trim())
+        : studentRecord.class;
+
+      if (targetClasses.length === 0) {
+        return NextResponse.json({ success: true, subjects: [] }, { status: 200 });
+      }
+
       const enrolledSubjectIds: string[] = [];
-      studentRecord.class.forEach((cls: any) => {
+      targetClasses.forEach((cls: any) => {
         if (cls.subjects && Array.isArray(cls.subjects)) {
           cls.subjects.forEach((sub: any) => {
             if (sub.subject_id) enrolledSubjectIds.push(sub.subject_id);
@@ -76,18 +103,21 @@ export async function GET(request: NextRequest) {
 
       const formattedGridSubjects: any[] = [];
 
-      studentRecord.class.forEach((cls: any) => {
+      targetClasses.forEach((cls: any) => {
         if (cls.subjects && Array.isArray(cls.subjects)) {
           cls.subjects.forEach((sub: any) => {
             const masterDetails = subjectMap.get(sub.subject_id);
 
             if (masterDetails) {
+              const rawSemester = cls.semester || masterDetails.semester || "1";
+              const normalizedSemester = String(rawSemester).trim().toLowerCase().includes("2") ? "2" : "1";
+
               formattedGridSubjects.push({
                 sched_code: masterDetails.sched_code || "—",
                 subject_id: masterDetails.subject_id,
                 subject_name: masterDetails.subject_name || "—",
                 room: masterDetails.room || "—",
-                semester: cls.semester || masterDetails.semester || "1", 
+                semester: normalizedSemester, 
                 "subject-day": masterDetails.subject_day || "Monday", 
                 subject_specification: masterDetails.subject_specification || "core",
                 class_time: {
@@ -103,6 +133,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: true, subjects: formattedGridSubjects }, { status: 200 });
     }
 
+    // --- Fetch Evaluation Status ---
     if (searchParams.get("getEvaluationStatus") === "true") {
       const studentRecord = await StudentSection.findOne({ student_id: studentId }).lean();
       const studentProfile = await Student.findOne({ student_id: studentId }).lean();
@@ -181,6 +212,7 @@ export async function GET(request: NextRequest) {
       }, { status: 200 });
     }
 
+    // --- Default Profile & Years Only Handling ---
     if (!searchParams.get("getYearsOnly") && !searchParams.get("year") && !searchParams.get("semester")) {
       const studentProfile = await Student.findOne({ student_id: studentId }).lean();
 
@@ -226,6 +258,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: true, data: uniqueYears }, { status: 200 });
     }
 
+    // --- Fetch Grades Filtered by Year and Semester ---
     const yearFilter = searchParams.get("year");
     const semesterFilter = searchParams.get("semester");
 
@@ -339,7 +372,6 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ success: false, message: "Student record or profile not found." }, { status: 404 });
     }
 
-    // Determine the current active/target class (same logic as GET)
     const unapprovedClass = studentRecord.class.slice().reverse().find(
       (cls: any) => cls.evaluation && cls.evaluation.toLowerCase() !== "approved"
     ) || studentRecord.class[studentRecord.class.length - 1];
@@ -347,7 +379,6 @@ export async function PUT(request: NextRequest) {
     const currentSemester = String(unapprovedClass?.semester || "1").trim();
     const isFirstSemester = currentSemester === "1" || currentSemester.toLowerCase().includes("1st");
 
-    // Set status and message dynamically based on current semester
     if (isFirstSemester) {
       studentProfile.status = "Pending - 2nd Sem";
       await studentProfile.save();

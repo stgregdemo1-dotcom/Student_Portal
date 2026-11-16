@@ -317,7 +317,7 @@ function SubjectModalContent({
           </div>
 
           {timeError && (
-            <div className="text-xs text-red-600 font-semibold bg-red-50 p-2 rounded-lg border border-red-100 animate-shake">
+            <div className="text-xs text-red-600 font-semibold bg-red-50 p-2 rounded-lg border border-red-100">
               ⚠️ {timeError}
             </div>
           )}
@@ -392,6 +392,7 @@ function ManageSubjectsContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
+  const [selectedTeacher, setSelectedTeacher] = useState("");
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [subjectArchiveAction, setSubjectArchiveAction] = useState<{ subject: Subject; archive: boolean } | null>(null);
@@ -449,12 +450,29 @@ function ManageSubjectsContent() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedYear, archiveFilter]);
+  }, [searchQuery, selectedYear, selectedTeacher, archiveFilter]);
 
   const getTeacherFullName = (teacherId: string) => {
     const match = teachers.find((t) => t.teacher_id === teacherId);
     return match ? match.full_name : teacherId || "Unassigned";
   };
+
+  // Derive unique teachers currently present in the subject table records
+  const tableTeacherOptions = useMemo(() => {
+    const uniqueIds = Array.from(
+      new Set(subjects.map((s) => s.teacher_id).filter((id): id is string => Boolean(id && id.trim() !== "")))
+    );
+
+    return uniqueIds
+      .map((id) => {
+        const match = teachers.find((t) => t.teacher_id === id);
+        return {
+          teacher_id: id,
+          full_name: match ? match.full_name : id,
+        };
+      })
+      .sort((a, b) => a.full_name.localeCompare(b.full_name));
+  }, [subjects, teachers]);
 
   const yearOptions = useMemo(() => {
     const years = subjects
@@ -485,9 +503,12 @@ function ManageSubjectsContent() {
     const schedCodeYear = s.sched_code?.substring(0, 4);
     const matchesYear = !selectedYear || schedCodeYear === selectedYear;
 
+    const matchesTeacher = !selectedTeacher || s.teacher_id === selectedTeacher;
+
     const matchesArchive = archiveFilter === "all"
       || (archiveFilter === "archived" ? Boolean(s.archived) : !s.archived);
-    return matchesSearch && matchesYear && matchesArchive;
+
+    return matchesSearch && matchesYear && matchesTeacher && matchesArchive;
   });
 
   const sortedSubjects = [...filteredSubjects].sort((a, b) => {
@@ -607,9 +628,9 @@ function ManageSubjectsContent() {
   return (
     <div className="p-6">
       <div className="p-4 bg-white flex flex-col md:flex-row justify-between items-center shadow rounded-t-xl border-b border-gray-100 gap-4">
-        <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+        <div className="flex flex-col sm:flex-row flex-wrap items-center gap-3 w-full md:w-auto">
           <h2 className="text-xl font-bold text-gray-800">Subject Management</h2>
-          <div className="relative w-full sm:w-64">
+          <div className="relative w-full sm:w-60">
             <input
               type="text"
               placeholder="Search by name or Sched Code..."
@@ -619,7 +640,9 @@ function ManageSubjectsContent() {
             />
           </div>
           <div className="w-full sm:w-auto">
+            <label htmlFor="subject-year-filter" className="sr-only">Filter by year</label>
             <select
+              id="subject-year-filter"
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}
               className="w-full sm:w-auto px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-700"
@@ -628,6 +651,22 @@ function ManageSubjectsContent() {
               {yearOptions.map((year) => (
                 <option key={year} value={year}>
                   {year}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="w-full sm:w-auto">
+            <label htmlFor="subject-teacher-filter" className="sr-only">Filter by teacher</label>
+            <select
+              id="subject-teacher-filter"
+              value={selectedTeacher}
+              onChange={(e) => setSelectedTeacher(e.target.value)}
+              className="w-full sm:w-auto px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-700"
+            >
+              <option value="">All Teachers</option>
+              {tableTeacherOptions.map((tch) => (
+                <option key={tch.teacher_id} value={tch.teacher_id}>
+                  {tch.full_name}
                 </option>
               ))}
             </select>
@@ -649,7 +688,7 @@ function ManageSubjectsContent() {
 
         <button
           onClick={handleAddClick}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium w-full md:w-auto"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium w-full md:w-auto shrink-0"
         >
           Add Subject
         </button>
@@ -713,14 +752,15 @@ function ManageSubjectsContent() {
                     </td>
                     <td className="border-b border-r border-slate-200 px-3 py-4">
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${subject.archived
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          subject.archived
                             ? "bg-slate-100 text-slate-700"
                             : subject.status === "Active"
                             ? "bg-green-100 text-green-700"
                             : subject.status === "Inactive"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-yellow-100 text-yellow-700"
-                          }`}
+                            ? "bg-red-100 text-red-700"
+                            : "bg-yellow-100 text-yellow-700"
+                        }`}
                       >
                         {subject.archived ? "Archived" : subject.status}
                       </span>
@@ -776,7 +816,7 @@ function ManageSubjectsContent() {
 
             {totalItems === 0 && (
               <div className="text-center py-10 text-gray-500 italic">
-                No subjects match your search or selected year.
+                No subjects match your search or selected filters.
               </div>
             )}
 
@@ -792,10 +832,11 @@ function ManageSubjectsContent() {
                   <button
                     onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                     disabled={currentPage === 1}
-                    className={`px-3 py-1.5 border rounded-lg font-medium transition ${currentPage === 1
+                    className={`px-3 py-1.5 border rounded-lg font-medium transition ${
+                      currentPage === 1
                         ? "bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed"
                         : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                      }`}
+                    }`}
                   >
                     Previous
                   </button>
@@ -805,10 +846,11 @@ function ManageSubjectsContent() {
                   <button
                     onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                     disabled={currentPage === totalPages}
-                    className={`px-3 py-1.5 border rounded-lg font-medium transition ${currentPage === totalPages
+                    className={`px-3 py-1.5 border rounded-lg font-medium transition ${
+                      currentPage === totalPages
                         ? "bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed"
                         : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                      }`}
+                    }`}
                   >
                     Next
                   </button>
@@ -826,6 +868,7 @@ function ManageSubjectsContent() {
         onSave={handleSaveSubject}
         dbTeachers={teachers}
       />
+
       {subjectArchiveAction && (
         <div
           className="portal-modal-backdrop fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
