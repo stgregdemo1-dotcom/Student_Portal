@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server"; 
 import mongoose from "mongoose";
 import { Student, Credentials, Audit } from "@/models/Schema";
 
@@ -20,6 +20,8 @@ function getAuditUser(request: NextRequest): string {
 }
 
 export async function POST(request: NextRequest) {
+  const session = await mongoose.startSession();
+
   try {
     await connectDB();
     const body = await request.json();
@@ -48,9 +50,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (accountSetup.password.length < 8) {
+    // Backend password validation matching frontend complexity rules
+    const pwd = accountSetup.password;
+    const hasMinLength = pwd.length >= 8;
+    const hasLowerAndUpper = /(?=.*[a-z])(?=.*[A-Z])/.test(pwd);
+    const hasAlphanumeric = /(?=.*[a-zA-Z])(?=.*\d)/.test(pwd);
+    const hasSpecialChar = /(?=.*[^A-Za-z0-9])/.test(pwd);
+
+    if (!hasMinLength || !hasLowerAndUpper || !hasAlphanumeric || !hasSpecialChar) {
       return NextResponse.json(
-        { success: false, message: "Password must be at least 8 characters." },
+        { success: false, message: "Password does not meet security requirements." },
         { status: 400 }
       );
     }
@@ -72,6 +81,20 @@ export async function POST(request: NextRequest) {
         { status: 409 }
       );
     }
+
+    // Properly cast incoming JSON attachment buffers so Mongoose successfully saves them into the collection
+    const processedAttachments = Array.isArray(studentProfile.attachments)
+      ? studentProfile.attachments.map((att: any) => ({
+          filename: att.filename,
+          contentType: att.contentType,
+          documentType: att.documentType,
+          data: att.data?.data 
+            ? Buffer.from(att.data.data) 
+            : Buffer.isBuffer(att.data) 
+            ? att.data 
+            : att.data ? Buffer.from(att.data) : undefined,
+        }))
+      : [];
 
     const studentRecordPayload = {
       status: studentProfile.status,
@@ -95,44 +118,50 @@ export async function POST(request: NextRequest) {
       emergency_contact_person: studentProfile.emergency_contact_person,
       emergency_contact_relationship: studentProfile.emergency_contact_relationship,
       emergency_contact_number: studentProfile.emergency_contact_number,
+      attachments: processedAttachments, // Successfully includes admission attachments with buffers
     };
 
     const credentialRecordPayload = {
       username: accountSetup.username,
-      password: accountSetup.password,
+      password: accountSetup.password, // Stored as plain text per original setup
       user_type: accountSetup.user_type || "student",
       privacyNoticeAcknowledged: false,
     };
 
-    const session = await mongoose.startSession();
+    let createdStudent: any;
+
     try {
       session.startTransaction();
 
-      const [createdStudent] = await Student.create([studentRecordPayload], { session });
+      const [studentDoc] = await Student.create([studentRecordPayload], { session });
+      createdStudent = studentDoc;
       await Credentials.create([credentialRecordPayload], { session });
 
       await session.commitTransaction();
-
-      const currentOperator = getAuditUser(request);
-      const studentFullName = `${studentProfile.first_name} ${studentProfile.last_name}`.trim();
-      const activityDescription = `Enrolled new student: (${studentFullName} ID: ${studentProfile.student_id})`;
-
-      await createAuditLog(currentOperator, activityDescription);
-
-      return NextResponse.json(
-        {
-          success: true,
-          message: "Enrollment complete. Security records saved successfully.",
-          data: { student_id: createdStudent.student_id },
-        },
-        { status: 201 }
-      );
     } catch (txError) {
       await session.abortTransaction();
       throw txError;
     } finally {
       session.endSession();
     }
+
+    try {
+      const currentOperator = getAuditUser(request);
+      const studentFullName = `${studentProfile.first_name} ${studentProfile.last_name}`.trim();
+      const activityDescription = `Enrolled new student: (${studentFullName} ID: ${studentProfile.student_id})`;
+      await createAuditLog(currentOperator, activityDescription);
+    } catch (auditError) {
+      console.error("Failed to write audit log:", auditError);
+    }
+
+    return NextResponse.json(
+      {
+        success: true,
+        message: "Enrollment complete. Security records and attachments saved successfully.",
+        data: { student_id: createdStudent.student_id },
+      },
+      { status: 201 }
+    );
 
   } catch (error: any) {
     console.error("Database Save Error:", error);
@@ -167,7 +196,7 @@ export async function PUT(request: NextRequest) {
 
     const updatedCredential = await Credentials.findOneAndUpdate(
       { username: String(username).trim() },
-      { $set: { password: String(password) } },
+      { $set: { password: String(password) } }, // Updated as plain text
       { new: true }
     );
 
@@ -175,8 +204,12 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ success: false, message: "Credential record not found for this username." }, { status: 404 });
     }
 
-    const currentOperator = getAuditUser(request);
-    await createAuditLog(currentOperator, `Reset/Updated password for student username: ${username}`);
+    try {
+      const currentOperator = getAuditUser(request);
+      await createAuditLog(currentOperator, `Reset/Updated password for student username: ${username}`);
+    } catch (auditError) {
+      console.error("Failed to write audit log:", auditError);
+    }
 
     return NextResponse.json(
       { success: true, message: "Password updated successfully." },

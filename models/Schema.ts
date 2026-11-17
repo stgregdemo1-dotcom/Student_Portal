@@ -53,32 +53,6 @@ const SubjectSchema = new mongoose.Schema(
 );
 export const Subject = mongoose.models.Subject || mongoose.model("Subject", SubjectSchema);
 
-const StudentSchema = new mongoose.Schema(
-  {
-    student_id:               { type: String, required: true },
-    first_name:               { type: String, required: true },
-    middle_name:              { type: String, required: true },
-    last_name:                { type: String, required: true },
-    suffix:                   { type: String },
-    status:                   { type: String, required: true },
-    email_address:            { type: String, required: true },
-    contact_number:           { type: String, required: true },
-    date_of_birth:            { type: String, required: true },
-    gender:                   { type: String, required: true },
-    nationality:              { type: String, required: true },
-    secondary_school:         { type: String, required: true },
-    graduation_year:          { type: String, required: true },
-    gpa:                      { type: String, required: true },
-    track:                    { type: String, required: true },
-    residential_address:      { type: String, required: true },
-    emergency_contact_person: { type: String, required: true },
-    emergency_contact_relationship: { type: String, required: true },
-    emergency_contact_number: { type: String, required: true },
-  },
-  { collection: "students" }
-);
-export const Student = mongoose.models.Student || mongoose.model("Student", StudentSchema);
-
 const AttachmentSchema = new mongoose.Schema({
   filename: String,
   contentType: String,
@@ -88,6 +62,34 @@ const AttachmentSchema = new mongoose.Schema({
   },
   data: Buffer, // 🚀 This handles your binary Base64 subType data maps automatically
 });
+
+const StudentSchema = new mongoose.Schema(
+  {
+    student_id:                 { type: String, required: true },
+    first_name:                 { type: String, required: true },
+    middle_name:                { type: String }, // <-- Removed required: true to support applicants without middle names
+    last_name:                  { type: String, required: true },
+    suffix:                     { type: String },
+    status:                     { type: String, required: true },
+    email_address:              { type: String, required: true },
+    contact_number:             { type: String, required: true },
+    date_of_birth:              { type: String, required: true },
+    gender:                     { type: String, required: true },
+    nationality:                { type: String, required: true },
+    secondary_school:           { type: String, required: true },
+    graduation_year:            { type: String, required: true },
+    gpa:                        { type: String, required: true },
+    track:                      { type: String, required: true },
+    gradeLevel:                 { type: String, required: true }, // <-- Properly mapped here
+    residential_address:        { type: String, required: true },
+    emergency_contact_person:   { type: String, required: true },
+    emergency_contact_relationship: { type: String, required: true },
+    emergency_contact_number:   { type: String, required: true },
+    attachments: [AttachmentSchema], // <-- Includes admission attachments with binary buffer data
+  },
+  { collection: "students" }
+);
+export const Student = mongoose.models.Student || mongoose.model("Student", StudentSchema);
 
 const AdmissionSchema = new mongoose.Schema({
   applicant_id: { type: String, unique: true },

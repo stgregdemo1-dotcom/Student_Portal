@@ -41,6 +41,12 @@ interface ApplicantData {
   }>;
 }
 
+interface PreviewFile {
+  name: string;
+  url: string;
+  contentType: string;
+}
+
 function ApplicantDetailsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -49,6 +55,9 @@ function ApplicantDetailsContent() {
   const [dataLoading, setDataLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
+  
+  // State for document preview modal
+  const [previewFile, setPreviewFile] = useState<PreviewFile | null>(null);
 
   const fetchApplicantDetails = async () => {
     if (!applicantId) return;
@@ -100,9 +109,10 @@ function ApplicantDetailsContent() {
               <h2 style="color: #2575fc;">Congratulations, ${applicant.firstName}!</h2>
               <p>We are pleased to inform you that your admission application for the <strong>${applicant.track}</strong> track has been <strong>Approved</strong>.</p>
               <p><strong>Admission Tracking ID:</strong> ${applicant.applicant_id}</p>
-              <p>Please follow the link below to completed your enrollment process</p>
-              <p><a href="https://student-portal-q4hs.onrender.com/admission/verification">Enrollment link</a></p>
+              <p>Please process your enrollment application by providing your voucher or tuition fee in the school cashier, our registrar will process your application and will let you know once your enrollment is completed</p>
               <p>Our registrar office will reach out to you shortly regarding the next enrolment steps, document verification, and schedules.</p>
+              <p>Please create your portal account by following this link</p>
+              <a href="https://student-portal-q4hs.onrender.com/admission/verification">Create an account</a>
               <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
               <p style="font-size: 12px; color: #666;">Saint Gregory College of Science and Technology</p>
             </div>
@@ -268,10 +278,12 @@ function ApplicantDetailsContent() {
                     <FileItem 
                       key={file._id} 
                       name={file.filename} 
+                      contentType={file.contentType}
                       documentType={file.documentType}
                       status="Uploaded" 
                       applicantId={applicant.applicant_id} 
                       fileId={file._id} 
+                      onPreview={(fileData) => setPreviewFile(fileData)}
                     />
                   ))
                 ) : (
@@ -317,6 +329,59 @@ function ApplicantDetailsContent() {
 
         </div>
       </div>
+
+      {/* Document Preview Modal */}
+      {previewFile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col max-h-[90vh] overflow-hidden">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100">
+              <h3 className="font-bold text-gray-800 text-sm truncate max-w-xl">{previewFile.name}</h3>
+              <div className="flex items-center gap-3">
+                <a 
+                  href={previewFile.url} 
+                  download={previewFile.name}
+                  className="text-xs bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-semibold px-3 py-1.5 rounded-lg transition-colors"
+                >
+                  Download
+                </a>
+                <button 
+                  onClick={() => setPreviewFile(null)}
+                  className="text-gray-400 hover:text-gray-700 font-bold text-lg p-1"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6 bg-gray-50 flex-1 overflow-auto flex items-center justify-center min-h-[450px]">
+              {previewFile.contentType?.includes("image") ? (
+                <img 
+                  src={previewFile.url} 
+                  alt={previewFile.name} 
+                  className="max-h-[65vh] object-contain rounded-lg shadow-sm"
+                />
+              ) : previewFile.contentType?.includes("pdf") || previewFile.name.toLowerCase().endsWith(".pdf") ? (
+                <iframe 
+                  src={previewFile.url} 
+                  title={previewFile.name}
+                  className="w-full h-[65vh] rounded-lg border border-gray-200 bg-white"
+                />
+              ) : (
+                <div className="text-center space-y-3 py-12">
+                  <p className="text-gray-600 text-sm">Inline preview is not available for this file type.</p>
+                  <a 
+                    href={previewFile.url} 
+                    download={previewFile.name}
+                    className="inline-block bg-indigo-600 text-white text-xs font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+                  >
+                    Download File to View
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -377,8 +442,24 @@ function Field({ label, value }: { label?: string; value: string }) {
   );
 }
 
-function FileItem({ name, documentType, status, applicantId, fileId }: { name: string; documentType?: "profile" | "reportCard" | "birthCertificate"; status: string; applicantId: string; fileId: string; }) {
-  const downloadUrl = `/api/portal/registrar?applicantId=${applicantId}&fileId=${fileId}`;
+function FileItem({ 
+  name, 
+  contentType, 
+  documentType, 
+  status, 
+  applicantId, 
+  fileId, 
+  onPreview 
+}: { 
+  name: string; 
+  contentType: string;
+  documentType?: "profile" | "reportCard" | "birthCertificate"; 
+  status: string; 
+  applicantId: string; 
+  fileId: string; 
+  onPreview: (file: PreviewFile) => void;
+}) {
+  const fileUrl = `/api/portal/registrar?applicantId=${applicantId}&fileId=${fileId}`;
   const documentLabel =
     documentType === "profile"
       ? "Profile Picture"
@@ -397,9 +478,18 @@ function FileItem({ name, documentType, status, applicantId, fileId }: { name: s
           </span>
         )}
         <span className="text-xs font-medium text-gray-700 truncate">{name}</span>
-        <a href={downloadUrl} download={name} className="text-[10px] text-blue-600 hover:text-blue-800 hover:underline font-semibold mt-0.5">
-          Public Download Document
-        </a>
+        <div className="flex items-center gap-2 mt-1">
+          <button 
+            onClick={() => onPreview({ name, url: fileUrl, contentType })}
+            className="text-[10px] text-indigo-600 hover:text-indigo-800 hover:underline font-semibold"
+          >
+            Preview
+          </button>
+          <span className="text-gray-300">•</span>
+          <a href={fileUrl} download={name} className="text-[10px] text-blue-600 hover:text-blue-800 hover:underline font-semibold">
+            Download
+          </a>
+        </div>
       </div>
       <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-md bg-green-100 text-green-700">
         {status}

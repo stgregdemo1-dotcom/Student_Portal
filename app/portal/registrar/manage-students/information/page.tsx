@@ -4,6 +4,13 @@ import React, { useState, useEffect, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthGuard } from "@/app/hooks/useAuthGuard";
 
+interface Attachment {
+  _id: string;
+  filename: string;
+  contentType: string;
+  documentType?: "profile" | "reportCard" | "birthCertificate";
+}
+
 interface StudentData {
   _id: string;
   student_id: string;
@@ -53,12 +60,20 @@ interface StudentSectionData {
   class: ClassEntry[];
 }
 
+interface PreviewFile {
+  name: string;
+  url: string;
+  contentType: string;
+}
+
 function AdminStudentDetailsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const studentId = searchParams.get("id");
 
   const [student, setStudent] = useState<StudentData | null>(null);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [applicantId, setApplicantId] = useState<string>("");
   const [studentSectionDoc, setStudentSectionDoc] = useState<StudentSectionData | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -68,6 +83,9 @@ function AdminStudentDetailsContent() {
   const currentYear = new Date().getFullYear().toString();
   const [subjectsList, setSubjectsList] = useState<SubjectData[]>([]);
   const [subjectsLoading, setSubjectsLoading] = useState<boolean>(false);
+
+  // State for document preview modal
+  const [previewFile, setPreviewFile] = useState<PreviewFile | null>(null);
 
   const filteredSectionsList = useMemo(() => {
     if (!sectionsList || sectionsList.length === 0) return [];
@@ -110,6 +128,28 @@ function AdminStudentDetailsContent() {
         const jsonResponse = await studentRes.json();
         const data: StudentData = jsonResponse.data || jsonResponse || null;
         setStudent(data);
+
+        // Transform student_id: ST- becomes ID- to query admissions_applications for attachments
+        if (data && data.student_id) {
+          const transformedApplicantId = data.student_id.startsWith("ST-")
+            ? data.student_id.replace(/^ST-/, "ID-")
+            : data.student_id;
+
+          setApplicantId(transformedApplicantId);
+
+          try {
+            const appRes = await fetch(`/api/portal/registrar?table=admissions_applications&id=${transformedApplicantId}`);
+            if (appRes.ok) {
+              const appJsonResponse = await appRes.json();
+              const appRecord = appJsonResponse.data || appJsonResponse;
+              if (appRecord && Array.isArray(appRecord.attachments)) {
+                setAttachments(appRecord.attachments);
+              }
+            }
+          } catch (attErr) {
+            console.error("Failed to fetch admission attachments:", attErr);
+          }
+        }
       }
 
       const sectionRes = await fetch(`/api/portal/registrar?table=student_section&id=${studentId}`);
@@ -254,7 +294,7 @@ function AdminStudentDetailsContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-4 sm:py-6">
+    <div className="min-h-screen bg-gray-50 py-4 sm:py-6 px-4">
       <div className="w-full space-y-6">
 
         {/* Header Navigation */}
@@ -307,6 +347,30 @@ function AdminStudentDetailsContent() {
                 <Field label="Graduation Year" value={student.graduation_year} />
                 <Field label="Grade Point Average (GPA)" value={student.gpa} />
               </Grid>
+            </Card>
+
+            {/* Uploaded Admission Documents Section */}
+            <Card title="Uploaded Admission Documents">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {attachments && attachments.length > 0 ? (
+                  attachments.map((file, index) => (
+                    <FileItem 
+                      key={file._id || index} 
+                      name={file.filename} 
+                      contentType={file.contentType}
+                      documentType={file.documentType}
+                      status="Available" 
+                      applicantId={applicantId} 
+                      fileId={file._id} 
+                      onPreview={(fileData) => setPreviewFile(fileData)}
+                    />
+                  ))
+                ) : (
+                  <div className="col-span-full p-4 rounded-xl border border-dashed border-gray-200 text-center text-xs text-gray-500 italic">
+                    No admission attachments found for this student.
+                  </div>
+                )}
+              </div>
             </Card>
 
             <Card title="Address Details">
@@ -473,6 +537,59 @@ function AdminStudentDetailsContent() {
 
         </div>
       </div>
+
+      {/* Document Preview Modal */}
+      {previewFile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col max-h-[90vh] overflow-hidden">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100">
+              <h3 className="font-bold text-gray-800 text-sm truncate max-w-xl">{previewFile.name}</h3>
+              <div className="flex items-center gap-3">
+                <a 
+                  href={previewFile.url} 
+                  download={previewFile.name}
+                  className="text-xs bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-semibold px-3 py-1.5 rounded-lg transition-colors"
+                >
+                  Download
+                </a>
+                <button 
+                  onClick={() => setPreviewFile(null)}
+                  className="text-gray-400 hover:text-gray-700 font-bold text-lg p-1"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6 bg-gray-50 flex-1 overflow-auto flex items-center justify-center min-h-[450px]">
+              {previewFile.contentType?.includes("image") ? (
+                <img 
+                  src={previewFile.url} 
+                  alt={previewFile.name} 
+                  className="max-h-[65vh] object-contain rounded-lg shadow-sm"
+                />
+              ) : previewFile.contentType?.includes("pdf") || previewFile.name.toLowerCase().endsWith(".pdf") ? (
+                <iframe 
+                  src={previewFile.url} 
+                  title={previewFile.name}
+                  className="w-full h-[65vh] rounded-lg border border-gray-200 bg-white"
+                />
+              ) : (
+                <div className="text-center space-y-3 py-12">
+                  <p className="text-gray-600 text-sm">Inline preview is not available for this file type.</p>
+                  <a 
+                    href={previewFile.url} 
+                    download={previewFile.name}
+                    className="inline-block bg-indigo-600 text-white text-xs font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+                  >
+                    Download File to View
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -523,6 +640,62 @@ function Field({ label, value }: { label?: string; value: string }) {
     <div>
       {label && <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">{label}</label>}
       <p className="font-semibold text-gray-800 text-sm min-h-[20px]">{value || "—"}</p>
+    </div>
+  );
+}
+
+function FileItem({ 
+  name, 
+  contentType, 
+  documentType, 
+  status, 
+  applicantId, 
+  fileId, 
+  onPreview 
+}: { 
+  name: string; 
+  contentType: string;
+  documentType?: "profile" | "reportCard" | "birthCertificate"; 
+  status: string; 
+  applicantId: string; 
+  fileId: string; 
+  onPreview: (file: PreviewFile) => void;
+}) {
+  const fileUrl = `/api/portal/registrar?applicantId=${applicantId}&fileId=${fileId}`;
+  const documentLabel =
+    documentType === "profile"
+      ? "Profile Picture"
+      : documentType === "reportCard"
+        ? "Report Card"
+        : documentType === "birthCertificate"
+          ? "Birth Certificate"
+          : undefined;
+
+  return (
+    <div className="flex justify-between items-center border border-gray-100 p-3 rounded-lg bg-gray-50/40">
+      <div className="flex flex-col min-w-0 max-w-[180px]">
+        {documentLabel && (
+          <span className="text-[10px] font-bold uppercase tracking-wide text-[#0D2B45]">
+            {documentLabel}
+          </span>
+        )}
+        <span className="text-xs font-medium text-gray-700 truncate">{name}</span>
+        <div className="flex items-center gap-2 mt-1">
+          <button 
+            onClick={() => onPreview({ name, url: fileUrl, contentType })}
+            className="text-[10px] text-indigo-600 hover:text-indigo-800 hover:underline font-semibold"
+          >
+            Preview
+          </button>
+          <span className="text-gray-300">•</span>
+          <a href={fileUrl} download={name} className="text-[10px] text-blue-600 hover:text-blue-800 hover:underline font-semibold">
+            Download
+          </a>
+        </div>
+      </div>
+      <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-md bg-green-100 text-green-700">
+        {status}
+      </span>
     </div>
   );
 }

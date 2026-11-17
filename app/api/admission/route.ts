@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "node:crypto";
 import mongoose from "mongoose";
 import { Admission, Audit } from "@/models/Schema";
+import FormData from "form-data";
+import Mailgun from "mailgun.js";
+
+const mailgun = new Mailgun(FormData);
 
 export const dynamic = "force-dynamic";
 
@@ -304,12 +308,22 @@ export async function POST(request: NextRequest) {
       const currentYear = new Date().getFullYear();
       const idPrefix = `ID-${currentYear}-`;
 
-      const totalYearCount = await Admission.countDocuments({
-        applicant_id: new RegExp(`^${idPrefix}`)
-      });
+      const latestApplicant = await Admission.findOne({
+        applicant_id: new RegExp(`^${idPrefix}`),
+      })
+        .sort({ applicant_id: -1 })
+        .lean();
 
-      const paddedIndex = (totalYearCount + 1).toString().padStart(5, "0");
-      fields.applicant_id = `${idPrefix}${paddedIndex}`;
+      let nextSequence = 1;
+      if (latestApplicant && latestApplicant.applicant_id) {
+        const parts = latestApplicant.applicant_id.split("-");
+        const numericPart = parseInt(parts[2], 10);
+        if (!isNaN(numericPart)) {
+          nextSequence = numericPart + 1;
+        }
+      }
+
+      fields.applicant_id = `${idPrefix}${nextSequence.toString().padStart(5, "0")}`;
     }
 
     const applicationData = {
@@ -341,6 +355,40 @@ export async function POST(request: NextRequest) {
 
     const application = new Admission(applicationData);
     await application.save();
+
+    // Send notification email via Mailgun upon successful submission
+    try {
+      const apiKey = process.env.MAILGUN_API_KEY;
+      const domain = process.env.MAILGUN_DOMAIN;
+
+      if (apiKey && domain && fields.email) {
+        const mg = mailgun.client({
+          username: "api",
+          key: apiKey,
+        });
+
+        const applicantFullName = `${fields.firstName} ${fields.lastName}`;
+
+        await mg.messages.create(domain, {
+          from: `Saint Gregory CST Admissions <mailgun@${domain}>`,
+          to: [fields.email],
+          subject: "Admission Update: Application Submitted",
+          html: `
+            <div style="font-family: Arial, sans-serif; color: #1E293B; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #DCE4ED; border-radius: 12px; background-color: #ffffff;">
+              <h2 style="color: #0D2B45; margin-top: 0;">Saint Gregory College of Science and Technology</h2>
+              <p>Dear ${applicantFullName},</p>
+              <p>Thank you for submitting your application. We have received your information and required documents.</p>
+              <p>Your Control Number is: <strong style="color: #D89B00; font-size: 16px;">${fields.applicant_id}</strong></p>
+              <p>I will review your application and will let you know if it is approved or rejected.</p>
+              <br/>
+              <p style="margin-top: 24px; font-size: 14px; color: #334155;">Best regards,<br/><strong>SGCST Admissions Office</strong></p>
+            </div>
+          `,
+        });
+      }
+    } catch (emailError) {
+      console.error("Failed to send admission submission email:", emailError);
+    }
 
     const currentOperator = getAuditUser(request);
     const applicantFullName = `${fields.firstName || ""} ${fields.lastName || ""}${suffixVal ? `, ${suffixVal}` : ""}`.trim();

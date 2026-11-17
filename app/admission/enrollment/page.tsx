@@ -23,6 +23,7 @@ interface AdmissionApplication {
   city?: string;
   province?: string;
   zip?: string;
+  attachments?: any; // Added to support attachments from the application record
 }
 
 const isAdmissionApplication = (value: unknown): value is AdmissionApplication =>
@@ -207,6 +208,8 @@ export default function EnrollmentForm() {
       gpa: "",
       graduation_year: "",
       track: studentData.track,
+      gradeLevel: studentData.gradeLevel, // <-- Added to correctly send Grade 12 or other levels
+      attachments: studentData.attachments || [], // <-- Carries over documents/attachments
     };
 
     setSubmitting(true);
